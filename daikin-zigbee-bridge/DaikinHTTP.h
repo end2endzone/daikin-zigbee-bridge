@@ -1,33 +1,104 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-/*
-class EnumHelper {
+class DaikinHttpPayload {
+private:
+  String payload;
+
 public:
-  struct EnumHelper {
-    const char * name;  // description
-    const char * payload; // serialized payload value
+  DaikinHttpPayload() : payload() {}
+  DaikinHttpPayload(const String& payload) : payload(payload) {}
+
+  void clear() {
+    payload.clear();
   }
 
-  static int getName(const int value, const EnumHelper * helpers, size_t helper_count, int default_value) {
-    return helpers[value].name;
+  const String& get() const {
+    return payload;
   }
 
-  static int deserialize(const String &payload, const EnumHelper * helpers, size_t helper_count, int default_value) {
-    for (int i = 0; i < helper_count; i++) {
-      if (payload == helpers[i].payload) return i;
+  String& get() {
+    return payload;
+  }
+
+  void set(const String& value) {
+    payload = value;
+  }
+
+  bool findKeyValue(const String &key, int & start_index, int & end_index) const {
+    start_index = -1;
+    end_index = -1;
+
+    // Search for `,key=` first
+    String pattern = "," + key + "=";
+    int start = payload.indexOf(pattern);
+    if (start == -1) {
+      // Pattern `,key=` not found. Maybe the key is the first key in the payload.
+      // Search for `key=`.
+      pattern = key + "=";
+      start = payload.indexOf(pattern);
+      if (start == -1) return false; // error
     }
-    return default_value;
+    else
+    {
+      start++; // skip `,`
+    }
+
+    // Key found, extract value boundaries
+    start += key.length() + 1; // skip `key=`
+    int end = payload.indexOf(",", start);
+    if (end == -1) end = payload.length();
+
+    // Success
+    start_index = start;
+    end_index = end;
+    return true;
   }
 
-  static String serialize(const String &payload, const EnumHelper * helpers, size_t helper_count, int default_value) {
-    for (int i = 0; i < helper_count; i++) {
-      if (payload == helpers[i].payload) return i;
+  String getValueString(const String &key) const {
+    //Serial.println("searching for key:" + key);
+    //Serial.println("payload=" + payload);
+    int start_index = -1;
+    int end_index = -1;
+    bool found = findKeyValue(key, start_index, end_index);
+    if (!found) {
+      //Serial.println("key not found!");
+      return "";
     }
-    return default_value;
+
+    // Extract payload value
+    String value = payload.substring(start_index, end_index);
+    return value;
   }
+
+  void setValueString(const String &key, const String &value) {
+    // Search for the exiting key
+    int start_index = -1;
+    int end_index = -1;
+    bool found = findKeyValue(key, start_index, end_index);
+    if (!found) {
+      // Key not found, append at end
+      if (!payload.endsWith(",")) payload += ",";
+      payload += key + "=" + value;
+      return;
+    }
+
+    // Key is found.
+    // Override previous key with new value
+    payload = payload.substring(0, start_index) + value + payload.substring(end_index);
+  }
+
+  float getValueFloat(const String &key) const {
+    String tmp = getValueString(key);
+    return tmp.length() ? tmp.toFloat() : NAN;
+  }
+
+  void setValueFloat(const String &key, const float &value) {
+    String tmp = String(value);
+    setValueString(key, tmp);
+  }
+
 };
-*/
 
 class DaikinHTTP {
 public:
@@ -248,88 +319,12 @@ public:
   }
 
   //------------------------------------------------------
-  // Payload helper functions
-  //------------------------------------------------------
-private:
-  static bool payloadFindKeyValue(const String &payload, const String &key, int & start_index, int & end_index) {
-    start_index = -1;
-    end_index = -1;
-
-    // Search for `,key=` first
-    String pattern = "," + key + "=";
-    int start = payload.indexOf(pattern);
-    if (start == -1) {
-      // Pattern `,key=` not found. Maybe the key is the first key in the payload.
-      // Search for `key=`.
-      pattern = key + "=";
-      start = payload.indexOf(pattern);
-      if (start == -1) return false; // error
-    }
-    else
-    {
-      start++; // skip `,`
-    }
-
-    // Key found, extract value boundaries
-    start += key.length() + 1; // skip `key=`
-    int end = payload.indexOf(",", start);
-    if (end == -1) end = payload.length();
-
-    // Success
-    start_index = start;
-    end_index = end;
-    return true;
-  }
-
-  static String payloadGetValueString(const String &payload, const String &key) {
-    //Serial.println("searching for key:" + key);
-    //Serial.println("payload=" + payload);
-    int start_index = -1;
-    int end_index = -1;
-    bool found = payloadFindKeyValue(payload, key, start_index, end_index);
-    if (!found) {
-      //Serial.println("key not found!");
-      return "";
-    }
-
-    // Extract payload value
-    String value = payload.substring(start_index, end_index);
-    return value;
-  }
-
-  static void payloadSetValueString(String &payload, const String &key, const String &value) {
-    // Search for the exiting key
-    int start_index = -1;
-    int end_index = -1;
-    bool found = payloadFindKeyValue(payload, key, start_index, end_index);
-    if (!found) {
-      // Key not found, append at end
-      if (!payload.endsWith(",")) payload += ",";
-      payload += key + "=" + value;
-      return;
-    }
-
-    // Key is found.
-    // Override previous key with new value
-    payload = payload.substring(0, start_index) + value + payload.substring(end_index);
-  }
-
-  static float payloadGetValueFloat(const String &payload, const String &key) {
-    String tmp = payloadGetValueString(payload, key);
-    return tmp.length() ? tmp.toFloat() : NAN;
-  }
-
-  static void payloadSetValueFloat(String &payload, const String &key, const float &value) {
-    String tmp = String(value);
-    payloadSetValueString(payload, key, tmp);
-  }
-
-
-  //------------------------------------------------------
   // REST Api functions
   //------------------------------------------------------
 private:
   String ip;
+  DaikinHttpPayload controlInfo;
+  DaikinHttpPayload sensorInfo;
 
   bool httpGet(const String &endpoint, String &response) {
     HTTPClient http;
@@ -351,83 +346,140 @@ private:
 public:
   DaikinHTTP(String ipAddr) : ip(ipAddr) {}
 
-  bool getControlInfo(String &response) {
-    return httpGet("/aircon/get_control_info", response);
+  bool fetchControlInfo() {
+    controlInfo.clear();
+    bool success = httpGet("/aircon/get_control_info", controlInfo.get());
+    return success;
   }
 
-  bool getSensorInfo(String &response) {
-    return httpGet("/aircon/get_sensor_info", response);
+  bool fetchSensorInfo() {
+    sensorInfo.clear();
+    bool success = httpGet("/aircon/get_sensor_info", sensorInfo.get());
+    return success;
+  }
+
+  const DaikinHttpPayload& getControlInfoPayload() const {
+    return controlInfo;
+  }
+
+  const DaikinHttpPayload& getSensorInfoPayload() const {
+    return sensorInfo;
   }
 
   //------------------------------------------------------
-  // Payload public utility functions
+  // Payload getter/setter functions
   //------------------------------------------------------
-public:
-  static String getPayloadString(const String &payload, Key key) {
-    const String name = toString(key);
-    String value = payloadGetValueString(payload, name);
+private:
+  DaikinHttpPayload* findPayloadForKey(Key key) {
+    switch(key) {
+      case KEY_RETURN_STATUS:     return NULL; // both has it
+      case KEY_OPERATION_MODE:    return &controlInfo;
+      case KEY_FAN_RATE:          return &controlInfo;
+      case KEY_FAN_DIRECTION:     return &controlInfo;
+      case KEY_PRESET_MODE:       return &controlInfo;
+      case KEY_INDOOR_TEMP:       return &sensorInfo;
+      case KEY_OUTDOOR_TEMP:      return &sensorInfo;
+      case KEY_INDOOR_HUMIDITY:   return &controlInfo;
+      case KEY_TARGET_TEMP:       return &controlInfo;
+      case KEY_UNKNOWN:           return NULL;
+      default:                    return NULL;
+    }
+  }
+
+  String getKeyString(Key key) {
+    DaikinHttpPayload* payload = findPayloadForKey(key);
+    if (payload == NULL) return "";
+    const String keyName = toString(key);
+    String value = payload->getValueString(keyName);
     return value;
   }
 
-  static void setPayloadString(String &payload, Key key, const String &value) {
-    const String name = toString(key);
-    payloadSetValueString(payload, name, value);
+  void setKeyString(Key key, const String &value) {
+    DaikinHttpPayload* payload = findPayloadForKey(key);
+    if (payload == NULL) return;
+    const String keyName = toString(key);
+    payload->setValueString(keyName, value);
   }
 
-  static float getPayloadFloat(const String &payload, Key key) {
-    const String name = toString(key);
-    float value = payloadGetValueFloat(payload, name);
+  float getKeyFloat(Key key) {
+    DaikinHttpPayload* payload = findPayloadForKey(key);
+    if (payload == NULL) return NAN;
+    const String keyName = toString(key);
+    float value = payload->getValueFloat(keyName);
     return value;
   }
 
-  static void setPayloadFloat(String &payload, Key key, const float &value) {
-    const String name = toString(key);
-    payloadSetValueFloat(payload, name, value);
+  void setKeyFloat(Key key, const float &value) {
+    DaikinHttpPayload* payload = findPayloadForKey(key);
+    if (payload == NULL) return;
+    const String keyName = toString(key);
+    payload->setValueFloat(keyName, value);
   }
 
   //------------------------------------------------------
   // Parsing utility functions
   //------------------------------------------------------
 public:
+
   // Control parsers
-  static Mode parseMode(const String &payload) {
-    String tmp = getPayloadString(payload, KEY_OPERATION_MODE);
+  Mode parseMode() {
+    String tmp = getKeyString(KEY_OPERATION_MODE);
     Mode output = static_cast<Mode>(deserializeMode(tmp));
     return output;
   }
 
-  static FanRate parseFanRate(const String &payload) {
-    String tmp = getPayloadString(payload, KEY_FAN_RATE);
+  FanRate parseFanRate() {
+    String tmp = getKeyString(KEY_FAN_RATE);
     FanRate output = static_cast<FanRate>(deserializeFan(tmp));
     return output;
   }
 
-  static Swing parseSwing(const String &payload) {
-    String tmp = getPayloadString(payload, KEY_FAN_DIRECTION);
+  Swing parseSwing() {
+    String tmp = getKeyString(KEY_FAN_DIRECTION);
     Swing output = static_cast<Swing>(deserializeSwing(tmp));
     return output;
   }
 
-  static Preset parsePreset(const String &payload) {
-    String tmp = getPayloadString(payload, KEY_PRESET_MODE);
+  Preset parsePreset() {
+    String tmp = getKeyString(KEY_PRESET_MODE);
     Preset output = static_cast<Preset>(deserializePreset(tmp));
     return output;
   }
 
-  static float parseTargetTemp(const String &payload) {
-    float output = getPayloadFloat(payload, KEY_TARGET_TEMP);
+  float parseTargetTemp() {
+    float output = getKeyFloat(KEY_TARGET_TEMP);
     return output;
   }
 
   // Sensor parsers
-  static float parseIndoorTemp(const String &payload) {
-    float output = getPayloadFloat(payload, KEY_INDOOR_TEMP);
+  float parseIndoorTemp() {
+    float output = getKeyFloat(KEY_INDOOR_TEMP);
     return output;
   }
 
-  static float parseOutdoorTemp(const String &payload) {
-    float output = getPayloadFloat(payload, KEY_OUTDOOR_TEMP);
+  float parseOutdoorTemp() {
+    float output = getKeyFloat(KEY_OUTDOOR_TEMP);
     return output;
+  }
+
+  //------------------------------------------------------
+  // toString() functions
+  //------------------------------------------------------
+public:
+  static String toString(Mode value) {
+    return toStringMode(value);
+  }
+
+  static String toString(FanRate value) {
+    return toStringFan(value);
+  }
+
+  static String toString(Swing value) {
+    return toStringSwing(value);
+  }
+
+  static String toString(Preset value) {
+    return toStringPreset(value);
   }
   
 };

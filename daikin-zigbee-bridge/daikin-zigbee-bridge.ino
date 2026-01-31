@@ -25,33 +25,31 @@ void setup() {
 }
 
 void loop() {
-  String payload;
-
   // Get control info
-  if (daikin.getControlInfo(payload)) {
-    Serial.print("DEBUG: Control payload:"); Serial.println(payload);
+  if (daikin.fetchControlInfo()) {
+    Serial.print("DEBUG: Control payload:"); Serial.println(daikin.getControlInfoPayload().get());
 
-    DaikinHTTP::Mode mode = daikin.parseMode(payload);
-    DaikinHTTP::FanRate fan = daikin.parseFanRate(payload);
-    DaikinHTTP::Swing swing = daikin.parseSwing(payload);
-    DaikinHTTP::Preset preset = daikin.parsePreset(payload);
-    float target_temp = daikin.parseTargetTemp(payload);
+    DaikinHTTP::Mode mode = daikin.parseMode();
+    DaikinHTTP::FanRate fan = daikin.parseFanRate();
+    DaikinHTTP::Swing swing = daikin.parseSwing();
+    DaikinHTTP::Preset preset = daikin.parsePreset();
+    float target_temp = daikin.parseTargetTemp();
 
-    Serial.println("Mode: " + DaikinHTTP::toStringMode(mode));
-    Serial.println("Fan: " + DaikinHTTP::toStringFan(fan));
-    Serial.println("Swing: " + DaikinHTTP::toStringSwing(swing));
-    Serial.println("Preset: " + DaikinHTTP::toStringPreset(preset));
+    Serial.println("Mode: " + DaikinHTTP::toString(mode));
+    Serial.println("Fan: " + DaikinHTTP::toString(fan));
+    Serial.println("Swing: " + DaikinHTTP::toString(swing));
+    Serial.println("Preset: " + DaikinHTTP::toString(preset));
     Serial.print("Target Temp:  "); Serial.println(target_temp);
   } else {
     Serial.println("Failed to get control info.");
   }
 
   // Get sensor info
-  if (daikin.getSensorInfo(payload)) {
-    Serial.print("DEBUG: Sensor payload:"); Serial.println(payload);
+  if (daikin.fetchSensorInfo()) {
+    Serial.print("DEBUG: Sensor payload:"); Serial.println(daikin.getSensorInfoPayload().get());
 
-    float indoor = daikin.parseIndoorTemp(payload);
-    float outdoor = daikin.parseOutdoorTemp(payload);
+    float indoor = daikin.parseIndoorTemp();
+    float outdoor = daikin.parseOutdoorTemp();
 
     Serial.print("Indoor Temp:  "); Serial.println(indoor);
     Serial.print("Outdoor Temp: "); Serial.println(outdoor);
