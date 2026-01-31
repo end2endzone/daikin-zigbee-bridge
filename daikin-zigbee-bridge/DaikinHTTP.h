@@ -57,12 +57,10 @@ public:
     KEY_UNKNOWN               // fallback for unknown keys
   };
 
-  // Utility: convert enum to string
   static const char* toString(Key key) {
     return KeyNames[key];
   }
 
-  // Utility: find enum from string
   static Key fromString(const String& str) {
     for (int i = 0; i < KEY_UNKNOWN; i++) {
       if (str == KeyNames[i]) return static_cast<Key>(i);
@@ -70,12 +68,12 @@ public:
     return KEY_UNKNOWN;
   }
 
-  // --- Generic getter using Key enum ---
+  // Generic getter using Key enum
   String getValue(const String &payload, Key key) {
     return "";
   }
 
-  // --- Generic setter using Key enum ---
+  // Generic setter using Key enum
   static void setValue(String &payload, Key key, const String &value) {
   }
 
@@ -188,7 +186,7 @@ public:
     payload = payload.substring(0, start) + value + payload.substring(end);
   }
 
-  // --- Control parsers ---
+  // Control parsers
   static Mode parseMode(const String &controlPayload) {
     String val = getValue(controlPayload, "mode");
     if (val == "0") return MODE_AUTO;
@@ -229,7 +227,7 @@ public:
     return PRESET_ERROR;
   }
 
-  // --- Sensor parsers ---
+  // Sensor parsers
   static float parseIndoorTemp(const String &sensorPayload) {
     String val = getValue(sensorPayload, "htemp");
     return val.length() ? val.toFloat() : NAN;
@@ -240,7 +238,7 @@ public:
     return val.length() ? val.toFloat() : NAN;
   }
 
-  // --- String conversion helpers ---
+  // String conversion helpers
   static String toString(Mode mode) {
     switch (mode) {
       case MODE_AUTO: return "Auto";

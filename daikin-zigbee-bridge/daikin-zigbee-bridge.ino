@@ -27,10 +27,9 @@ void setup() {
 void loop() {
   String payload;
 
-  // --- Get control info ---
+  // Get control info
   if (daikin.getControlInfo(payload)) {
-    Serial.println("DEBUG: Control payload:");
-    Serial.println(payload);
+    Serial.print("DEBUG: Control payload:"); Serial.println(payload);
 
     DaikinHTTP::Mode mode = daikin.parseMode(payload);
     DaikinHTTP::FanRate fan = daikin.parseFanRate(payload);
@@ -45,10 +44,9 @@ void loop() {
     Serial.println("Failed to get control info.");
   }
 
-  // --- Get sensor info ---
+  // Get sensor info
   if (daikin.getSensorInfo(payload)) {
-    Serial.println("DEBUG: Sensor payload:");
-    Serial.println(payload);
+    Serial.print("DEBUG: Sensor payload:"); Serial.println(payload);
 
     float indoor = daikin.parseIndoorTemp(payload);
     float outdoor = daikin.parseOutdoorTemp(payload);
