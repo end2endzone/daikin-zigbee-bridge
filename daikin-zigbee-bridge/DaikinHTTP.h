@@ -114,6 +114,7 @@ public:
     KEY_OUTDOOR_TEMP,         // "otemp" - outdoor temperature
     KEY_INDOOR_HUMIDITY,      // "hhum" - indoor humidity
     KEY_TARGET_TEMP,          // "stemp" - setpoint temperature
+    KEY_DEVICE_NAME,          // "name" - from basic info
     KEY_UNKNOWN               // fallback for unknown keys
   };
 
@@ -128,6 +129,7 @@ public:
     "otemp",     // KEY_OUTDOOR_TEMP
     "hhum",      // KEY_INDOOR_HUMIDITY
     "stemp",     // KEY_TARGET_TEMP
+    "name",      // KEY_DEVICE_NAME
     "unknown"    // KEY_UNKNOWN
   };
 
@@ -323,6 +325,7 @@ public:
   //------------------------------------------------------
 private:
   String ip;
+  DaikinHttpPayload basicInfo;
   DaikinHttpPayload controlInfo;
   DaikinHttpPayload sensorInfo;
 
@@ -346,6 +349,12 @@ private:
 public:
   DaikinHTTP(String ipAddr) : ip(ipAddr) {}
 
+  bool fetchBasicInfo() {
+    controlInfo.clear();
+    bool success = httpGet("/common/basic_info", basicInfo.get());
+    return success;
+  }
+
   bool fetchControlInfo() {
     controlInfo.clear();
     bool success = httpGet("/aircon/get_control_info", controlInfo.get());
@@ -356,6 +365,10 @@ public:
     sensorInfo.clear();
     bool success = httpGet("/aircon/get_sensor_info", sensorInfo.get());
     return success;
+  }
+
+  const DaikinHttpPayload& getBasicInfoPayload() const {
+    return basicInfo;
   }
 
   const DaikinHttpPayload& getControlInfoPayload() const {
@@ -381,6 +394,7 @@ private:
       case KEY_OUTDOOR_TEMP:      return &sensorInfo;
       case KEY_INDOOR_HUMIDITY:   return &controlInfo;
       case KEY_TARGET_TEMP:       return &controlInfo;
+      case KEY_DEVICE_NAME:       return &basicInfo;
       case KEY_UNKNOWN:           return NULL;
       default:                    return NULL;
     }
@@ -417,11 +431,63 @@ private:
   }
 
   //------------------------------------------------------
+  // Name decoding utility functions
+  //------------------------------------------------------
+private:
+  int hexDigitToInt(char c) {
+      if (c >= '0' && c <= '9') return c - '0';
+      if (c >= 'A' && c <= 'F') return 10 + (c - 'A');
+      if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
+      return 0; // fallback
+  }
+
+  String decodePercentEncoded(const String& encoded) {
+      String decoded;
+      char accumulator[3] = {0};  // holds two hex digits + null terminator
+      int accIndex = 0; // accumulator index where the next insertation must be
+
+      // for each characters in the encoded string
+      for (size_t i = 0; i < encoded.length(); ++i) {
+          char c = encoded[i];
+          if (c == '%') {
+              // skip the '%' itself
+              continue;
+          } else {
+              // collect hex digits into accumulator
+              accumulator[accIndex] = c;
+              accIndex++;
+
+              // if the accumulator is full
+              if (accIndex == 2) {
+                  // convert two hex digits into a character
+                  int high = hexDigitToInt(accumulator[0]);
+                  int low  = hexDigitToInt(accumulator[1]);
+                  char decodedChar = static_cast<char>((high << 4) | low);
+                  decoded += decodedChar;
+
+                  // reset accumulator
+                  accIndex = 0;
+                  accumulator[0] = 0;
+                  accumulator[1] = 0;
+              }
+          }
+      }
+      return decoded;
+  }
+
+  //------------------------------------------------------
   // Parsing utility functions
   //------------------------------------------------------
 public:
 
-  // Control parsers
+  // Basic info parsers
+  String getDeviceName() {
+    String tmp = getKeyString(KEY_DEVICE_NAME);
+    String decoded = decodePercentEncoded(tmp);
+    return decoded;
+  }
+
+  // Control info parsers
   Mode getMode() {
     String tmp = getKeyString(KEY_OPERATION_MODE);
     Mode output = static_cast<Mode>(deserializeMode(tmp));
@@ -451,7 +517,7 @@ public:
     return output;
   }
 
-  // Sensor parsers
+  // Sensor info parsers
   float getIndoorTemp() {
     float output = getKeyFloat(KEY_INDOOR_TEMP);
     return output;

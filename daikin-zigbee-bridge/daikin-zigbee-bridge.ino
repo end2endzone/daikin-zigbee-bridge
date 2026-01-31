@@ -25,6 +25,15 @@ void setup() {
 }
 
 void loop() {
+  
+  // Get basic info
+  if (daikin.fetchBasicInfo()) {
+    Serial.print("DEBUG: Basic payload:"); Serial.println(daikin.getBasicInfoPayload().get());
+
+    String device_name = daikin.getDeviceName();
+    Serial.print("Device name:  "); Serial.println(device_name);
+  }
+  
   // Get control info
   if (daikin.fetchControlInfo()) {
     Serial.print("DEBUG: Control payload:"); Serial.println(daikin.getControlInfoPayload().get());
