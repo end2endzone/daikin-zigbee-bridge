@@ -26,44 +26,46 @@ void setup() {
 
 void loop() {
   
-  // Get basic info
-  if (daikin.fetchBasicInfo()) {
-    Serial.print("DEBUG: Basic payload:"); Serial.println(daikin.getBasicInfoPayload().get());
+  if (!daikin.update()) {
+    Serial.println("Failed to update device info.");
+    delay(10000);
+    return;
+  }
 
+  // Print payloads
+  Serial.print("DEBUG: Basic payload: "); Serial.println(daikin.getBasicInfoPayload().get());
+  Serial.print("DEBUG: Control payload: "); Serial.println(daikin.getControlInfoPayload().get());
+  Serial.print("DEBUG: Sensor payload: "); Serial.println(daikin.getSensorInfoPayload().get());
+  Serial.println();
+
+  // Print basic info
+  {
     String device_name = daikin.getDeviceName();
     Serial.print("Device name:  "); Serial.println(device_name);
   }
   
-  // Get control info
-  if (daikin.fetchControlInfo()) {
-    Serial.print("DEBUG: Control payload:"); Serial.println(daikin.getControlInfoPayload().get());
-
+  // Print control info
+  {
     DaikinHTTP::Mode mode = daikin.getMode();
     DaikinHTTP::FanRate fan = daikin.getFanRate();
-    DaikinHTTP::Swing swing = daikin.getSwing();
+    DaikinHTTP::FanDir FanDir = daikin.getFanDir();
     DaikinHTTP::Preset preset = daikin.getPreset();
     float target_temp = daikin.getTargetTemp();
 
-    Serial.println("Mode: " + DaikinHTTP::toString(mode));
-    Serial.println("Fan: " + DaikinHTTP::toString(fan));
-    Serial.println("Swing: " + DaikinHTTP::toString(swing));
-    Serial.println("Preset: " + DaikinHTTP::toString(preset));
-    Serial.print("Target Temp:  "); Serial.println(target_temp);
-  } else {
-    Serial.println("Failed to get control info.");
+    Serial.println("Mode:         " + DaikinHTTP::toString(mode));
+    Serial.println("Fan rate:     " + DaikinHTTP::toString(fan));
+    Serial.println("Fan dir:      " + DaikinHTTP::toString(FanDir));
+    Serial.println("Preset:       " + DaikinHTTP::toString(preset));
+    Serial.println("Target Temp:  " + String(target_temp));
   }
 
-  // Get sensor info
-  if (daikin.fetchSensorInfo()) {
-    Serial.print("DEBUG: Sensor payload:"); Serial.println(daikin.getSensorInfoPayload().get());
+  // Print sensor info
+  {
+    float indoor_temp = daikin.getIndoorTemp();
+    float outdoor_temp = daikin.getOutdoorTemp();
 
-    float indoor = daikin.getIndoorTemp();
-    float outdoor = daikin.getOutdoorTemp();
-
-    Serial.print("Indoor Temp:  "); Serial.println(indoor);
-    Serial.print("Outdoor Temp: "); Serial.println(outdoor);
-  } else {
-    Serial.println("Failed to get sensor info.");
+    Serial.println("Indoor Temp:  " + String(indoor_temp));
+    Serial.println("Outdoor Temp: " + String(outdoor_temp));
   }
 
   delay(10000);

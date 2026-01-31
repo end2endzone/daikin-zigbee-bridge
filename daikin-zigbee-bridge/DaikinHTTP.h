@@ -108,7 +108,7 @@ public:
     KEY_RETURN_STATUS,        // "ret" - return status
     KEY_OPERATION_MODE,       // "mode" - operating mode (heat/cool/etc.)
     KEY_FAN_RATE,             // "f_rate" - fan speed
-    KEY_FAN_DIRECTION,        // "f_dir" - swing direction
+    KEY_FAN_DIRECTION,        // "f_dir" - FanDir direction
     KEY_PRESET_MODE,          // "adv" - preset (eco/away/boost)
     KEY_INDOOR_TEMP,          // "htemp" - indoor temperature
     KEY_OUTDOOR_TEMP,         // "otemp" - outdoor temperature
@@ -242,42 +242,42 @@ public:
 
 
   //------------------------------------------------------
-  // Swing directions
+  // Fan Direction
   //------------------------------------------------------
-  enum Swing {
-    SWING_OFF,
-    SWING_VERTICAL,
-    SWING_HORIZONTAL,
-    SWING_BOTH,
-    SWING_ERROR
+  enum FanDir {
+    FanDir_OFF,
+    FanDir_VERTICAL,
+    FanDir_HORIZONTAL,
+    FanDir_BOTH,
+    FanDir_ERROR
   };
 
-  static String toStringSwing(int value) {
+  static String toStringFanDir(int value) {
     switch (value) {
-      case SWING_OFF:         return "Off";
-      case SWING_VERTICAL:    return "Vertical";
-      case SWING_HORIZONTAL:  return "Horizontal";
-      case SWING_BOTH:        return "Both";
+      case FanDir_OFF:         return "Off";
+      case FanDir_VERTICAL:    return "Vertical";
+      case FanDir_HORIZONTAL:  return "Horizontal";
+      case FanDir_BOTH:        return "Both";
       default:                return "Error";
     }
   }
 
-  static String serializeSwing(int value) {
+  static String serializeFanDir(int value) {
     switch (value) {
-      case SWING_OFF:         return "0";
-      case SWING_VERTICAL:    return "1";
-      case SWING_HORIZONTAL:  return "2";
-      case SWING_BOTH:        return "3";
+      case FanDir_OFF:         return "0";
+      case FanDir_VERTICAL:    return "1";
+      case FanDir_HORIZONTAL:  return "2";
+      case FanDir_BOTH:        return "3";
       default:                return "-";
     }
   }
 
-  static int deserializeSwing(const String &value) {
-    if (value == "0") return SWING_OFF;
-    if (value == "1") return SWING_VERTICAL;
-    if (value == "2") return SWING_HORIZONTAL;
-    if (value == "3") return SWING_BOTH;
-    return SWING_ERROR;
+  static int deserializeFanDir(const String &value) {
+    if (value == "0") return FanDir_OFF;
+    if (value == "1") return FanDir_VERTICAL;
+    if (value == "2") return FanDir_HORIZONTAL;
+    if (value == "3") return FanDir_BOTH;
+    return FanDir_ERROR;
   }
 
 
@@ -365,6 +365,16 @@ public:
     sensorInfo.clear();
     bool success = httpGet("/aircon/get_sensor_info", sensorInfo.get());
     return success;
+  }
+
+  bool update() {
+    if (!fetchBasicInfo())
+      return false;
+    if (!fetchControlInfo())
+      return false;
+    if (!fetchSensorInfo())
+      return false;
+    return true;
   }
 
   const DaikinHttpPayload& getBasicInfoPayload() const {
@@ -500,9 +510,9 @@ public:
     return output;
   }
 
-  Swing getSwing() {
+  FanDir getFanDir() {
     String tmp = getKeyString(KEY_FAN_DIRECTION);
-    Swing output = static_cast<Swing>(deserializeSwing(tmp));
+    FanDir output = static_cast<FanDir>(deserializeFanDir(tmp));
     return output;
   }
 
@@ -540,8 +550,8 @@ public:
     return toStringFan(value);
   }
 
-  static String toString(Swing value) {
-    return toStringSwing(value);
+  static String toString(FanDir value) {
+    return toStringFanDir(value);
   }
 
   static String toString(Preset value) {
