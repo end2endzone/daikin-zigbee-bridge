@@ -35,11 +35,13 @@ void loop() {
     DaikinHTTP::FanRate fan = daikin.parseFanRate(payload);
     DaikinHTTP::Swing swing = daikin.parseSwing(payload);
     DaikinHTTP::Preset preset = daikin.parsePreset(payload);
+    float target_temp = daikin.parseTargetTemp(payload);
 
-    Serial.println("Mode: " + DaikinHTTP::toString(mode));
-    Serial.println("Fan: " + DaikinHTTP::toString(fan));
-    Serial.println("Swing: " + DaikinHTTP::toString(swing));
-    Serial.println("Preset: " + DaikinHTTP::toString(preset));
+    Serial.println("Mode: " + DaikinHTTP::toStringMode(mode));
+    Serial.println("Fan: " + DaikinHTTP::toStringFan(fan));
+    Serial.println("Swing: " + DaikinHTTP::toStringSwing(swing));
+    Serial.println("Preset: " + DaikinHTTP::toStringPreset(preset));
+    Serial.print("Target Temp:  "); Serial.println(target_temp);
   } else {
     Serial.println("Failed to get control info.");
   }
