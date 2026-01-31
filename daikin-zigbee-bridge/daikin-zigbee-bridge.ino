@@ -5,6 +5,8 @@
 
 DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
 
+void printInfo();
+
 void setup() {
   Serial.begin(115200);
   WiFi.begin(SECRET_WIFI_SSID, SECRET_WIFI_PASSWORD);
@@ -14,21 +16,13 @@ void setup() {
   }
   Serial.println("\nWi-Fi connected!");
 
-  /*
-  TODO: Add a begin() function that check if it can communicate with the heatpump.
-  if (daikin.begin()) {
-    Serial.println("Connected to Daikin heatpump!");
-  } else {
-    Serial.println("Failed to connect to Daikin heatpump.");
-  }
-  */
+  //
+  printInfo();
 }
 
-void loop() {
-  
+void printInfo() {
   if (!daikin.update()) {
     Serial.println("Failed to update device info.");
-    delay(10000);
     return;
   }
 
@@ -69,6 +63,9 @@ void loop() {
     Serial.println("Indoor Temp:  " + String(indoor_temp));
     Serial.println("Outdoor Temp: " + String(outdoor_temp));
   }
+}
 
+void loop() {
   delay(10000);
+  printInfo();
 }
