@@ -106,6 +106,7 @@ public:
   // Enum for all known keys in Daikin HTTP payloads
   enum Key {
     KEY_RETURN_STATUS,        // "ret" - return status
+    KEY_DEVICE_POWER,         // "pow" - from Control payload
     KEY_OPERATION_MODE,       // "mode" - operating mode (heat/cool/etc.)
     KEY_FAN_RATE,             // "f_rate" - fan speed
     KEY_FAN_DIRECTION,        // "f_dir" - FanDir direction
@@ -120,17 +121,18 @@ public:
 
   // Lookup table: maps key enums to string key in payload
   static constexpr char* KeyNames[] = {
-    "ret",       // KEY_RETURN_STATUS
-    "mode",      // KEY_OPERATION_MODE
-    "f_rate",    // KEY_FAN_RATE
-    "f_dir",     // KEY_FAN_DIRECTION
-    "adv",       // KEY_PRESET_MODE
-    "htemp",     // KEY_INDOOR_TEMP
-    "otemp",     // KEY_OUTDOOR_TEMP
-    "hhum",      // KEY_INDOOR_HUMIDITY
-    "stemp",     // KEY_TARGET_TEMP
-    "name",      // KEY_DEVICE_NAME
-    "unknown"    // KEY_UNKNOWN
+    "ret",      // KEY_RETURN_STATUS
+    "pow",      // KEY_DEVICE_POWER
+    "mode",     // KEY_OPERATION_MODE
+    "f_rate",   // KEY_FAN_RATE
+    "f_dir",    // KEY_FAN_DIRECTION
+    "adv",      // KEY_PRESET_MODE
+    "htemp",    // KEY_INDOOR_TEMP
+    "otemp",    // KEY_OUTDOOR_TEMP
+    "hhum",     // KEY_INDOOR_HUMIDITY
+    "stemp",    // KEY_TARGET_TEMP
+    "name",     // KEY_DEVICE_NAME
+    "unknown"   // KEY_UNKNOWN
   };
 
   static const char* toString(Key key) {
@@ -142,6 +144,38 @@ public:
       if (str == KeyNames[i]) return static_cast<Key>(i);
     }
     return KEY_UNKNOWN;
+  }
+
+
+  //------------------------------------------------------
+  // Power
+  //------------------------------------------------------
+  enum Power {
+    POWER_OFF,
+    POWER_ON,
+    POWER_ERROR
+  };
+
+  static String toStringPower(int value) {
+    switch (value) {
+      case POWER_OFF:     return "Off";
+      case POWER_ON:      return "On";
+      default:            return "Error";
+    }
+  }
+
+  static String serializePower(int value) {
+    switch (value) {
+      case POWER_OFF:     return "0";
+      case POWER_ON:      return "1";
+      default:            return "-";
+    }
+  }
+
+  static int deserializePower(const String &value) {
+    if (value == "0") return POWER_OFF;
+    if (value == "1") return POWER_ON;
+    return POWER_ERROR;
   }
 
 
@@ -203,7 +237,7 @@ public:
     FAN_ERROR
   };
 
-  static String toStringFan(int value) {
+  static String toStringFanRate(int value) {
     switch (value) {
       case FAN_AUTO:    return "Auto";
       case FAN_QUIET:   return "Quiet";
@@ -216,7 +250,7 @@ public:
     }
   }
 
-  static String serializeFan(int value) {
+  static String serializeFanRate(int value) {
     switch (value) {
       case FAN_AUTO:    return "A";
       case FAN_QUIET:   return "B";
@@ -229,7 +263,7 @@ public:
     }
   }
 
-  static int deserializeFan(const String &value) {
+  static int deserializeFanRate(const String &value) {
     if (value == "A") return FAN_AUTO;
     if (value == "B") return FAN_QUIET;
     if (value == "3") return FAN_LEVEL1;
@@ -396,6 +430,7 @@ private:
   DaikinHttpPayload* findPayloadForKey(Key key) {
     switch(key) {
       case KEY_RETURN_STATUS:     return NULL; // both has it
+      case KEY_DEVICE_POWER:      return &controlInfo;
       case KEY_OPERATION_MODE:    return &controlInfo;
       case KEY_FAN_RATE:          return &controlInfo;
       case KEY_FAN_DIRECTION:     return &controlInfo;
@@ -498,6 +533,12 @@ public:
   }
 
   // Control info parsers
+  Power getPower() {
+    String tmp = getKeyString(KEY_DEVICE_POWER);
+    Power output = static_cast<Power>(deserializePower(tmp));
+    return output;
+  }
+
   Mode getMode() {
     String tmp = getKeyString(KEY_OPERATION_MODE);
     Mode output = static_cast<Mode>(deserializeMode(tmp));
@@ -506,7 +547,7 @@ public:
 
   FanRate getFanRate() {
     String tmp = getKeyString(KEY_FAN_RATE);
-    FanRate output = static_cast<FanRate>(deserializeFan(tmp));
+    FanRate output = static_cast<FanRate>(deserializeFanRate(tmp));
     return output;
   }
 
@@ -542,12 +583,16 @@ public:
   // toString() functions
   //------------------------------------------------------
 public:
+  static String toString(Power value) {
+    return toStringPower(value);
+  }
+
   static String toString(Mode value) {
     return toStringMode(value);
   }
 
   static String toString(FanRate value) {
-    return toStringFan(value);
+    return toStringFanRate(value);
   }
 
   static String toString(FanDir value) {

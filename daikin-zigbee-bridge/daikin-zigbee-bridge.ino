@@ -46,12 +46,14 @@ void loop() {
   
   // Print control info
   {
+    DaikinHTTP::Power power = daikin.getPower();
     DaikinHTTP::Mode mode = daikin.getMode();
     DaikinHTTP::FanRate fan = daikin.getFanRate();
     DaikinHTTP::FanDir FanDir = daikin.getFanDir();
     DaikinHTTP::Preset preset = daikin.getPreset();
     float target_temp = daikin.getTargetTemp();
 
+    Serial.println("Power:        " + DaikinHTTP::toString(power));
     Serial.println("Mode:         " + DaikinHTTP::toString(mode));
     Serial.println("Fan rate:     " + DaikinHTTP::toString(fan));
     Serial.println("Fan dir:      " + DaikinHTTP::toString(FanDir));
