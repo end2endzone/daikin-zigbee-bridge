@@ -422,42 +422,42 @@ private:
 public:
 
   // Control parsers
-  Mode parseMode() {
+  Mode getMode() {
     String tmp = getKeyString(KEY_OPERATION_MODE);
     Mode output = static_cast<Mode>(deserializeMode(tmp));
     return output;
   }
 
-  FanRate parseFanRate() {
+  FanRate getFanRate() {
     String tmp = getKeyString(KEY_FAN_RATE);
     FanRate output = static_cast<FanRate>(deserializeFan(tmp));
     return output;
   }
 
-  Swing parseSwing() {
+  Swing getSwing() {
     String tmp = getKeyString(KEY_FAN_DIRECTION);
     Swing output = static_cast<Swing>(deserializeSwing(tmp));
     return output;
   }
 
-  Preset parsePreset() {
+  Preset getPreset() {
     String tmp = getKeyString(KEY_PRESET_MODE);
     Preset output = static_cast<Preset>(deserializePreset(tmp));
     return output;
   }
 
-  float parseTargetTemp() {
+  float getTargetTemp() {
     float output = getKeyFloat(KEY_TARGET_TEMP);
     return output;
   }
 
   // Sensor parsers
-  float parseIndoorTemp() {
+  float getIndoorTemp() {
     float output = getKeyFloat(KEY_INDOOR_TEMP);
     return output;
   }
 
-  float parseOutdoorTemp() {
+  float getOutdoorTemp() {
     float output = getKeyFloat(KEY_OUTDOOR_TEMP);
     return output;
   }

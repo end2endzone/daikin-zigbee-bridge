@@ -29,11 +29,11 @@ void loop() {
   if (daikin.fetchControlInfo()) {
     Serial.print("DEBUG: Control payload:"); Serial.println(daikin.getControlInfoPayload().get());
 
-    DaikinHTTP::Mode mode = daikin.parseMode();
-    DaikinHTTP::FanRate fan = daikin.parseFanRate();
-    DaikinHTTP::Swing swing = daikin.parseSwing();
-    DaikinHTTP::Preset preset = daikin.parsePreset();
-    float target_temp = daikin.parseTargetTemp();
+    DaikinHTTP::Mode mode = daikin.getMode();
+    DaikinHTTP::FanRate fan = daikin.getFanRate();
+    DaikinHTTP::Swing swing = daikin.getSwing();
+    DaikinHTTP::Preset preset = daikin.getPreset();
+    float target_temp = daikin.getTargetTemp();
 
     Serial.println("Mode: " + DaikinHTTP::toString(mode));
     Serial.println("Fan: " + DaikinHTTP::toString(fan));
@@ -48,8 +48,8 @@ void loop() {
   if (daikin.fetchSensorInfo()) {
     Serial.print("DEBUG: Sensor payload:"); Serial.println(daikin.getSensorInfoPayload().get());
 
-    float indoor = daikin.parseIndoorTemp();
-    float outdoor = daikin.parseOutdoorTemp();
+    float indoor = daikin.getIndoorTemp();
+    float outdoor = daikin.getOutdoorTemp();
 
     Serial.print("Indoor Temp:  "); Serial.println(indoor);
     Serial.print("Outdoor Temp: "); Serial.println(outdoor);
