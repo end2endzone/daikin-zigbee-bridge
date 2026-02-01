@@ -4,10 +4,12 @@
 class DaikinHttpPayload {
 private:
   String payload;
+  String separator; // usualy `,` but sometimes `&`
 
 public:
-  DaikinHttpPayload() : payload() {}
-  DaikinHttpPayload(const String& payload) : payload(payload) {}
+  DaikinHttpPayload() : payload(), separator(",") {}
+  DaikinHttpPayload(const String& payload) : payload(payload), separator(",") {}
+  DaikinHttpPayload(const String& payload, const String& separator) : payload(payload), separator(separator) {}
 
   void clear() {
     payload.clear();
@@ -25,12 +27,20 @@ public:
     payload = value;
   }
 
+  const String& getSeparator() const {
+    return separator;
+  }
+
+  void setSeparator(const String& value) {
+    separator = value;
+  }
+
   bool findKeyValue(const String &key, int & start_index, int & end_index) const {
     start_index = -1;
     end_index = -1;
 
     // Search for `,key=` first
-    String pattern = "," + key + "=";
+    String pattern = separator + key + "=";
     int start = payload.indexOf(pattern);
     if (start == -1) {
       // Pattern `,key=` not found. Maybe the key is the first key in the payload.
@@ -46,7 +56,7 @@ public:
 
     // Key found, extract value boundaries
     start += key.length() + 1; // skip `key=`
-    int end = payload.indexOf(",", start);
+    int end = payload.indexOf(separator, start);
     if (end == -1) end = payload.length();
 
     // Success
@@ -77,15 +87,19 @@ public:
     int end_index = -1;
     bool found = findKeyValue(key, start_index, end_index);
     if (!found) {
+      //Serial.println("setValueString(): key not found:" + key);
       // Key not found, append at end
-      if (!payload.endsWith(",")) payload += ",";
+      if (!payload.isEmpty() && !payload.endsWith(separator)) payload += separator;
       payload += key + "=" + value;
+      //Serial.println("setValueString(): payload set to:" + payload);
       return;
     }
 
     // Key is found.
     // Override previous key with new value
+    //Serial.println("setValueString(): key not found:" + key);
     payload = payload.substring(0, start_index) + value + payload.substring(end_index);
+    //Serial.println("setValueString(): payload set to:" + payload);
   }
 
   float getValueFloat(const String &key) const {
@@ -363,6 +377,16 @@ private:
   DaikinHttpPayload controlInfo;
   DaikinHttpPayload sensorInfo;
 
+  static constexpr char* MandatoryKeyNames[] = {
+    "pow",      // KEY_DEVICE_POWER
+    "mode",     // KEY_OPERATION_MODE
+    "stemp",    // KEY_TARGET_TEMP
+    "shum",     // KEY_TARGET_HUMIDITY
+    "f_rate",   // KEY_FAN_RATE
+    "f_dir",    // KEY_FAN_DIRECTION
+  };
+  static const int MandatoryKeyNamesCount = sizeof(MandatoryKeyNames) / sizeof(MandatoryKeyNames[0]);
+
   bool httpGet(const String &endpoint, String &response) {
     HTTPClient http;
     String url = "http://" + ip + endpoint;
@@ -377,36 +401,83 @@ private:
     return false;
   }
 
+  bool httpPost(const String &endpoint, const String &payload) {
+    HTTPClient http;
+    String url = "http://" + ip + endpoint;
+    http.begin(url);
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    int httpCode = http.POST(payload);
+    if (httpCode == 200) {
+      http.end();
+      return true;
+    }
+    http.end();
+    return false;
+  }
+
   //------------------------------------------------------
   // Payload public utility functions
   //------------------------------------------------------
 public:
   DaikinHTTP(String ipAddr) : ip(ipAddr) {}
 
-  bool fetchBasicInfo() {
+  bool pullBasicInfo() {
     controlInfo.clear();
     bool success = httpGet("/common/basic_info", basicInfo.get());
     return success;
   }
 
-  bool fetchControlInfo() {
+  bool pullControlInfo() {
     controlInfo.clear();
     bool success = httpGet("/aircon/get_control_info", controlInfo.get());
     return success;
   }
 
-  bool fetchSensorInfo() {
+  bool pushControlInfo() {
+    // The European versions of the Wifi Controller Unit BRP069Axx (where xx is 41, 42, 43 or 45) and BRP069Bxx are expecting a GET request with parameters encoded into the URL.
+    // For example http://192.168.1.100/aircon/set_control_info?pow=1&mode=4&stemp=26&shum=0&f_rate=7&f_dir=0
+
+    // Copy mandatory keys from controlInfo to an output payload
+    DaikinHttpPayload outputInfo("", "&"); // use `&` as separator since this payload will be added to the get url
+    //Serial.println("payload=" + outputInfo.get());
+    for(int i=0; i<MandatoryKeyNamesCount; i++) {
+      const String key = MandatoryKeyNames[i];
+
+      // Read previous pull payload
+      String value = controlInfo.getValueString(key);
+      if (value == "") return false;
+
+      // Encode value into output payload
+      outputInfo.setValueString(key, value);
+      //Serial.println("payload=" + outputInfo.get());
+    }
+
+    String endpoint = "/aircon/set_control_info?" + outputInfo.get();
+    //Serial.println("endpoint=" + outputInfo.get());
+    
+    String response;
+    bool success = httpGet(endpoint, response);
+    return success;
+  }
+
+  bool pullSensorInfo() {
     sensorInfo.clear();
     bool success = httpGet("/aircon/get_sensor_info", sensorInfo.get());
     return success;
   }
 
-  bool update() {
-    if (!fetchBasicInfo())
+  bool pull() {
+    if (!pullBasicInfo())
       return false;
-    if (!fetchControlInfo())
+    if (!pullControlInfo())
       return false;
-    if (!fetchSensorInfo())
+    if (!pullSensorInfo())
+      return false;
+    return true;
+  }
+
+  bool push() {
+    if (!pushControlInfo())
       return false;
     return true;
   }
@@ -539,10 +610,20 @@ public:
     return output;
   }
 
+  void setPower(Power value) {
+    String tmp = serializePower(value);
+    setKeyString(KEY_DEVICE_POWER, tmp);
+  }
+
   Mode getMode() {
     String tmp = getKeyString(KEY_OPERATION_MODE);
     Mode output = static_cast<Mode>(deserializeMode(tmp));
     return output;
+  }
+
+  void setMode(Mode value) {
+    String tmp = serializeMode(value);
+    setKeyString(KEY_OPERATION_MODE, tmp);
   }
 
   FanRate getFanRate() {
@@ -551,10 +632,20 @@ public:
     return output;
   }
 
+  void setFanRate(FanRate value) {
+    String tmp = serializeFanRate(value);
+    setKeyString(KEY_FAN_RATE, tmp);
+  }
+
   FanDir getFanDir() {
     String tmp = getKeyString(KEY_FAN_DIRECTION);
     FanDir output = static_cast<FanDir>(deserializeFanDir(tmp));
     return output;
+  }
+
+  void setFanDir(FanDir value) {
+    String tmp = serializeFanDir(value);
+    setKeyString(KEY_FAN_DIRECTION, tmp);
   }
 
   Preset getPreset() {
@@ -566,6 +657,10 @@ public:
   float getTargetTemp() {
     float output = getKeyFloat(KEY_TARGET_TEMP);
     return output;
+  }
+
+  void setTargetTemp(const float &value) {
+    setKeyFloat(KEY_TARGET_TEMP, value);
   }
 
   // Sensor info parsers

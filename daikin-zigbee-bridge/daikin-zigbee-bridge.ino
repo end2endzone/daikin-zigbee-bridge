@@ -5,7 +5,8 @@
 
 DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
 
-void printInfo();
+void pullAndPrintInfo();
+void increaseTargetTempBy1();
 
 void setup() {
   Serial.begin(115200);
@@ -16,13 +17,45 @@ void setup() {
   }
   Serial.println("\nWi-Fi connected!");
 
-  //
-  printInfo();
+  // Increase current target temperature by 1 degree
+  increaseTargetTempBy1();
 }
 
-void printInfo() {
-  if (!daikin.update()) {
-    Serial.println("Failed to update device info.");
+void increaseTargetTempBy1() {
+  // Pull to refresh latest data
+  Serial.println("Pulling device info...");
+  if (!daikin.pull()) {
+    Serial.println("Failed to pull device info.");
+    return;
+  }
+  Serial.println("pulled!");
+  Serial.println("actual    payload=" + daikin.getControlInfoPayload().get());
+
+  float target_temp = daikin.getTargetTemp();
+  target_temp += 1.0;
+  daikin.setTargetTemp(target_temp);
+  Serial.println("temporary payload=" + daikin.getControlInfoPayload().get());
+
+  Serial.println("Pushing new device info...");
+  if (!daikin.push()) {
+    Serial.println("Failed to push new device info.");
+    return;
+  }
+  Serial.println("pushed!");
+
+  // Pull again to refresh changes
+  Serial.println("Pulling device info...");
+  if (!daikin.pull()) {
+    Serial.println("Failed to pull device info.");
+    return;
+  }
+  Serial.println("pulled!");
+  Serial.println("actual    payload=" + daikin.getControlInfoPayload().get());
+}
+
+void pullAndPrintInfo() {
+  if (!daikin.pull()) {
+    Serial.println("Failed to pull device info.");
     return;
   }
 
@@ -66,6 +99,6 @@ void printInfo() {
 }
 
 void loop() {
+  Serial.println("program complete");
   delay(10000);
-  printInfo();
 }
