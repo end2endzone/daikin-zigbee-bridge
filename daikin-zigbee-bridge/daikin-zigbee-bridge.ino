@@ -8,19 +8,6 @@ DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
 void pullAndPrintInfo();
 void increaseTargetTempBy1();
 
-void setup() {
-  Serial.begin(115200);
-  WiFi.begin(SECRET_WIFI_SSID, SECRET_WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWi-Fi connected!");
-
-  // Increase current target temperature by 1 degree
-  increaseTargetTempBy1();
-}
-
 void increaseTargetTempBy1() {
   // Pull to refresh latest data
   Serial.println("Pulling device info...");
@@ -96,6 +83,19 @@ void pullAndPrintInfo() {
     Serial.println("Indoor Temp:  " + String(indoor_temp));
     Serial.println("Outdoor Temp: " + String(outdoor_temp));
   }
+}
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(SECRET_WIFI_SSID, SECRET_WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWi-Fi connected!");
+
+  // Increase current target temperature by 1 degree
+  increaseTargetTempBy1();
 }
 
 void loop() {
