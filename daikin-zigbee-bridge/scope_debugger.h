@@ -1,5 +1,7 @@
 #pragma once
 
+#include "logging.h"
+
 class ScopeDebugger {
   private:
     const char * scope_name;
@@ -8,24 +10,11 @@ class ScopeDebugger {
     ScopeDebugger(const char * name, int line) : 
         scope_name(name),
         line(line) {
-      print("<ENTER-%s>, line %d", scope_name, line);
+      logEntry("<ENTER-%s>, line %d", scope_name, line);
     }
 
     ~ScopeDebugger() {
-      print("<LEAVE-%s>", scope_name);
-    }
-  private:
-    void logEntry(const char* fmt, ...) {
-      char buffer[2048];
-      va_list args;
-      
-      // Convert arguments to string
-      va_start(args, fmt);
-      vsnprintf(buffer, sizeof(buffer), fmt, args);
-      va_end(args);
-      
-      // Output on the serial port. 
-      Serial.println(buffer);
+      logEntry("<LEAVE-%s>", scope_name);
     }
 };
 #define LOG_SCOPE ScopeDebugger scope_debugger(__FUNCTION__,__LINE__);

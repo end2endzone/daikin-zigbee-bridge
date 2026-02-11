@@ -1,3 +1,46 @@
+/**
+ * @brief Zigbee Stelpro H420/HT402 Thermostat Emulator
+ *
+ * This sketch emulates a Stelpro HT402 (Hilo) line-voltage thermostat
+ * for Zigbee2MQTT recognition. The HT402 is a heating-only thermostat
+ * designed for baseboard heaters (4000W @ 240V).
+ *
+ * Hardware:
+ * - ESP32-C6 with onboard LED on GPIO8 (RGB LED)
+ * - RGB LED on GPIO8
+ * - BOOT button on GPIO9
+ *
+ * LED Indicators:
+ * - Fast red blink: Pairing mode (unpaired) or disconnected.
+ * - Fast yellow blink: Identify mode active
+ * - Slow blue pulse (once per 15s): Connected to Zigbee coordinator
+ *
+ * Button:
+ * - Press and hold for 3 seconds: Factory reset and enter pairing mode
+ *
+ * Arduino IDE Settings:
+ * - Board: ESP32C6 Dev Module
+ * - Zigbee Mode: Zigbee ED (end device)
+ * - Partition Scheme: Zigbee 4MB with spiffs
+ *
+ * Required Libraries:
+ * - Button2 (install via Library Manager)
+ * - SoftTimers (install via Library Manager)
+ */
+
+#ifndef ZIGBEE_MODE_ED
+#error "Zigbee end device mode is not selected in Tools->Zigbee mode"
+#endif
+
+#include "Zigbee.h"
+#include "zb_uint8_t.h"
+#include "ZigbeeStelproH420Thermostat.h"
+#include "RgbLedBlinker.h"
+#include "Button2.h"
+#include <SoftTimers.h>
+#include "logging.h"
+#include "scope_debugger.h"
+
 #ifdef ENABLE_DAIKINHTTP
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -5,11 +48,40 @@
 #include "DaikinHTTP.h"
 #endif // ENABLE_DAIKINHTTP
 
+// Pin definitions
+#define LED_PIN RGB_BUILTIN   // RGB LED on ESP32-C6
+#define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
 
-#ifdef ENABLE_DAIKINHTTP
+// Temperature simulation timing
+#define TEMP_SIMULATION_UPDATE_INTERVAL 10000   // 10 seconds
+
+// Factory reset delay
+#define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
+
+// RGB LED blinker
+RgbLedBlinker blinker;
+enum LED_MODE {
+  LED_MODE_OFF,
+  LED_MODE_IDENTIFY,
+  LED_MODE_DISCONNECTED,
+  LED_MODE_CONNECTED,
+};
+LED_MODE previousLedMode = LED_MODE_OFF;
+
+// Zigbee thermostat (contains EnergyCalculator internally)
+ZigbeeStelproH420Thermostat zbThermostat(STELPRO_ENDPOINT);
+
+// Button handler
+Button2 button;
+
+// Update timers
+SoftTimer tempSimulationUpdateTimer;
+SoftTimer identifyTimer;
+
 // -------------------------------------------------------------------------
 //                          Daikin support section
 // -------------------------------------------------------------------------
+#ifdef ENABLE_DAIKINHTTP
 DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
 
 void daikinIncreaseTargetTempBy1() {
@@ -103,16 +175,281 @@ void daikinSetup() {
 #endif // ENABLE_DAIKINHTTP
 
 // -------------------------------------------------------------------------
-//                          Main sketch section
+//                          Reset/init functions
+// -------------------------------------------------------------------------
+void initTempSimulationUpdateTimer() {
+  tempSimulationUpdateTimer.setTimeOutTime(TEMP_SIMULATION_UPDATE_INTERVAL);
+  tempSimulationUpdateTimer.reset();
+}
+
+// -------------------------------------------------------------------------
+//                            Button Callbacks
 // -------------------------------------------------------------------------
 
+void clickDetected(Button2& btn) {
+  //Serial.print("button click detected!");
+}
+
+void doubleClickDetected(Button2& btn) {
+  //Serial.print("button double click detected!");
+}
+
+void trippleClickDetected(Button2& btn) {
+  //Serial.print("button tripple click detected!");
+}
+
+void holdDetected(Button2& btn) {
+  //Serial.println("button hold detected!");
+
+  Serial.println("Factory reset triggered - hold detected for " + String(FACTORY_RESET_LONG_CLICK_TIME) + " seconds!");
+  Serial.println("Rebooting in 1 second...");
+  delay(1000);
+  Zigbee.factoryReset();
+}
+
+void longClickDetected(Button2& btn) {
+  //Serial.print("button long click detected!");
+}
+
+// -------------------------------------------------------------------------
+//                          Temperature Simulation
+// -------------------------------------------------------------------------
+
+void simulateTemperature() {
+  if (!tempSimulationUpdateTimer.hasTimedOut()) {
+    return;
+  }
+  
+  // reset timer for next iteration
+  initTempSimulationUpdateTimer();
+
+  // Get current values
+  int16_t current_temp = zbThermostat.getLocalTemperature();
+  int16_t setpoint = zbThermostat.getHeatingSetpoint();
+  uint8_t system_mode = zbThermostat.getSystemMode();
+  
+  // Simulate temperature based on heating demand
+  if (system_mode == THERMOSTAT_SYSTEM_MODE_OFF) {
+    // When off, temperature drifts toward room temp (21.0°C)
+    if (current_temp > STELPRO_DEFAULT_TEMPERATURE) {
+      current_temp -= 10;  // Cool down 0.1°C
+    } else if (current_temp < STELPRO_DEFAULT_TEMPERATURE) {
+      current_temp += 10;  // Warm up 0.1°C
+    }
+  } else {
+    // When heating, temperature moves toward setpoint
+    if (current_temp < setpoint - 50) {
+      current_temp += 20;  // Heat faster when far from setpoint
+    } else if (current_temp < setpoint) {
+      current_temp += 10;  // Heat slower when close
+    } else if (current_temp > setpoint + 50) {
+      current_temp -= 20;  // Cool faster when too hot
+    } else if (current_temp > setpoint) {
+      current_temp -= 10;  // Cool slower when close
+    }
+  }
+  
+  // Update temperature in thermostat (which updates internal EnergyCalculator)
+  zbThermostat.setLocalTemperature(current_temp);
+  
+  // Get calculated values for logging
+  uint8_t pi_heating_demand = zbThermostat.getPIHeatingDemand();
+  uint16_t running_state = zbThermostat.getRunningState();
+  
+  // Calculate power for display (internal calculator will compute accurately)
+  int32_t power_watts = (STELPRO_MAX_POWER_WATTS * pi_heating_demand) / 100;
+  
+  logEntry("Simulation Update --> Temp: %.1f°C, Setpoint: %.1f°C, Demand: %d%%, State: %s, Power: %dW",
+                current_temp / 100.0,
+                setpoint / 100.0,
+                pi_heating_demand,
+                (running_state == THERMOSTAT_RUNNING_STATE_HEAT) ? "HEATING" : "IDLE",
+                power_watts);
+}
+
+// -------------------------------------------------------------------------
+//                            Zigbee Callbacks
+// -------------------------------------------------------------------------
+
+void onIdentify(uint16_t time) {
+  logEntry("Identify called for %d seconds", time);
+  if (time > 0) {
+    // Enable identifyTimer timer. This will trigger the LED blinking feedback
+    identifyTimer.setTimeOutTime(time * 1000);
+    identifyTimer.reset();
+  }
+}
+
+void onSetpointChange(int16_t setpoint) {
+  logEntry("Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
+}
+
+void onSystemModeChange(uint8_t mode) {
+  logEntry("System mode changed from coordinator to: %s", (mode == THERMOSTAT_SYSTEM_MODE_HEAT) ? "HEAT" : "OFF");
+}
+
+void onPIHeatingDemandChange(uint8_t pi_heating_demand) {
+  logEntry("System PI heating demand changed from coordinator to: %d", pi_heating_demand);
+}
+
+void onRunningStateChange(uint16_t state) {
+  logEntry("System running state changed from coordinator to: %d", state);
+}
+
+void onDisplayModeChange(uint8_t mode) {
+  logEntry("System display mode changed from coordinator to: %d", mode);
+}
+
+void onKeypadLockoutChange(uint8_t lockout) {
+  logEntry("System keypad lockout changed from coordinator to: %d", lockout);
+}
+
+// -------------------------------------------------------------------------
+//                            LED Status Update
+// -------------------------------------------------------------------------
+void updateLEDStatus() {
+  LED_MODE newLedMode = LED_MODE_OFF;
+  const char * msg = "";
+
+  // Check device's state to know how the LED should behave
+  if (identifyTimer.getTimeOutTime() != 0 && !identifyTimer.hasTimedOut()) { // if active and not timed out
+    msg = "Indentify - LED set to fast YELLOW blink";
+    newLedMode = LED_MODE_IDENTIFY;
+    blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_YELLOW);
+  } else if (!Zigbee.connected()) {
+    msg = "Disconnected - LED set to fast RED blink";
+    newLedMode = LED_MODE_DISCONNECTED;
+    blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_RED);
+  } else {
+    msg = "Connected - LED set to slow BLUE pulse";
+    newLedMode = LED_MODE_CONNECTED;
+    blinker.set(RgbLedBlinker::MODE_PULSE_ONCE_PER_15_SECONDS, RgbLedBlinker::COLOR_BLUE);
+  }
+
+  // Did we changed LED MODE ?
+  if (previousLedMode != newLedMode) {
+    logEntry(msg);
+  }
+  previousLedMode = newLedMode;
+}
+
+// -------------------------------------------------------------------------
+//                          Arduino main section
+// -------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
 
+  // Initialize RGB LED blinker
+  blinker.setup(LED_PIN);
+  blinker.set(RgbLedBlinker::MODE_OFF, RgbLedBlinker::COLOR_BLACK);
+  blinker.loop(); // force the LED to turn off
+
+  // Wait up to 3s for serial
+  while (!Serial && millis() < 3000);
+  
 #ifdef ENABLE_DAIKINHTTP
   daikinSetup();
 #endif // ENABLE_DAIKINHTTP
+  
+  Serial.println("========================================");
+  Serial.println("  Stelpro HT402 Thermostat Emulator");
+  Serial.println("========================================");
+  Serial.println("Model: HT402 (Hilo)");
+  Serial.println("Manufacturer: Stelpro");
+  Serial.println("Endpoint: " + String(STELPRO_ENDPOINT));
+  Serial.println("Type: Line-voltage heating thermostat");
+  Serial.println("========================================");
+  
+  // Initialize button
+  button.begin(BUTTON_PIN);
+  button.setDebounceTime(25); // default is 50ms which is too high.
+  button.setLongClickTime(FACTORY_RESET_LONG_CLICK_TIME * 1000);
+  // Button callbacks
+  button.setClickHandler(clickDetected);
+  button.setDoubleClickHandler(doubleClickDetected);
+  button.setTripleClickHandler(trippleClickDetected);
+  button.setLongClickHandler(longClickDetected);
+  button.setLongClickDetectedHandler(holdDetected);
+  
+  // Initialize temperature update timer
+  initTempSimulationUpdateTimer();
+  
+  // Set callback functions for Zigbee
+  zbThermostat.onIdentify(onIdentify);
+  zbThermostat.onSetpointChange(onSetpointChange);
+  zbThermostat.onSystemModeChange(onSystemModeChange);
+  zbThermostat.onPIHeatingDemandChange(onPIHeatingDemandChange);
+  zbThermostat.onRunningStateChange(onRunningStateChange);
+  zbThermostat.onDisplayModeChange(onDisplayModeChange);
+  zbThermostat.onKeypadLockoutChange(onKeypadLockoutChange);
+
+  // Set manufacturer and model
+  zbThermostat.setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
+
+  // DEBUG
+  //zbThermostat.debugClusterList();
+  //while(true) {}
+  
+  // Add endpoint to Zigbee Core
+  Serial.println("Adding Zigbee Thermostat endpoint to Zigbee Core");
+  Zigbee.addEndpoint(&zbThermostat);
+  
+  Serial.println("Starting Zigbee stack...");
+  if (!Zigbee.begin()) {
+    Serial.println("Zigbee failed to start!");
+    Serial.println("Rebooting...");
+    ESP.restart();
+  }
+  Serial.println("Zigbee stack ready.");
+  
+  // Init identifyTimer
+  identifyTimer.setTimeOutTime(0);
+  identifyTimer.reset();
+
+  Serial.println("Connecting to network...");
+  size_t dotCount = 0;
+  while (!Zigbee.connected()) {
+    Serial.print(".");
+    dotCount++;
+    if (dotCount % 60 == 0)
+      Serial.println();
+
+    // Keep LED blinking during connection
+    updateLEDStatus();
+    blinker.loop();
+
+    delay(100);
+  }
+
+  if (dotCount % 60 > 0) // if there is dots printed without a terminating new line
+    Serial.println();
+
+  Serial.println("Connected to network!");
+
+  // Connected - switch to blue pulse
+  updateLEDStatus();
+  blinker.loop();
 }
 
 void loop() {
+  // Update LED status based on connection state
+  updateLEDStatus();
+  
+  // Disable identifyTimer, after timed out
+  if (identifyTimer.getTimeOutTime() != 0 && identifyTimer.hasTimedOut()) { // if active and has timed out
+    identifyTimer.setTimeOutTime(0);
+    identifyTimer.reset();
+  }
+
+  // Update all components
+  blinker.loop();
+  button.loop();
+  zbThermostat.updateEnergy();  // Update energy simulation calculations and Zigbee attributes
+  
+  // Simulate temperature changes of zbThermostat
+  if (Zigbee.connected()) {
+    simulateTemperature();
+  }
+  
+  delay(10);
 }
