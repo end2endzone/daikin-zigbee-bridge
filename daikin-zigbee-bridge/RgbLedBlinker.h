@@ -98,11 +98,15 @@ class RgbLedBlinker {
     }
 
     void set(Mode mode, const Color24 &color) {
+      bool has_changed = (this->mode != mode || this->color != color);
+
       this->mode = mode;
       this->color = color;
 
-      // reset timer from this point to prevent weird blinking issues
-      this->timer.reset();
+      // reset timer it something has changed to prevent weird blinking issues
+      if (has_changed) {
+        this->timer.reset();
+      }
     }
 
     Mode getMode() {
