@@ -1,14 +1,18 @@
+#ifdef ENABLE_DAIKINHTTP
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "secrets.h"
 #include "DaikinHTTP.h"
+#endif // ENABLE_DAIKINHTTP
 
+
+#ifdef ENABLE_DAIKINHTTP
+// -------------------------------------------------------------------------
+//                          Daikin support section
+// -------------------------------------------------------------------------
 DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
 
-void pullAndPrintInfo();
-void increaseTargetTempBy1();
-
-void increaseTargetTempBy1() {
+void daikinIncreaseTargetTempBy1() {
   // Pull to refresh latest data
   Serial.println("Pulling device info...");
   if (!daikin.pull()) {
@@ -40,7 +44,7 @@ void increaseTargetTempBy1() {
   Serial.println("actual    payload=" + daikin.getControlInfoPayload().get());
 }
 
-void pullAndPrintInfo() {
+void daikinPullAndPrintInfo() {
   if (!daikin.pull()) {
     Serial.println("Failed to pull device info.");
     return;
@@ -85,8 +89,7 @@ void pullAndPrintInfo() {
   }
 }
 
-void setup() {
-  Serial.begin(115200);
+void daikinSetup() {
   WiFi.begin(SECRET_WIFI_SSID, SECRET_WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -95,10 +98,21 @@ void setup() {
   Serial.println("\nWi-Fi connected!");
 
   // Increase current target temperature by 1 degree
-  increaseTargetTempBy1();
+  daikinIncreaseTargetTempBy1();
+}
+#endif // ENABLE_DAIKINHTTP
+
+// -------------------------------------------------------------------------
+//                          Main sketch section
+// -------------------------------------------------------------------------
+
+void setup() {
+  Serial.begin(115200);
+
+#ifdef ENABLE_DAIKINHTTP
+  daikinSetup();
+#endif // ENABLE_DAIKINHTTP
 }
 
 void loop() {
-  Serial.println("program complete");
-  delay(10000);
 }
