@@ -522,6 +522,149 @@ void ZigbeeStelproH420Thermostat::debugClusterList() {
   debugPrintClusterList(_cluster_list);
 }
 
+bool ZigbeeStelproH420Thermostat::getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const {
+  if (output_ptr == nullptr || output_size == 0)
+    return false;
+
+  bool ret = true;
+  size_t attr_size = 0;
+  
+  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
+  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
+  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
+
+  logEntry("Reading attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
+
+  esp_zb_lock_acquire(portMAX_DELAY);
+  
+  // get attribute descriptor
+  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
+    _endpoint,
+    cluster_id,
+    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+    attr_id);
+  if (attr == nullptr) {
+    logEntry("Failed to read attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
+    ret = false;
+    goto unlock_and_return;
+  }
+
+  // assert attr size
+  attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
+  if (attr_size != output_size) {
+    logEntry("Unexpected attribute size for attribute 0x%04x (%s) of cluster 0x%04x (%s). Output size:%d Attribute size:%d", attr_id, attr_name, cluster_id, cluster_name, output_size, attr_size);
+    ret = false;
+    goto unlock_and_return;
+  }
+
+  // Read the value
+  memcpy(output_ptr, attr->data_p, output_size);
+
+unlock_and_return:
+  esp_zb_lock_release();
+  return ret;
+}
+
+bool ZigbeeStelproH420Thermostat::setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const void* value_ptr, size_t value_size) const {
+  if (value_ptr == nullptr || value_size == 0)
+    return false;
+
+  bool ret = true;
+  size_t attr_size = 0;
+  esp_zb_zcl_status_t status = ESP_ZB_ZCL_STATUS_SUCCESS;
+  
+  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
+  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
+  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
+
+  logEntry("Writing attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
+
+  esp_zb_lock_acquire(portMAX_DELAY);
+  
+  // get attribute descriptor
+  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
+    _endpoint,
+    cluster_id,
+    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+    attr_id);
+  if (attr == nullptr) {
+    logEntry("Failed to get attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
+    ret = false;
+    goto unlock_and_return;
+  }
+
+  // assert attr size
+  attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
+  if (attr_size != value_size) {
+    logEntry("Unexpected attribute size from cluster 0x%04x (%s) attribute 0x%04x (%s). Output size:%d Attribute size:%d", cluster_id, cluster_name, attr_id, attr_name, value_size, attr_size);
+    ret = false;
+    goto unlock_and_return;
+  }
+
+  // set attribute value
+  status = esp_zb_zcl_set_attribute_val(
+    _endpoint,
+    cluster_id,
+    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+    attr_id,
+    (void*)value_ptr,
+    false
+  );
+  if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
+    logEntry("Failed to write attribute 0x%04x (%s) of cluster 0x%04x (%s). Status: 0x%x: %s", attr_id, attr_name, cluster_id, cluster_name, status, esp_zb_zcl_status_to_name(status));
+    ret = false;
+    goto unlock_and_return;
+  }
+
+unlock_and_return:
+  esp_zb_lock_release();
+  return ret;
+}
+
+bool ZigbeeStelproH420Thermostat::getGenericAttributeU16(uint16_t cluster_id, uint16_t attr_id, uint16_t * value) const {
+  if (!value)
+    return false;
+
+  bool ret = true;
+  size_t actual_size = 0;
+  size_t expected_size = sizeof(*value);
+  
+  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
+  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
+  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
+
+  // logEntry("Reading from cluster 0x%04x (%s) attribute 0x%04x (%s)", cluster_id, cluster_name, attr_id, attr_name);
+
+  esp_zb_lock_acquire(portMAX_DELAY);
+  
+  // get attribute description
+  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
+    _endpoint,
+    cluster_id,
+    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+    attr_id);
+  if (attr == nullptr) {
+    logEntry("Failed to read from cluster 0x%04x (%s) attribute 0x%04x (%s)", cluster_id, cluster_name, attr_id, attr_name);
+    ret = false;
+    goto unlock_and_return;
+  }
+
+  // assert size
+  actual_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
+  if (actual_size != expected_size) {
+    logEntry("Unexpected attribute size from cluster 0x%04x (%s) attribute 0x%04x (%s). Expected:%d Actual:%d", cluster_id, cluster_name, attr_id, attr_name, expected_size, actual_size);
+    ret = false;
+    goto unlock_and_return;
+  }
+
+  // Read the value
+  *value = *((uint16_t*)(attr->data_p));
+
+unlock_and_return:
+  esp_zb_lock_release();
+  return ret;
+}
+
 esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *thermostat_cfg) {
   esp_err_t err = ESP_OK;
 

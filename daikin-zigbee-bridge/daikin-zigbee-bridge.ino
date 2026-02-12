@@ -221,6 +221,21 @@ void longClickDetected(Button2& btn) {
 //                          Temperature Simulation
 // -------------------------------------------------------------------------
 
+void debugMinMaxSetpoints() {
+  uint16_t actual_min_heat_setpoint      = 0;
+  uint16_t actual_max_heat_setpoint      = 0;
+  uint16_t actual_abs_min_heat_setpoint  = 0;
+  uint16_t actual_abs_max_heat_setpoint  = 0;
+  bool success1 = zbThermostat.getGenericAttributeU16(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,      &actual_min_heat_setpoint    );
+  bool success2 = zbThermostat.getGenericAttributeU16(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID ,     &actual_max_heat_setpoint    );
+  bool success3 = zbThermostat.getGenericAttributeU16(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID,  &actual_abs_min_heat_setpoint);
+  bool success4 = zbThermostat.getGenericAttributeU16(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID,  &actual_abs_max_heat_setpoint);
+  logEntry("success=%d  actual_min_heat_setpoint=%d",     success1, actual_min_heat_setpoint);
+  logEntry("success=%d  actual_max_heat_setpoint=%d",     success2, actual_max_heat_setpoint);
+  logEntry("success=%d  actual_abs_min_heat_setpoint=%d", success3, actual_abs_min_heat_setpoint);
+  logEntry("success=%d  actual_abs_max_heat_setpoint=%d", success4, actual_abs_max_heat_setpoint);
+}
+
 void simulateTemperature() {
   if (!tempSimulationUpdateTimer.hasTimedOut()) {
     return;

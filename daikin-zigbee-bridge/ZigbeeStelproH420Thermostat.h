@@ -180,7 +180,37 @@ public:
   void updateEnergy();
 
   void debugClusterList();
-  
+
+  bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const;
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, uint8_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, uint16_t& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, uint32_t& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, uint64_t& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, int8_t&   output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, int16_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, int32_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, int64_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_int24_s&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_uint24_s& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_uint48_s& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  inline bool getAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_int48_s&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+
+  bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const void* value_ptr, size_t value_size) const;
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const uint8_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const uint16_t& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const uint32_t& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const uint64_t& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const int8_t&   value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const int16_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const int32_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const int64_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_int24_s&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_uint24_s& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_uint48_s& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+  inline bool setAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_int48_s&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
+
+  bool getGenericAttributeU16(uint16_t cluster_id, uint16_t attr_id, uint16_t* value) const;
+    
 private:
   void zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) override;
   
