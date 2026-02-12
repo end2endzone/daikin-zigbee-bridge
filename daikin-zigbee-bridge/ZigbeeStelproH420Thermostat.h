@@ -153,8 +153,11 @@ public:
   void onOutdoorTemperatureChange(void (*callback)(int16_t)) {
     _on_outdoor_temperature_change = callback;
   }
-  void onSetpointChange(void (*callback)(int16_t)) {
-    _on_setpoint_change = callback;
+  void onOccupiedCoolSetpointChange(void (*callback)(int16_t)) {
+    _on_occupied_cool_setpoint_change = callback;
+  }
+  void onOccupiedHeatSetpointChange(void (*callback)(int16_t)) {
+    _on_occupied_heat_setpoint_change = callback;
   }
   void onSystemModeChange(void (*callback)(uint8_t)) {
     _on_system_mode_change = callback;
@@ -173,9 +176,10 @@ public:
   }
 
   // Getters for current values
-  int16_t getLocalTemperature() const { return _local_temperature; }
-  int16_t getHeatingSetpoint() const { return _heating_setpoint; }
-  uint8_t getSystemMode() const { return _system_mode; }
+  bool getLocalTemperature(int16_t& output) const           { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID,           output); }
+  bool getOccupiedCoolingSetpoint(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID,   output); }
+  bool getOccupiedHeatingSetpoint(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID,   output); }
+  bool getSystemMode(uint8_t& output) const                 { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID,                 output); }
   uint8_t getPIHeatingDemand() const { return _pi_heating_demand; }
   uint16_t getRunningState() const { return _running_state; }
   int16_t getOutdoorTemperature() const { return _outdoor_temperature; }
@@ -185,7 +189,8 @@ public:
 
   // Setters (update Zigbee attributes)
   bool setLocalTemperature(int16_t temperature);
-  bool setHeatingSetpoint(int16_t setpoint);
+  bool setOccupiedCoolingSetpoint(int16_t setpoint);
+  bool setOccupiedHeatingSetpoint(int16_t setpoint);
   bool setSystemMode(uint8_t mode);
   bool setPIHeatingDemand(uint8_t demand);
   bool setRunningState(uint16_t state);
@@ -269,22 +274,20 @@ private:
 
   // Callback functions
   void (*_on_temperature_change)(int16_t);
-  void (*_on_outdoor_temperature_change)(int16_t);
-  void (*_on_setpoint_change)(int16_t);
+  void (*_on_occupied_cool_setpoint_change)(int16_t);
+  void (*_on_occupied_heat_setpoint_change)(int16_t);
   void (*_on_system_mode_change)(uint8_t);
+  void (*_on_outdoor_temperature_change)(int16_t);
   void (*_on_pi_heating_demand_change)(uint8_t);
   void (*_on_running_state_change)(uint16_t);
   void (*_on_display_mode_change)(uint8_t);
   void (*_on_keypad_lockout_change)(uint8_t);
 
   // Thermostat state variables
-  int16_t _local_temperature;
-  int16_t _heating_setpoint;
   int16_t _outdoor_temperature;
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   int16_t _stelpro_outdoor_temp;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  uint8_t _system_mode;
   uint8_t _pi_heating_demand;
   uint16_t _running_state;
   uint8_t _temperature_display_mode; // type ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM

@@ -19,8 +19,9 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   
   // Initialize callbacks to nullptr
   _on_temperature_change = nullptr;
+  _on_occupied_cool_setpoint_change = nullptr;
+  _on_occupied_heat_setpoint_change = nullptr;
   _on_outdoor_temperature_change = nullptr;
-  _on_setpoint_change = nullptr;
   _on_system_mode_change = nullptr;
   _on_pi_heating_demand_change = nullptr;
   _on_running_state_change = nullptr;
@@ -28,13 +29,10 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _on_keypad_lockout_change = nullptr;
 
   // Initialize default values
-  _local_temperature = STELPRO_DEFAULT_TEMPERATURE;
-  _heating_setpoint = STELPRO_DEFAULT_HEATING_SETPOINT;
   _outdoor_temperature = 0;
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   _stelpro_outdoor_temp = 0;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  _system_mode = THERMOSTAT_SYSTEM_MODE_HEAT;
   _pi_heating_demand = 0;
   _running_state = THERMOSTAT_RUNNING_STATE_IDLE;
   _temperature_display_mode = ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE; // celcius ? fahrenheit ?
@@ -87,7 +85,9 @@ void logUnknownAttrDataType(uint16_t cluster_id, uint16_t attr_id) {
 }
 
 void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) {
-  // Handle incoming Zigbee attribute changes
+  // Handle incoming Zigbee attribute changes.
+  // When this function is called, the internal memory of the attribute is already updated.
+  // There is no need to call setters.
   
   if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT) {
     // Thermostat cluster
@@ -100,10 +100,11 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
           return;
         }
         int16_t new_setpoint = *(int16_t *)message->attribute.data.value;
-        if (_heating_setpoint != new_setpoint) {
-          _heating_setpoint = new_setpoint;
-          if (_on_setpoint_change) {
-            _on_setpoint_change(_heating_setpoint);
+        int16_t old_setpoint = 0;
+        bool success = getOccupiedHeatingSetpoint(old_setpoint);
+        if (old_setpoint != new_setpoint) {
+          if (_on_occupied_heat_setpoint_change) {
+            _on_occupied_heat_setpoint_change(new_setpoint);
           }
         }
         break;
@@ -117,10 +118,11 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
           return;
         }
         uint8_t new_mode = *(uint8_t *)message->attribute.data.value;
-        if (_system_mode != new_mode) {
-          _system_mode = new_mode;
+        uint8_t old_mode = 0;
+        bool success = getSystemMode(old_mode);
+        if (old_mode != new_mode) {
           if (_on_system_mode_change) {
-            _on_system_mode_change(_system_mode);
+            _on_system_mode_change(new_mode);
           }
         }
         break;
@@ -199,97 +201,47 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
 
 // Setter methods with Zigbee attribute updates
 bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
-  esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // logEntry("Updating local temperature to %d", temperature);
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID, temperature);
+  if (!success)
+    return false;
 
-  // Update cluster
-  esp_zb_lock_acquire(portMAX_DELAY);
-  // set attribute value
-  ret = esp_zb_zcl_set_attribute_val(
-    _endpoint,
-    ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID,
-    &_local_temperature,
-    false
-  );
-  if (ret != ESP_ZB_ZCL_STATUS_SUCCESS) {
-    logEntry("Failed to set local temperature. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
-    goto unlock_and_return;
-  }
-
-  // Update attribute
-  _local_temperature = temperature;
   if (_on_temperature_change) {
-    _on_temperature_change(_local_temperature);
+    _on_temperature_change(temperature);
   }
-
-unlock_and_return:
-  esp_zb_lock_release();
-  return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
+  return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setHeatingSetpoint(int16_t setpoint) {
-  esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
+bool ZigbeeStelproH420Thermostat::setOccupiedCoolingSetpoint(int16_t setpoint) {
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID, setpoint);
+  if (!success)
+    return false;
 
-  // logEntry("Updating heating setpoint temperature to %d", setpoint);
+  if (_on_occupied_cool_setpoint_change) {
+    _on_occupied_cool_setpoint_change(setpoint);
+  }
+  return success;
+}
 
-  // Update cluster
-  esp_zb_lock_acquire(portMAX_DELAY);
-  // set attribute value
-  ret = esp_zb_zcl_set_attribute_val(
-    _endpoint,
-    ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID,
-    &_heating_setpoint,
-    false
-  );
-  if (ret != ESP_ZB_ZCL_STATUS_SUCCESS) {
-    logEntry("Failed to set heating setpoint temperature. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
-    goto unlock_and_return;
+bool ZigbeeStelproH420Thermostat::setOccupiedHeatingSetpoint(int16_t setpoint) {
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID, setpoint);
+  if (!success)
+    return false;
+
+  if (_on_occupied_heat_setpoint_change) {
+    _on_occupied_heat_setpoint_change(setpoint);
   }
-  
-  // Update attribute
-  _heating_setpoint = setpoint;
-  if (_on_setpoint_change) {
-    _on_setpoint_change(_heating_setpoint);
-  }
-unlock_and_return:
-  esp_zb_lock_release();
-  return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
+  return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
-  esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID, mode);
+  if (!success)
+    return false;
 
-  // logEntry("Updating system mode to %d", mode);
-
-  // Update cluster
-  esp_zb_lock_acquire(portMAX_DELAY);
-  // set attribute value
-  ret = esp_zb_zcl_set_attribute_val(
-    _endpoint,
-    ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID,
-    &_system_mode,
-    false
-  );
-  if (ret != ESP_ZB_ZCL_STATUS_SUCCESS) {
-    logEntry("Failed to set system mode. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
-    goto unlock_and_return;
-  }
-  
-  // Update attribute
-  _system_mode = mode;
   if (_on_system_mode_change) {
-    _on_system_mode_change(_system_mode);
+    _on_system_mode_change(mode);
   }
-unlock_and_return:
-  esp_zb_lock_release();
-  return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
+  return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setPIHeatingDemand(uint8_t demand) {

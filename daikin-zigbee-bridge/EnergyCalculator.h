@@ -87,7 +87,7 @@ public:
     _local_temperature = temperature;
   }
   
-  void setHeatingSetpoint(int16_t setpoint) {
+  void setOccupiedHeatingSetpoint(int16_t setpoint) {
     _heating_setpoint = setpoint;
   }
   

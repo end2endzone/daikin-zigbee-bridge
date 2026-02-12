@@ -221,21 +221,31 @@ void longClickDetected(Button2& btn) {
 //                          Temperature Simulation
 // -------------------------------------------------------------------------
 
-void debugMinMaxSetpoints() {
+void printAllAttributes() {
+  LOG_SCOPE;
+
+  // Mandatory thermostat attributes
+  {
+    int16_t actual_local_temperature          = 0;
+    int16_t actual_occupied_cooling_setpoint  = 0;
+    int16_t actual_occupied_heating_setpoint  = 0;
+    uint8_t actual_system_mode                = 0;
+    if (zbThermostat.getLocalTemperature(         actual_local_temperature          ))    logEntry("actual_local_temperature=%d",             actual_local_temperature);
+    if (zbThermostat.getOccupiedCoolingSetpoint(  actual_occupied_cooling_setpoint  ))    logEntry("actual_occupied_cooling_setpoint=%d",     actual_occupied_cooling_setpoint);
+    if (zbThermostat.getOccupiedHeatingSetpoint(  actual_occupied_heating_setpoint  ))    logEntry("actual_occupied_heating_setpoint=%d",     actual_occupied_heating_setpoint);
+    if (zbThermostat.getSystemMode(               actual_system_mode                ))    logEntry("actual_system_mode=%d",                   actual_system_mode);
+  }
+
   // Heating setpoints
   {
     int16_t actual_min_heat_setpoint      = 0;
     int16_t actual_max_heat_setpoint      = 0;
     int16_t actual_abs_min_heat_setpoint  = 0;
     int16_t actual_abs_max_heat_setpoint  = 0;
-    bool success1 = zbThermostat.getMinHeatingSetpointLimit(    actual_min_heat_setpoint    );
-    bool success2 = zbThermostat.getMaxHeatingSetpointLimit(    actual_max_heat_setpoint    );
-    bool success3 = zbThermostat.getAbsMinHeatingSetpointLimit( actual_abs_min_heat_setpoint);
-    bool success4 = zbThermostat.getAbsMaxHeatingSetpointLimit( actual_abs_max_heat_setpoint);
-    logEntry("success=%d  actual_min_heat_setpoint=%d",     success1, actual_min_heat_setpoint);
-    logEntry("success=%d  actual_max_heat_setpoint=%d",     success2, actual_max_heat_setpoint);
-    logEntry("success=%d  actual_abs_min_heat_setpoint=%d", success3, actual_abs_min_heat_setpoint);
-    logEntry("success=%d  actual_abs_max_heat_setpoint=%d", success4, actual_abs_max_heat_setpoint);
+    if (zbThermostat.getMinHeatingSetpointLimit(    actual_min_heat_setpoint    ))    logEntry("actual_min_heat_setpoint=%d",     actual_min_heat_setpoint);
+    if (zbThermostat.getMaxHeatingSetpointLimit(    actual_max_heat_setpoint    ))    logEntry("actual_max_heat_setpoint=%d",     actual_max_heat_setpoint);
+    if (zbThermostat.getAbsMinHeatingSetpointLimit( actual_abs_min_heat_setpoint))    logEntry("actual_abs_min_heat_setpoint=%d", actual_abs_min_heat_setpoint);
+    if (zbThermostat.getAbsMaxHeatingSetpointLimit( actual_abs_max_heat_setpoint))    logEntry("actual_abs_max_heat_setpoint=%d", actual_abs_max_heat_setpoint);
   }
 
   // Cooling setpoints
@@ -244,14 +254,10 @@ void debugMinMaxSetpoints() {
     int16_t actual_max_cool_setpoint      = 0;
     int16_t actual_abs_min_cool_setpoint  = 0;
     int16_t actual_abs_max_cool_setpoint  = 0;
-    bool success1 = zbThermostat.getMinCoolingSetpointLimit(    actual_min_cool_setpoint    );
-    bool success2 = zbThermostat.getMaxCoolingSetpointLimit(    actual_max_cool_setpoint    );
-    bool success3 = zbThermostat.getAbsMinCoolingSetpointLimit( actual_abs_min_cool_setpoint);
-    bool success4 = zbThermostat.getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint);
-    logEntry("success=%d  actual_min_cool_setpoint=%d",     success1, actual_min_cool_setpoint);
-    logEntry("success=%d  actual_max_cool_setpoint=%d",     success2, actual_max_cool_setpoint);
-    logEntry("success=%d  actual_abs_min_cool_setpoint=%d", success3, actual_abs_min_cool_setpoint);
-    logEntry("success=%d  actual_abs_max_cool_setpoint=%d", success4, actual_abs_max_cool_setpoint);
+    if (zbThermostat.getMinCoolingSetpointLimit(    actual_min_cool_setpoint    ))    logEntry("actual_min_cool_setpoint=%d",     actual_min_cool_setpoint);
+    if (zbThermostat.getMaxCoolingSetpointLimit(    actual_max_cool_setpoint    ))    logEntry("actual_max_cool_setpoint=%d",     actual_max_cool_setpoint);
+    if (zbThermostat.getAbsMinCoolingSetpointLimit( actual_abs_min_cool_setpoint))    logEntry("actual_abs_min_cool_setpoint=%d", actual_abs_min_cool_setpoint);
+    if (zbThermostat.getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint))    logEntry("actual_abs_max_cool_setpoint=%d", actual_abs_max_cool_setpoint);
   }
 }
 
@@ -264,10 +270,13 @@ void simulateTemperature() {
   initTempSimulationUpdateTimer();
 
   // Get current values
-  int16_t current_temp = zbThermostat.getLocalTemperature();
-  int16_t setpoint = zbThermostat.getHeatingSetpoint();
-  uint8_t system_mode = zbThermostat.getSystemMode();
-  
+  int16_t current_temp = 0;
+  int16_t setpoint = 0;
+  uint8_t system_mode = 0;
+  zbThermostat.getLocalTemperature(current_temp);
+  zbThermostat.getOccupiedHeatingSetpoint(setpoint);
+  zbThermostat.getSystemMode(system_mode);
+
   // Simulate temperature based on heating demand
   if (system_mode == THERMOSTAT_SYSTEM_MODE_OFF) {
     // When off, temperature drifts toward room temp
@@ -305,6 +314,10 @@ void simulateTemperature() {
                 pi_heating_demand,
                 (running_state == THERMOSTAT_RUNNING_STATE_HEAT) ? "HEATING" : "IDLE",
                 power_watts);
+
+
+  //
+  printAllAttributes();
 }
 
 // -------------------------------------------------------------------------
@@ -320,7 +333,7 @@ void onIdentify(uint16_t time) {
   }
 }
 
-void onSetpointChange(int16_t setpoint) {
+void onOccupiedHeatSetpointChange(int16_t setpoint) {
   logEntry("Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
 }
 
@@ -416,7 +429,7 @@ void setup() {
   
   // Set callback functions for Zigbee
   zbThermostat.onIdentify(onIdentify);
-  zbThermostat.onSetpointChange(onSetpointChange);
+  zbThermostat.onOccupiedHeatSetpointChange(onOccupiedHeatSetpointChange);
   zbThermostat.onSystemModeChange(onSystemModeChange);
   zbThermostat.onPIHeatingDemandChange(onPIHeatingDemandChange);
   zbThermostat.onRunningStateChange(onRunningStateChange);
@@ -471,10 +484,10 @@ void setup() {
   blinker.loop();
   
   // Initialize simulation stuff
-  zbThermostat.setHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
+  zbThermostat.setOccupiedHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
 
   // DEBUG
-  debugMinMaxSetpoints();
+  printAllAttributes();
 }
 
 void loop() {
