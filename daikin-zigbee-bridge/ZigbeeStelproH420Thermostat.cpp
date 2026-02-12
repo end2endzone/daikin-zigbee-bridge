@@ -2,37 +2,10 @@
 
 #include "esp_zigbee_cluster.h"
 #include "zcl/esp_zigbee_zcl_thermostat.h"
-//#include "zcl/esp_zigbee_zcl_power_config.h"
 #include "zb_constants_helper.h"
 #include "logging.h"
 #include "zb_debug.h"
 #include "zb_helper.h"
-
-/*
-typedef struct esp_zb_zcl_attr_s {
-    uint16_t id;               
-    uint8_t type;              
-    uint8_t access;            
-    uint16_t manuf_code;       
-    void *data_p;              
-} ESP_ZB_PACKED_STRUCT
-esp_zb_zcl_attr_t;
-
-typedef struct esp_zb_zcl_cluster_s {
-    uint16_t cluster_id;                     
-    uint16_t attr_count;                     
-    esp_zb_zcl_attr_t *attr_desc_list;       
-    uint8_t role_mask;                       
-    uint16_t manuf_code;                     
-    esp_zb_zcl_cluster_init_t cluster_init;  
-} ESP_ZB_PACKED_STRUCT
-esp_zb_zcl_cluster_t;
-
-typedef struct esp_zb_cluster_list_s {
-    esp_zb_zcl_cluster_t cluster;
-    struct esp_zb_cluster_list_s *next;
-} esp_zb_cluster_list_t;
-*/
 
 ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : ZigbeeEP(endpoint) {
   /*
@@ -68,10 +41,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _keypad_lockout = ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE;  // Unlocked
   _occupancy = ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE; // Occupied
   _display_mode = ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE;
-  _min_heat_setpoint = STELPRO_MIN_HEAT_SETPOINT;
-  _max_heat_setpoint = STELPRO_MAX_HEAT_SETPOINT;
-  _abs_min_heat_setpoint = STELPRO_MIN_HEAT_SETPOINT;
-  _abs_max_heat_setpoint = STELPRO_MAX_HEAT_SETPOINT;
 
   // Create cluster configuration
   zigbee_stelpro_thermostat_cfg_t thermostat_cfg = ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG();
@@ -643,17 +612,69 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID, &_min_heat_setpoint);           logError(err, __FILE__, __LINE__);
   //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID, &_max_heat_setpoint);           logError(err, __FILE__, __LINE__);
 
+  // Force HEATING MIN/MAX SETPOINTS
+  #if 1
+  {
+    // Heating setpoint limits (even for heating-only thermostats)
+    static int16_t abs_min_heat_setpoint =  STELPRO_MIN_HEAT_SETPOINT;
+    static int16_t abs_max_heat_setpoint =  STELPRO_MAX_HEAT_SETPOINT;
+    static int16_t min_heat_setpoint =      STELPRO_MIN_HEAT_SETPOINT;
+    static int16_t max_heat_setpoint =      STELPRO_MAX_HEAT_SETPOINT;
+
+    // Add attribute limits
+    err = esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
+        &abs_min_heat_setpoint
+    );
+    logError(err, __FILE__, __LINE__);
+
+    err = esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
+        &abs_max_heat_setpoint
+    );
+    logError(err, __FILE__, __LINE__);
+
+    err = esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+        &min_heat_setpoint
+    );
+    logError(err, __FILE__, __LINE__);
+
+    err = esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+        &max_heat_setpoint
+    );
+    logError(err, __FILE__, __LINE__);
+  }
+  #endif
+
   // Force COOLING MIN/MAX SETPOINTS
-  #if 0
+  #if 1
   {
     // Cooling setpoint limits (even for heating-only thermostats)
-    static int16_t abs_min_cool_setpoint =   500;   //  5°C
-    static int16_t abs_max_cool_setpoint =  3500;   // 35°C
-    static int16_t min_cool_setpoint =       500;   //  5°C
-    static int16_t max_cool_setpoint =      3500;   // 35°C
+    static int16_t abs_min_cool_setpoint =  STELPRO_MIN_COOL_SETPOINT;
+    static int16_t abs_max_cool_setpoint =  STELPRO_MAX_COOL_SETPOINT;
+    static int16_t min_cool_setpoint =      STELPRO_MIN_COOL_SETPOINT;
+    static int16_t max_cool_setpoint =      STELPRO_MAX_COOL_SETPOINT;
 
-    // Add cooling limits
-    esp_zb_cluster_add_attr(
+    // Add attribute limits
+    err = esp_zb_cluster_add_attr(
         esp_zb_thermostat_cluster_attribute_list,
         ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
         ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID,
@@ -661,8 +682,9 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
         ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
         &abs_min_cool_setpoint
     );
+    logError(err, __FILE__, __LINE__);
 
-    esp_zb_cluster_add_attr(
+    err = esp_zb_cluster_add_attr(
         esp_zb_thermostat_cluster_attribute_list,
         ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
         ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,
@@ -670,8 +692,9 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
         ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
         &abs_max_cool_setpoint
     );
+    logError(err, __FILE__, __LINE__);
 
-    esp_zb_cluster_add_attr(
+    err = esp_zb_cluster_add_attr(
         esp_zb_thermostat_cluster_attribute_list,
         ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
         ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,
@@ -679,8 +702,9 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
         ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
         &min_cool_setpoint
     );
+    logError(err, __FILE__, __LINE__);
 
-    esp_zb_cluster_add_attr(
+    err = esp_zb_cluster_add_attr(
         esp_zb_thermostat_cluster_attribute_list,
         ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
         ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,
@@ -688,6 +712,7 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
         ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
         &max_cool_setpoint
     );
+    logError(err, __FILE__, __LINE__);
   }
   #endif
 

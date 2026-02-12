@@ -31,6 +31,12 @@
 #define STELPRO_MIN_HEAT_SETPOINT              500  //  5.0°C
 #define STELPRO_MAX_HEAT_SETPOINT             3000  // 30.0°C
 #define STELPRO_TEMP_MEASUREMENT_TOLERANCE      50  //  0.5°C
+// To allow `occupied_cooling_setpoint` with values from 5.0°C to 30.0°C, 
+// we need to set the following attribute values:
+#define STELPRO_MIN_COOL_SETPOINT              500  //  5.0°C
+#define STELPRO_MAX_COOL_SETPOINT             (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
+#define STELPRO_OCCUPIED_COOLING_SETPOINT     (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
+
 
 // HT402 only supports HEAT mode
 #define THERMOSTAT_SYSTEM_MODE_OFF 0x00
@@ -124,7 +130,7 @@ typedef struct {
     },                                                                                                \
     .thermostat_cfg = {                                                                               \
       .local_temperature = ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE,                     \
-      .occupied_cooling_setpoint = STELPRO_MAX_HEAT_SETPOINT,                                         \
+      .occupied_cooling_setpoint = STELPRO_OCCUPIED_COOLING_SETPOINT,                                 \
       .occupied_heating_setpoint = ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_DEFAULT_VALUE,     \
       .control_sequence_of_operation = ESP_ZB_ZCL_THERMOSTAT_CONTROL_SEQ_OF_OPERATION_DEFAULT_VALUE,  \
       .system_mode = ESP_ZB_ZCL_THERMOSTAT_CONTROL_SYSTEM_MODE_DEFAULT_VALUE,                         \
@@ -285,10 +291,6 @@ private:
   uint8_t _keypad_lockout;
   zb_uint8_t _occupancy;
   uint8_t _display_mode;
-  int16_t _min_heat_setpoint;
-  int16_t _max_heat_setpoint;
-  int16_t _abs_min_heat_setpoint;
-  int16_t _abs_max_heat_setpoint;
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
   // Metering cluster variables
