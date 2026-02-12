@@ -91,6 +91,24 @@ typedef struct {
 
 /**
  * @brief Default configuration for Stelpro H420 thermostat
+ * Notes:
+ *   - For `occupied_cooling_setpoint`, do not use default value `ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_DEFAULT_VALUE` of 26.0°C.
+ *     If you do, this will set an upper limit for `occupied_heating_setpoint` at 25.0°C.
+ *     Controllers that try to set a value above 25.0°C will get a "Invalid Value" error such as:
+ *     ```
+ *     z2m: Publish 'set' 'occupied_heating_setpoint' to '0x404ccafffe563248' failed:
+ *     'Error: ZCL command 0x404ccafffe563248/25 hvacThermostat.write(
+ *     {"occupiedHeatingSetpoint":2900}, 
+ *     {"timeout":10000,
+ *       "disableResponse":false,
+ *       "disableRecovery":false,
+ *       "disableDefaultResponse":true,
+ *       "direction":0,
+ *       "reservedBits":0,
+ *       "writeUndiv":false})
+ *       failed (Status 'INVALID_VALUE')'
+ *     ```
+ *     I think the zigbee stack can not allow a situation where `occupied_heating_setpoint > occupied_cooling_setpoint`.
  */
 #define ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG()                                                    \
   {                                                                                                   \
@@ -106,7 +124,7 @@ typedef struct {
     },                                                                                                \
     .thermostat_cfg = {                                                                               \
       .local_temperature = ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE,                     \
-      .occupied_cooling_setpoint = ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_DEFAULT_VALUE,     \
+      .occupied_cooling_setpoint = STELPRO_MAX_HEAT_SETPOINT,                                         \
       .occupied_heating_setpoint = ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_DEFAULT_VALUE,     \
       .control_sequence_of_operation = ESP_ZB_ZCL_THERMOSTAT_CONTROL_SEQ_OF_OPERATION_DEFAULT_VALUE,  \
       .system_mode = ESP_ZB_ZCL_THERMOSTAT_CONTROL_SYSTEM_MODE_DEFAULT_VALUE,                         \
@@ -175,6 +193,19 @@ public:
   bool setInstantaneousDemand(int32_t demand_watts);
   bool setCurrentSummationDelivered(uint64_t energy_wh);
 #endif // ENABLE_STELPRO_POWER_MEASUREMENTS
+
+  // Heating setpoints limits
+  bool getMinHeatingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,      output); }
+  bool getMaxHeatingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID,      output); }
+  bool getAbsMinHeatingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID,  output); }
+  bool getAbsMaxHeatingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID,  output); }
+  
+  // Cooling setpoints limits
+  bool getMinCoolingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,      output); }
+  bool getMaxCoolingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,      output); }
+  bool getAbsMinCoolingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID,  output); }
+  bool getAbsMaxCoolingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,  output); }
+
 
   // Update energy calculations (call in loop)
   void updateEnergy();

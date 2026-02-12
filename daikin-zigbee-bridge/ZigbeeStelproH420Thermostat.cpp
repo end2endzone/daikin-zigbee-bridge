@@ -232,13 +232,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
 bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
   
-  // Update attribute
-  _local_temperature = temperature;
-  if (_on_temperature_change) {
-    _on_temperature_change(_local_temperature);
-  }
-
-  logEntry("Updating local temperature to %d", temperature);
+  // logEntry("Updating local temperature to %d", temperature);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -255,6 +249,13 @@ bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
     logEntry("Failed to set local temperature. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
   }
+
+  // Update attribute
+  _local_temperature = temperature;
+  if (_on_temperature_change) {
+    _on_temperature_change(_local_temperature);
+  }
+
 unlock_and_return:
   esp_zb_lock_release();
   return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
@@ -262,14 +263,8 @@ unlock_and_return:
 
 bool ZigbeeStelproH420Thermostat::setHeatingSetpoint(int16_t setpoint) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // Update attribute
-  _heating_setpoint = setpoint;
-  if (_on_setpoint_change) {
-    _on_setpoint_change(_heating_setpoint);
-  }
 
-  logEntry("Updating heating setpoint temperature to %d", setpoint);
+  // logEntry("Updating heating setpoint temperature to %d", setpoint);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -286,6 +281,12 @@ bool ZigbeeStelproH420Thermostat::setHeatingSetpoint(int16_t setpoint) {
     logEntry("Failed to set heating setpoint temperature. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
   }
+  
+  // Update attribute
+  _heating_setpoint = setpoint;
+  if (_on_setpoint_change) {
+    _on_setpoint_change(_heating_setpoint);
+  }
 unlock_and_return:
   esp_zb_lock_release();
   return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
@@ -293,14 +294,8 @@ unlock_and_return:
 
 bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // Update attribute
-  _system_mode = mode;
-  if (_on_system_mode_change) {
-    _on_system_mode_change(_system_mode);
-  }
 
-  logEntry("Updating system mode to %d", mode);
+  // logEntry("Updating system mode to %d", mode);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -317,6 +312,12 @@ bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
     logEntry("Failed to set system mode. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
   }
+  
+  // Update attribute
+  _system_mode = mode;
+  if (_on_system_mode_change) {
+    _on_system_mode_change(_system_mode);
+  }
 unlock_and_return:
   esp_zb_lock_release();
   return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
@@ -324,14 +325,8 @@ unlock_and_return:
 
 bool ZigbeeStelproH420Thermostat::setPIHeatingDemand(uint8_t demand) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // Update attribute
-  _pi_heating_demand = demand;
-  if (_on_pi_heating_demand_change) {
-    _on_pi_heating_demand_change(_pi_heating_demand);
-  }
 
-  logEntry("Updating pi heating demand to %d", demand);
+  // logEntry("Updating pi heating demand to %d", demand);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -348,6 +343,12 @@ bool ZigbeeStelproH420Thermostat::setPIHeatingDemand(uint8_t demand) {
     logEntry("Failed to set pi heating demand. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
   }
+  
+  // Update attribute
+  _pi_heating_demand = demand;
+  if (_on_pi_heating_demand_change) {
+    _on_pi_heating_demand_change(_pi_heating_demand);
+  }
 unlock_and_return:
   esp_zb_lock_release();
   return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
@@ -355,14 +356,8 @@ unlock_and_return:
 
 bool ZigbeeStelproH420Thermostat::setRunningState(uint16_t state) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // Update attribute
-  _running_state = state;
-  if (_on_running_state_change) {
-    _on_running_state_change(_running_state);
-  }
 
-  logEntry("Updating running state to %d", state);
+  // logEntry("Updating running state to %d", state);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -379,6 +374,12 @@ bool ZigbeeStelproH420Thermostat::setRunningState(uint16_t state) {
     logEntry("Failed to set running state. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
   }
+  
+  // Update attribute
+  _running_state = state;
+  if (_on_running_state_change) {
+    _on_running_state_change(_running_state);
+  }
 unlock_and_return:
   esp_zb_lock_release();
   return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
@@ -386,14 +387,8 @@ unlock_and_return:
 
 bool ZigbeeStelproH420Thermostat::setOutdoorTemperature(int16_t temperature) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // Update attribute
-  _outdoor_temperature = temperature;
-  if (_on_outdoor_temperature_change) {
-    _on_outdoor_temperature_change(temperature);
-  }
 
-  logEntry("Updating outdoor temperature to %d", temperature);
+  // logEntry("Updating outdoor temperature to %d", temperature);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -410,6 +405,12 @@ bool ZigbeeStelproH420Thermostat::setOutdoorTemperature(int16_t temperature) {
     logEntry("Failed to set outdoor temperature. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
   }
+  
+  // Update attribute
+  _outdoor_temperature = temperature;
+  if (_on_outdoor_temperature_change) {
+    _on_outdoor_temperature_change(temperature);
+  }
 unlock_and_return:
   esp_zb_lock_release();
   return ret == ESP_ZB_ZCL_STATUS_SUCCESS;
@@ -418,14 +419,8 @@ unlock_and_return:
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 bool ZigbeeStelproH420Thermostat::setStelproOutdoorTemp(int16_t temperature) {
   esp_zb_zcl_status_t ret = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  // Update attribute
-  _stelpro_outdoor_temp = temperature;
-  if (_on_stelpro_outdoor_temp_change) {
-    _on_stelpro_outdoor_temp_change(temperature);
-  }
 
-  logEntry("Updating stelpro outdoor temperature to %d", temperature);
+  // logEntry("Updating stelpro outdoor temperature to %d", temperature);
 
   // Update cluster
   esp_zb_lock_acquire(portMAX_DELAY);
@@ -441,6 +436,12 @@ bool ZigbeeStelproH420Thermostat::setStelproOutdoorTemp(int16_t temperature) {
   if (ret != ESP_ZB_ZCL_STATUS_SUCCESS) {
     logEntry("Failed to set stelpro outdoor temperature. Status: 0x%x: %s", ret, esp_zb_zcl_status_to_name(ret));
     goto unlock_and_return;
+  }
+  
+  // Update attribute
+  _stelpro_outdoor_temp = temperature;
+  if (_on_stelpro_outdoor_temp_change) {
+    _on_stelpro_outdoor_temp_change(temperature);
   }
 unlock_and_return:
   esp_zb_lock_release();
@@ -533,7 +534,7 @@ bool ZigbeeStelproH420Thermostat::getGenericAttribute(uint16_t cluster_id, uint1
   const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
   const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
 
-  logEntry("Reading attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
+  // logEntry("Reading attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
 
   esp_zb_lock_acquire(portMAX_DELAY);
   
@@ -577,7 +578,7 @@ bool ZigbeeStelproH420Thermostat::setGenericAttribute(uint16_t cluster_id, uint1
   const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
   const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
 
-  logEntry("Writing attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
+  // logEntry("Writing attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
 
   esp_zb_lock_acquire(portMAX_DELAY);
   
@@ -632,15 +633,63 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   esp_zb_attribute_list_t *esp_zb_thermostat_ui_config_cluster_attribute_list = esp_zb_thermostat_ui_config_cluster_create(&thermostat_cfg->thermostat_ui_config_cfg);
 
   // Add additional thermostat attributes
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, &_pi_heating_demand);       logError(err, __FILE__, __LINE__);
+  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, &_pi_heating_demand);       logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID, &_running_state);    logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID, &_outdoor_temperature);   logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID, &_occupancy);                       logError(err, __FILE__, __LINE__);
 
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID, &_abs_min_heat_setpoint);   logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID, &_abs_max_heat_setpoint);   logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID, &_min_heat_setpoint);           logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID, &_max_heat_setpoint);           logError(err, __FILE__, __LINE__);
+  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID, &_abs_min_heat_setpoint);   logError(err, __FILE__, __LINE__);
+  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID, &_abs_max_heat_setpoint);   logError(err, __FILE__, __LINE__);
+  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID, &_min_heat_setpoint);           logError(err, __FILE__, __LINE__);
+  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID, &_max_heat_setpoint);           logError(err, __FILE__, __LINE__);
+
+  // Force COOLING MIN/MAX SETPOINTS
+  #if 0
+  {
+    // Cooling setpoint limits (even for heating-only thermostats)
+    static int16_t abs_min_cool_setpoint =   500;   //  5°C
+    static int16_t abs_max_cool_setpoint =  3500;   // 35°C
+    static int16_t min_cool_setpoint =       500;   //  5°C
+    static int16_t max_cool_setpoint =      3500;   // 35°C
+
+    // Add cooling limits
+    esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
+        &abs_min_cool_setpoint
+    );
+
+    esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
+        &abs_max_cool_setpoint
+    );
+
+    esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+        &min_cool_setpoint
+    );
+
+    esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster_attribute_list,
+        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
+        ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,
+        ESP_ZB_ZCL_ATTR_TYPE_S16,
+        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+        &max_cool_setpoint
+    );
+  }
+  #endif
 
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   // Add Stelpro custom outdoor temp (0x4001)
