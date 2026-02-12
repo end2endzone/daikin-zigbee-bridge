@@ -607,11 +607,6 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID, &_outdoor_temperature);   logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID, &_occupancy);                       logError(err, __FILE__, __LINE__);
 
-  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID, &_abs_min_heat_setpoint);   logError(err, __FILE__, __LINE__);
-  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID, &_abs_max_heat_setpoint);   logError(err, __FILE__, __LINE__);
-  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID, &_min_heat_setpoint);           logError(err, __FILE__, __LINE__);
-  //err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID, &_max_heat_setpoint);           logError(err, __FILE__, __LINE__);
-
   // Force HEATING MIN/MAX SETPOINTS
   #if 1
   {
@@ -622,45 +617,10 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     static int16_t max_heat_setpoint =      STELPRO_MAX_HEAT_SETPOINT;
 
     // Add attribute limits
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-        &abs_min_heat_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
-
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-        &abs_max_heat_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
-
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-        &min_heat_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
-
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-        &max_heat_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID, &abs_min_heat_setpoint);   ZB_LOG_ERROR(err);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID, &abs_max_heat_setpoint);   ZB_LOG_ERROR(err);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,     &min_heat_setpoint);       ZB_LOG_ERROR(err);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID,     &max_heat_setpoint);       ZB_LOG_ERROR(err);
   }
   #endif
 
@@ -674,45 +634,10 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     static int16_t max_cool_setpoint =      STELPRO_MAX_COOL_SETPOINT;
 
     // Add attribute limits
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-        &abs_min_cool_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
-
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-        &abs_max_cool_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
-
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-        &min_cool_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
-
-    err = esp_zb_cluster_add_attr(
-        esp_zb_thermostat_cluster_attribute_list,
-        ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-        ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,
-        ESP_ZB_ZCL_ATTR_TYPE_S16,
-        ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-        &max_cool_setpoint
-    );
-    logError(err, __FILE__, __LINE__);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID, &abs_min_cool_setpoint);   ZB_LOG_ERROR(err);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID, &abs_max_cool_setpoint);   ZB_LOG_ERROR(err);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,     &min_cool_setpoint);       ZB_LOG_ERROR(err);
+    err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster_attribute_list, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,     &max_cool_setpoint);       ZB_LOG_ERROR(err);
   }
   #endif
 
