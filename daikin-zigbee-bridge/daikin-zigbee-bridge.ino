@@ -40,6 +40,7 @@
 #include <SoftTimers.h>
 #include "logging.h"
 #include "scope_debugger.h"
+#include "zb_helper.h"
 
 #ifdef ENABLE_DAIKINHTTP
 #include <WiFi.h>
@@ -53,7 +54,12 @@
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
 
 // Temperature simulation timing
-#define TEMP_SIMULATION_UPDATE_INTERVAL 10000   // 10 seconds
+#define SIMULATION_UPDATE_INTERVAL            10000 // 10 seconds
+#define SIMULATION_DEFAULT_ROOM_TEMPERATURE   2200  // 22.0°C
+#define SIMULATION_TEMPERATURE_DIFF_HIGH       500  //  5.0°C
+#define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
+#define SIMULATION_TEMPERATURE_STEP_HIGH      (5 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
+#define SIMULATION_TEMPERATURE_SETPOINT       3000  // 30.0°C
 
 // Factory reset delay
 #define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
@@ -178,7 +184,7 @@ void daikinSetup() {
 //                          Reset/init functions
 // -------------------------------------------------------------------------
 void initTempSimulationUpdateTimer() {
-  tempSimulationUpdateTimer.setTimeOutTime(TEMP_SIMULATION_UPDATE_INTERVAL);
+  tempSimulationUpdateTimer.setTimeOutTime(SIMULATION_UPDATE_INTERVAL);
   tempSimulationUpdateTimer.reset();
 }
 
@@ -230,22 +236,22 @@ void simulateTemperature() {
   
   // Simulate temperature based on heating demand
   if (system_mode == THERMOSTAT_SYSTEM_MODE_OFF) {
-    // When off, temperature drifts toward room temp (21.0°C)
-    if (current_temp > STELPRO_DEFAULT_TEMPERATURE) {
-      current_temp -= 10;  // Cool down 0.1°C
-    } else if (current_temp < STELPRO_DEFAULT_TEMPERATURE) {
-      current_temp += 10;  // Warm up 0.1°C
+    // When off, temperature drifts toward room temp
+    if (current_temp > SIMULATION_DEFAULT_ROOM_TEMPERATURE) {
+      current_temp -= SIMULATION_TEMPERATURE_STEP_LOW;  // Cool down to room temperature
+    } else if (current_temp < SIMULATION_DEFAULT_ROOM_TEMPERATURE) {
+      current_temp += SIMULATION_TEMPERATURE_STEP_LOW;  // Warm up to room temperature
     }
   } else {
     // When heating, temperature moves toward setpoint
-    if (current_temp < setpoint - 50) {
-      current_temp += 20;  // Heat faster when far from setpoint
+    if (current_temp < setpoint - SIMULATION_TEMPERATURE_DIFF_HIGH ) {
+      current_temp += SIMULATION_TEMPERATURE_STEP_HIGH;   // Heat faster when far from setpoint
     } else if (current_temp < setpoint) {
-      current_temp += 10;  // Heat slower when close
-    } else if (current_temp > setpoint + 50) {
-      current_temp -= 20;  // Cool faster when too hot
+      current_temp += SIMULATION_TEMPERATURE_STEP_LOW;    // Heat slower when close to setpoint
+    } else if (current_temp > setpoint + SIMULATION_TEMPERATURE_DIFF_HIGH) {
+      current_temp -= SIMULATION_TEMPERATURE_STEP_HIGH;   // Cool faster when too hot
     } else if (current_temp > setpoint) {
-      current_temp -= 10;  // Cool slower when close
+      current_temp -= SIMULATION_TEMPERATURE_STEP_LOW;    // Cool slower when close
     }
   }
   
@@ -272,7 +278,7 @@ void simulateTemperature() {
 // -------------------------------------------------------------------------
 
 void onIdentify(uint16_t time) {
-  logEntry("Identify called for %d seconds", time);
+  logEntry("Identify time changed to: %d seconds", time);
   if (time > 0) {
     // Enable identifyTimer timer. This will trigger the LED blinking feedback
     identifyTimer.setTimeOutTime(time * 1000);
@@ -301,7 +307,7 @@ void onDisplayModeChange(uint8_t mode) {
 }
 
 void onKeypadLockoutChange(uint8_t lockout) {
-  logEntry("System keypad lockout changed from coordinator to: %d", lockout);
+  logEntry("System keypad lockout changed from coordinator to: %d, %s", lockout, zb_zcl_thermostat_ui_config_keypad_lockout_to_string((zb_zcl_thermostat_ui_config_keypad_lockout_t)lockout));
 }
 
 // -------------------------------------------------------------------------
@@ -429,6 +435,9 @@ void setup() {
   // Connected - switch to blue pulse
   updateLEDStatus();
   blinker.loop();
+  
+  // Initialize simulation stuff
+  zbThermostat.setHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
 }
 
 void loop() {

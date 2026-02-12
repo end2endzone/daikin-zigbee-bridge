@@ -26,10 +26,11 @@
 #define STELPRO_MODEL_NAME "HT402"
 
 // Default Stelpro thermostat values (in hundredths of degrees Celsius)
-#define STELPRO_DEFAULT_TEMPERATURE           2100  // 22.0°C
+#define STELPRO_DEFAULT_TEMPERATURE           2200  // 22.0°C
 #define STELPRO_DEFAULT_HEATING_SETPOINT      2000  // 20.0°C
 #define STELPRO_MIN_HEAT_SETPOINT              500  //  5.0°C
 #define STELPRO_MAX_HEAT_SETPOINT             3000  // 30.0°C
+#define STELPRO_TEMP_MEASUREMENT_TOLERANCE      50  //  0.5°C
 
 // HT402 only supports HEAT mode
 #define THERMOSTAT_SYSTEM_MODE_OFF 0x00
@@ -225,6 +226,8 @@ private:
   uint8_t _display_mode;
   int16_t _min_heat_setpoint;
   int16_t _max_heat_setpoint;
+  int16_t _abs_min_heat_setpoint;
+  int16_t _abs_max_heat_setpoint;
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
   // Metering cluster variables
