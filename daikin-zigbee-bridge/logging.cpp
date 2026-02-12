@@ -19,3 +19,11 @@ void logEntry(const char* fmt, ...) {
   // Also output on the serial port. 
   Serial.println(buffer);
 }
+
+void logError(esp_err_t err, const char * file, int line) {
+  if (err == ESP_OK)
+    return;
+  const char * err_name = esp_err_to_name(err);
+  logEntry("Error in file %s, line %d: 0x%04x, %s", file, line, err, err_name);
+}
+
