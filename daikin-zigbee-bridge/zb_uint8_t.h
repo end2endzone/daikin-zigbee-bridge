@@ -17,4 +17,4 @@ typedef struct esp_zb_uint8_s {
 zb_uint8_t;
 */
 
-typedef uint8_t zb_uint8_t
+typedef uint8_t zb_uint8_t;

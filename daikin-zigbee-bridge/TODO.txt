@@ -1,2 +1,3 @@
 - Implement Temperature Measurement Sensor Cluster
   https://docs.silabs.com/zigbee/8.2.2/zigbee-fundamentals/06-zigbee-cluster-library#example-temperature-measurement-sensor-cluster
+- Move attribute change callback such as _on_setpoint_change() after the confirmation that esp_zb_zcl_set_attribute_val() is successful
