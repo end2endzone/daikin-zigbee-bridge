@@ -147,54 +147,86 @@ public:
   ~ZigbeeStelproH420Thermostat() {}
 
   // Callback setters
-  void onTemperatureChange(void (*callback)(int16_t)) {
-    _on_temperature_change = callback;
-  }
-  void onOutdoorTemperatureChange(void (*callback)(int16_t)) {
-    _on_outdoor_temperature_change = callback;
+  // Thermostat cluster
+  void onLocalTemperatureChange(void (*callback)(int16_t)) {
+    callbacks._on_local_temperature_change = callback;
   }
   void onOccupiedCoolSetpointChange(void (*callback)(int16_t)) {
-    _on_occupied_cool_setpoint_change = callback;
+    callbacks._on_occupied_cool_setpoint_change = callback;
   }
   void onOccupiedHeatSetpointChange(void (*callback)(int16_t)) {
-    _on_occupied_heat_setpoint_change = callback;
+    callbacks._on_occupied_heat_setpoint_change = callback;
   }
   void onSystemModeChange(void (*callback)(uint8_t)) {
-    _on_system_mode_change = callback;
+    callbacks._on_system_mode_change = callback;
   }
-  void onPIHeatingDemandChange(void (*callback)(uint8_t)) {
-    _on_pi_heating_demand_change = callback;
-  }
-  void onRunningStateChange(void (*callback)(uint16_t)) {
-    _on_running_state_change = callback;
-  }
+  // Thermostat UI cluster
   void onDisplayModeChange(void (*callback)(uint8_t)) {
-    _on_display_mode_change = callback;
+    callbacks._on_display_mode_change = callback;
   }
   void onKeypadLockoutChange(void (*callback)(uint8_t)) {
-    _on_keypad_lockout_change = callback;
+    callbacks._on_keypad_lockout_change = callback;
   }
+  // Thermostat cluster, additional attributes
+  void onRunningStateChange(void (*callback)(uint16_t)) {
+    callbacks._on_running_state_change = callback;
+  }
+  void onPIHeatingDemandChange(void (*callback)(uint8_t)) {
+    callbacks._on_pi_heating_demand_change = callback;
+  }
+  void onOutdoorTemperatureChange(void (*callback)(int16_t)) {
+    callbacks._on_outdoor_temperature_change = callback;
+  }
+  void onOccupancyChange(void (*callback)(zb_uint8_t)) {
+    callbacks._on_occupancy_change = callback;
+  } 
 
-  // Getters for current values
-  bool getLocalTemperature(int16_t& output) const           { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID,           output); }
-  bool getOccupiedCoolingSetpoint(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID,   output); }
-  bool getOccupiedHeatingSetpoint(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID,   output); }
-  bool getSystemMode(uint8_t& output) const                 { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID,                 output); }
-  uint8_t getPIHeatingDemand() const { return _pi_heating_demand; }
-  uint16_t getRunningState() const { return _running_state; }
-  int16_t getOutdoorTemperature() const { return _outdoor_temperature; }
+  // Zigbee atributes getters
+  // Thermostat cluster
+  bool getLocalTemperature(int16_t& output) const               { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID,                         output); }
+  bool getOccupiedCoolingSetpoint(int16_t& output) const        { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID,                 output); }
+  bool getOccupiedHeatingSetpoint(int16_t& output) const        { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID,                 output); }
+  bool getControlSequenceOfOperation(uint8_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID,                               output); }
+  bool getSystemMode(uint8_t& output) const                     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_CONTROL_SEQUENCE_OF_OPERATION_ID,             output); }
+  // Thermostat UI cluster
+  bool getTemperatureDisplayMode(uint8_t& output) const         { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID,        output); }
+  bool getKeypadLockout(uint8_t& output) const                  { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID,                  output); }
+  // Thermostat cluster, additional attributes
+  bool getRunningState(uint16_t& output) const                  { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID,                  output); }
+  bool getPIHeatingDemand(uint8_t& output) const                { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID,                         output); }
+  bool getOutdoorTemperature(int16_t& output) const             { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID,                       output); }
+  bool getOccupancy(zb_uint8_t& output) const                   { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID,                                 output); }
+  // Heating setpoints limits
+  bool getMinHeatingSetpointLimit(int16_t& output) const        { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,                   output); }
+  bool getMaxHeatingSetpointLimit(int16_t& output) const        { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID,                   output); }
+  bool getAbsMinHeatingSetpointLimit(int16_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID,               output); }
+  bool getAbsMaxHeatingSetpointLimit(int16_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID,               output); }
+  // Cooling setpoints limits
+  bool getMinCoolingSetpointLimit(int16_t& output) const        { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,                   output); }
+  bool getMaxCoolingSetpointLimit(int16_t& output) const        { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,                   output); }
+  bool getAbsMinCoolingSetpointLimit(int16_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID,               output); }
+  bool getAbsMaxCoolingSetpointLimit(int16_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,               output); }
+
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   int16_t getStelproOutdoorTemp() const { return _stelpro_outdoor_temp; }
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
-  // Setters (update Zigbee attributes)
+  // Zigbee atributes setters
+  // Thermostat cluster
   bool setLocalTemperature(int16_t temperature);
   bool setOccupiedCoolingSetpoint(int16_t setpoint);
   bool setOccupiedHeatingSetpoint(int16_t setpoint);
+  bool setControlSequenceOfOperation(uint8_t csop);
   bool setSystemMode(uint8_t mode);
+  // Thermostat UI cluster
+  bool setTemperatureDisplayMode(uint8_t temperature);
+  bool setKeypadLockout(uint8_t lockout);
+  // Thermostat cluster, additional attributes
+  bool setRunningState(uint16_t running);
   bool setPIHeatingDemand(uint8_t demand);
-  bool setRunningState(uint16_t state);
   bool setOutdoorTemperature(int16_t temperature);
+  bool setOccupancy(zb_uint8_t occupancy);
+
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   bool setStelproOutdoorTemp(int16_t temperature);
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
@@ -205,23 +237,8 @@ public:
   bool setCurrentSummationDelivered(uint64_t energy_wh);
 #endif // ENABLE_STELPRO_POWER_MEASUREMENTS
 
-  // Heating setpoints limits
-  bool getMinHeatingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID,      output); }
-  bool getMaxHeatingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID,      output); }
-  bool getAbsMinHeatingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID,  output); }
-  bool getAbsMaxHeatingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID,  output); }
-  
-  // Cooling setpoints limits
-  bool getMinCoolingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID,      output); }
-  bool getMaxCoolingSetpointLimit(int16_t& output) const    { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,      output); }
-  bool getAbsMinCoolingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID,  output); }
-  bool getAbsMaxCoolingSetpointLimit(int16_t& output) const { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,  output); }
-
-
   // Update energy calculations (call in loop)
   void updateEnergy();
-
-  void debugClusterList();
 
 private:
   bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const;
@@ -273,27 +290,32 @@ private:
   esp_zb_cluster_list_t *zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *thermostat_cfg);
 
   // Callback functions
-  void (*_on_temperature_change)(int16_t);
-  void (*_on_occupied_cool_setpoint_change)(int16_t);
-  void (*_on_occupied_heat_setpoint_change)(int16_t);
-  void (*_on_system_mode_change)(uint8_t);
-  void (*_on_outdoor_temperature_change)(int16_t);
-  void (*_on_pi_heating_demand_change)(uint8_t);
-  void (*_on_running_state_change)(uint16_t);
-  void (*_on_display_mode_change)(uint8_t);
-  void (*_on_keypad_lockout_change)(uint8_t);
+  typedef struct zb_zcl_thermostat_callbacks_s {
+    // Thermostat cluster
+    void (*_on_local_temperature_change)(int16_t);
+    void (*_on_occupied_cool_setpoint_change)(int16_t);
+    void (*_on_occupied_heat_setpoint_change)(int16_t);
+    void (*_on_control_sequence_of_operation_change)(uint8_t);
+    void (*_on_system_mode_change)(uint8_t);
+    // Thermostat UI cluster
+    void (*_on_display_mode_change)(uint8_t);
+    void (*_on_keypad_lockout_change)(uint8_t);
+    // Thermostat cluster, additional attributes
+    void (*_on_running_state_change)(uint16_t);
+    void (*_on_pi_heating_demand_change)(uint8_t);
+    void (*_on_outdoor_temperature_change)(int16_t);
+    void (*_on_occupancy_change)(zb_uint8_t);
+  } zb_zcl_thermostat_callbacks_t;
+  zb_zcl_thermostat_callbacks_t callbacks;
 
   // Thermostat state variables
-  int16_t _outdoor_temperature;
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   int16_t _stelpro_outdoor_temp;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  uint8_t _pi_heating_demand;
   uint16_t _running_state;
-  uint8_t _temperature_display_mode; // type ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM
-  uint8_t _keypad_lockout;
+  uint8_t _pi_heating_demand;
+  int16_t _outdoor_temperature;
   zb_uint8_t _occupancy;
-  uint8_t _display_mode;
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
   // Metering cluster variables
