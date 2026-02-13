@@ -8,6 +8,28 @@
 #include "zb_debug.h"
 #include "zb_helper.h"
 
+void logUnexpectedDataTypeReceived(uint16_t cluster_id, esp_zb_zcl_attr_type_t actual_type_id, uint16_t expected_type_id, uint16_t attr_id) {
+  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
+  esp_zb_zcl_attr_type_t actual_type = (esp_zb_zcl_attr_type_t)actual_type_id;
+  esp_zb_zcl_attr_type_t expected_type = (esp_zb_zcl_attr_type_t)expected_type_id;
+
+  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
+  const char* actual_name = zb_constants_zcl_attr_type_to_string(actual_type);
+  const char* expected_name = zb_constants_zcl_attr_type_to_string(expected_type);
+  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
+
+  logEntry( "Unexpected data type received: cluster=%s, attr=%s, expected=%s, actual=%s", cluster_name, attr_name, expected_name, actual_name);
+}
+
+void logUnhandledMessageError(uint16_t cluster_id, uint16_t attr_id) {
+  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
+
+  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
+  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
+
+  logEntry("Received unknown message: cluster=%s (0x%04x), attr=%s (0x%04x)", cluster_name, cluster_id, attr_name, attr_id );
+}
+
 ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : ZigbeeEP(endpoint) {
   /*
   // HACK for debugging logEntry() calls since ZigbeeStelproH420Thermostat as a static object before setup() is called.
@@ -26,7 +48,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _stelpro_outdoor_temp = 0;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
-  // Create cluster configuration
+  // logUnexpectedDataTypeReceivedration
   zigbee_stelpro_thermostat_cfg_t thermostat_cfg = ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG();
   _cluster_list = zigbee_stelpro_thermostat_clusters_create(&thermostat_cfg);
 
@@ -48,28 +70,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
 #endif // ENABLE_STELPRO_POWER_MEASUREMENTS
 }
 
-void logInvalidAttrDataType(uint16_t cluster_id, esp_zb_zcl_attr_type_t actual_type_id, uint16_t expected_type_id, uint16_t attr_id) {
-  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
-  esp_zb_zcl_attr_type_t actual_type = (esp_zb_zcl_attr_type_t)actual_type_id;
-  esp_zb_zcl_attr_type_t expected_type = (esp_zb_zcl_attr_type_t)expected_type_id;
-
-  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
-  const char* actual_name = zb_constants_zcl_attr_type_to_string(actual_type);
-  const char* expected_name = zb_constants_zcl_attr_type_to_string(expected_type);
-  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
-
-  logEntry( "Unexpected data type received: cluster=%s, attr=%s, expected=%s, actual=%s", cluster_name, attr_name, expected_name, actual_name);
-}
-
-void logUnknownAttrDataType(uint16_t cluster_id, uint16_t attr_id) {
-  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
-
-  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
-  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
-
-  logEntry("Received unknown message: cluster=%s (0x%04x), attr=%s (0x%04x)", cluster_name, cluster_id, attr_name, attr_id );
-}
-
 void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) {
   // Handle incoming Zigbee attribute changes.
   // When this function is called, the internal memory of the attribute is already updated.
@@ -82,7 +82,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
           return;
         }
         int16_t new_temperature = *(int16_t *)message->attribute.data.value;
@@ -100,7 +100,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
           return;
         }
         int16_t new_setpoint = *(int16_t *)message->attribute.data.value;
@@ -118,7 +118,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
           return;
         }
         int16_t new_setpoint = *(int16_t *)message->attribute.data.value;
@@ -136,7 +136,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM, message->attribute.id);
           return;
         }
         uint8_t new_mode = *(uint8_t *)message->attribute.data.value;
@@ -155,7 +155,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_U16) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U16, message->attribute.id);
           return;
         }
         uint16_t new_running_state = *(uint16_t *)message->attribute.data.value;
@@ -173,7 +173,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_U8) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U8, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U8, message->attribute.id);
           return;
         }
         uint8_t new_pi_heating_demand = *(uint8_t *)message->attribute.data.value;
@@ -191,7 +191,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
           return;
         }
         int16_t new_outdoor_temperature = *(int16_t *)message->attribute.data.value;
@@ -209,7 +209,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U16, message->attribute.id);
           return;
         }
         uint8_t new_occupancy = *(uint8_t *)message->attribute.data.value;
@@ -228,7 +228,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
           return;
         }
 
@@ -244,7 +244,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
       default:
-        logUnknownAttrDataType(message->info.cluster, message->attribute.id);
+        logUnhandledMessageError(message->info.cluster, message->attribute.id);
         break;
     }
   }
@@ -255,7 +255,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_U8) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U8, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U8, message->attribute.id);
           return;
         }
         uint8_t new_display_mode = *(uint8_t *)message->attribute.data.value;
@@ -273,7 +273,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       {
         if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM) {
           // ERROR
-          logInvalidAttrDataType(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM, message->attribute.id);
+          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM, message->attribute.id);
           return;
         }
         uint8_t new_keypad_lockout = *(uint8_t *)message->attribute.data.value;
@@ -288,13 +288,13 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
       }
 
       default:
-        logUnknownAttrDataType(message->info.cluster, message->attribute.id);
+        logUnhandledMessageError(message->info.cluster, message->attribute.id);
         break;
     };
   }
   else {
     // ERROR
-    logUnknownAttrDataType(message->info.cluster, message->attribute.id);
+    logUnhandledMessageError(message->info.cluster, message->attribute.id);
   }
 }
 
@@ -357,7 +357,7 @@ bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
 
 // Thermostat UI cluster
 bool ZigbeeStelproH420Thermostat::setTemperatureDisplayMode(uint8_t mode) {
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID, mode);
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID, mode);
   if (!success)
     return false;
 
@@ -368,7 +368,7 @@ bool ZigbeeStelproH420Thermostat::setTemperatureDisplayMode(uint8_t mode) {
 }
 
 bool ZigbeeStelproH420Thermostat::setKeypadLockout(uint8_t lockout) {
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID, lockout);
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID, lockout);
   if (!success)
     return false;
 
@@ -553,7 +553,8 @@ bool ZigbeeStelproH420Thermostat::getGenericAttribute(uint16_t cluster_id, uint1
   // assert attr size
   attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
   if (attr_size != output_size) {
-    logEntry("Unexpected attribute size for attribute 0x%04x (%s) of cluster 0x%04x (%s). Output size:%d Attribute size:%d", attr_id, attr_name, cluster_id, cluster_name, output_size, attr_size);
+    logEntry( "Assertion failed to read attribute 0x%04x (%s) of cluster 0x%04x (%s): output value size (%d bytes) does not match registered attribute size (%d bytes). "
+              "Attribute type is registered as %s.", attr_id, attr_name, cluster_id, cluster_name, output_size, attr_size, zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr->type));
     ret = false;
     goto unlock_and_return;
   }
@@ -597,7 +598,8 @@ bool ZigbeeStelproH420Thermostat::setGenericAttribute(uint16_t cluster_id, uint1
   // assert attr size
   attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
   if (attr_size != value_size) {
-    logEntry("Unexpected attribute size from cluster 0x%04x (%s) attribute 0x%04x (%s). Output size:%d Attribute size:%d", cluster_id, cluster_name, attr_id, attr_name, value_size, attr_size);
+    logEntry( "Assertion failed to write attribute 0x%04x (%s) of cluster 0x%04x (%s): new value size (%d bytes) does not match registered attribute size (%d bytes). "
+              "Attribute type is registered as %s.", attr_id, attr_name, cluster_id, cluster_name, value_size, attr_size, zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr->type));
     ret = false;
     goto unlock_and_return;
   }

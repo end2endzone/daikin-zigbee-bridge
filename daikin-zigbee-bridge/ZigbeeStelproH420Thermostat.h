@@ -14,6 +14,7 @@
 #include "zcl/esp_zigbee_zcl_thermostat.h"
 #include "zcl/esp_zigbee_zcl_thermostat_ui_config.h"
 #include "esp_zigbee_type.h"
+#include "logging.h"
 
 #ifdef USE_ENERGY_CALCULATOR
 #include "EnergyCalculator.h"
@@ -157,6 +158,9 @@ public:
   void onOccupiedHeatSetpointChange(void (*callback)(int16_t)) {
     callbacks._on_occupied_heat_setpoint_change = callback;
   }
+  void onControlSequenceOfOperationChange(void (*callback)(uint8_t)) {
+    callbacks._on_control_sequence_of_operation_change = callback;
+  }
   void onSystemModeChange(void (*callback)(uint8_t)) {
     callbacks._on_system_mode_change = callback;
   }
@@ -189,8 +193,8 @@ public:
   bool getControlSequenceOfOperation(uint8_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID,                               output); }
   bool getSystemMode(uint8_t& output) const                     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_CONTROL_SEQUENCE_OF_OPERATION_ID,             output); }
   // Thermostat UI cluster
-  bool getTemperatureDisplayMode(uint8_t& output) const         { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID,        output); }
-  bool getKeypadLockout(uint8_t& output) const                  { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID,                  output); }
+  bool getTemperatureDisplayMode(uint8_t& output) const         { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID,        output); }
+  bool getKeypadLockout(uint8_t& output) const                  { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID,                  output); }
   // Thermostat cluster, additional attributes
   bool getRunningState(uint16_t& output) const                  { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID,                  output); }
   bool getPIHeatingDemand(uint8_t& output) const                { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID,                         output); }
@@ -244,32 +248,9 @@ private:
   bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const;
   bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const void* value_ptr, size_t value_size) const;
 public:
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, uint8_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, uint16_t& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, uint32_t& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, uint64_t& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, int8_t&   output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, int16_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, int32_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, int64_t&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_int24_s&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_uint24_s& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_uint48_s& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
-  inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, esp_zb_int48_s&  output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(output)); }
+  template<typename T> inline bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, T& output) const { return getGenericAttribute(cluster_id, attr_id, &output, sizeof(T)); }
+  template<typename T> inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, T& output) const { return setGenericAttribute(cluster_id, attr_id, &output, sizeof(T)); }
 
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const uint8_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const uint16_t& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const uint32_t& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const uint64_t& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const int8_t&   value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const int16_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const int32_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const int64_t&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_int24_s&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_uint24_s& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_uint48_s& value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-  inline bool setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const esp_zb_int48_s&  value) const { return setGenericAttribute(cluster_id, attr_id, &value, sizeof(value)); }
-    
 private:
   void zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) override;
   

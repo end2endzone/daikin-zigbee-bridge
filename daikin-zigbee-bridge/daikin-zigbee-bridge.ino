@@ -222,7 +222,7 @@ void longClickDetected(Button2& btn) {
 // -------------------------------------------------------------------------
 
 void printAllAttributes() {
-  LOG_SCOPE;
+  logEntry("attributes: {");
 
   // Thermostat cluster
   {
@@ -231,19 +231,19 @@ void printAllAttributes() {
     int16_t actual_occupied_heating_setpoint        = 0;
     uint8_t actual_control_sequence_of_operation    = 0;
     uint8_t actual_system_mode                      = 0;
-    if (zbThermostat.getLocalTemperature(           actual_local_temperature              ))    logEntry("actual_local_temperature=%d",             actual_local_temperature);
-    if (zbThermostat.getOccupiedCoolingSetpoint(    actual_occupied_cooling_setpoint      ))    logEntry("actual_occupied_cooling_setpoint=%d",     actual_occupied_cooling_setpoint);
-    if (zbThermostat.getOccupiedHeatingSetpoint(    actual_occupied_heating_setpoint      ))    logEntry("actual_occupied_heating_setpoint=%d",     actual_occupied_heating_setpoint);
-    if (zbThermostat.getControlSequenceOfOperation( actual_control_sequence_of_operation  ))    logEntry("actual_control_sequence_of_operation=%d", actual_control_sequence_of_operation);
-    if (zbThermostat.getSystemMode(                 actual_system_mode                    ))    logEntry("actual_system_mode=%d",                   actual_system_mode);
+    if (zbThermostat.getLocalTemperature(           actual_local_temperature              ))    logEntry("  actual_local_temperature=%d",             actual_local_temperature);
+    if (zbThermostat.getOccupiedCoolingSetpoint(    actual_occupied_cooling_setpoint      ))    logEntry("  actual_occupied_cooling_setpoint=%d",     actual_occupied_cooling_setpoint);
+    if (zbThermostat.getOccupiedHeatingSetpoint(    actual_occupied_heating_setpoint      ))    logEntry("  actual_occupied_heating_setpoint=%d",     actual_occupied_heating_setpoint);
+    if (zbThermostat.getControlSequenceOfOperation( actual_control_sequence_of_operation  ))    logEntry("  actual_control_sequence_of_operation=%d", actual_control_sequence_of_operation);
+    if (zbThermostat.getSystemMode(                 actual_system_mode                    ))    logEntry("  actual_system_mode=%d",                   actual_system_mode);
   }
 
   // Thermostat UI cluster
   {
     uint8_t actual_temperature_display_mode     = 0;
     uint8_t actual_keypad_lockout               = 0;
-    if (zbThermostat.getTemperatureDisplayMode( actual_temperature_display_mode       ))    logEntry("actual_temperature_display_mode=%d",            actual_temperature_display_mode);
-    if (zbThermostat.getKeypadLockout(          actual_keypad_lockout                 ))    logEntry("actual_keypad_lockout=%d",                      actual_keypad_lockout);
+    if (zbThermostat.getTemperatureDisplayMode( actual_temperature_display_mode       ))    logEntry("  actual_temperature_display_mode=%d",            actual_temperature_display_mode);
+    if (zbThermostat.getKeypadLockout(          actual_keypad_lockout                 ))    logEntry("  actual_keypad_lockout=%d",                      actual_keypad_lockout);
   }
 
   // Thermostat cluster, additional attributes
@@ -252,10 +252,10 @@ void printAllAttributes() {
     uint8_t     actual_pi_heating_demand          = 0;
     int16_t     actual_outdoor_temperature        = 0;
     zb_uint8_t  actual_occupancy                  = 0;
-    if (zbThermostat.getRunningState(       actual_running_state                     ))    logEntry("actual_running_state=%d",              actual_running_state);
-    if (zbThermostat.getPIHeatingDemand(    actual_pi_heating_demand                 ))    logEntry("actual_pi_heating_demand=%d",          actual_pi_heating_demand);
-    if (zbThermostat.getOutdoorTemperature( actual_outdoor_temperature               ))    logEntry("actual_outdoor_temperature=%d",        actual_outdoor_temperature);
-    if (zbThermostat.getOccupancy(          actual_occupancy                         ))    logEntry("actual_occupancy=%d",                  actual_occupancy);
+    if (zbThermostat.getRunningState(       actual_running_state                     ))    logEntry("  actual_running_state=%d",              actual_running_state);
+    if (zbThermostat.getPIHeatingDemand(    actual_pi_heating_demand                 ))    logEntry("  actual_pi_heating_demand=%d",          actual_pi_heating_demand);
+    if (zbThermostat.getOutdoorTemperature( actual_outdoor_temperature               ))    logEntry("  actual_outdoor_temperature=%d",        actual_outdoor_temperature);
+    if (zbThermostat.getOccupancy(          actual_occupancy                         ))    logEntry("  actual_occupancy=%d",                  actual_occupancy);
 
     // Heating setpoints
     {
@@ -263,10 +263,10 @@ void printAllAttributes() {
       int16_t actual_max_heat_setpoint      = 0;
       int16_t actual_abs_min_heat_setpoint  = 0;
       int16_t actual_abs_max_heat_setpoint  = 0;
-      if (zbThermostat.getMinHeatingSetpointLimit(    actual_min_heat_setpoint    ))    logEntry("actual_min_heat_setpoint=%d",     actual_min_heat_setpoint);
-      if (zbThermostat.getMaxHeatingSetpointLimit(    actual_max_heat_setpoint    ))    logEntry("actual_max_heat_setpoint=%d",     actual_max_heat_setpoint);
-      if (zbThermostat.getAbsMinHeatingSetpointLimit( actual_abs_min_heat_setpoint))    logEntry("actual_abs_min_heat_setpoint=%d", actual_abs_min_heat_setpoint);
-      if (zbThermostat.getAbsMaxHeatingSetpointLimit( actual_abs_max_heat_setpoint))    logEntry("actual_abs_max_heat_setpoint=%d", actual_abs_max_heat_setpoint);
+      if (zbThermostat.getMinHeatingSetpointLimit(    actual_min_heat_setpoint    ))    logEntry("  actual_min_heat_setpoint=%d",     actual_min_heat_setpoint);
+      if (zbThermostat.getMaxHeatingSetpointLimit(    actual_max_heat_setpoint    ))    logEntry("  actual_max_heat_setpoint=%d",     actual_max_heat_setpoint);
+      if (zbThermostat.getAbsMinHeatingSetpointLimit( actual_abs_min_heat_setpoint))    logEntry("  actual_abs_min_heat_setpoint=%d", actual_abs_min_heat_setpoint);
+      if (zbThermostat.getAbsMaxHeatingSetpointLimit( actual_abs_max_heat_setpoint))    logEntry("  actual_abs_max_heat_setpoint=%d", actual_abs_max_heat_setpoint);
     }
 
     // Cooling setpoints
@@ -275,12 +275,14 @@ void printAllAttributes() {
       int16_t actual_max_cool_setpoint      = 0;
       int16_t actual_abs_min_cool_setpoint  = 0;
       int16_t actual_abs_max_cool_setpoint  = 0;
-      if (zbThermostat.getMinCoolingSetpointLimit(    actual_min_cool_setpoint    ))    logEntry("actual_min_cool_setpoint=%d",     actual_min_cool_setpoint);
-      if (zbThermostat.getMaxCoolingSetpointLimit(    actual_max_cool_setpoint    ))    logEntry("actual_max_cool_setpoint=%d",     actual_max_cool_setpoint);
-      if (zbThermostat.getAbsMinCoolingSetpointLimit( actual_abs_min_cool_setpoint))    logEntry("actual_abs_min_cool_setpoint=%d", actual_abs_min_cool_setpoint);
-      if (zbThermostat.getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint))    logEntry("actual_abs_max_cool_setpoint=%d", actual_abs_max_cool_setpoint);
+      if (zbThermostat.getMinCoolingSetpointLimit(    actual_min_cool_setpoint    ))    logEntry("  actual_min_cool_setpoint=%d",     actual_min_cool_setpoint);
+      if (zbThermostat.getMaxCoolingSetpointLimit(    actual_max_cool_setpoint    ))    logEntry("  actual_max_cool_setpoint=%d",     actual_max_cool_setpoint);
+      if (zbThermostat.getAbsMinCoolingSetpointLimit( actual_abs_min_cool_setpoint))    logEntry("  actual_abs_min_cool_setpoint=%d", actual_abs_min_cool_setpoint);
+      if (zbThermostat.getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint))    logEntry("  actual_abs_max_cool_setpoint=%d", actual_abs_max_cool_setpoint);
     }
   }
+
+  logEntry("};");
 }
 
 void simulateTemperature() {
