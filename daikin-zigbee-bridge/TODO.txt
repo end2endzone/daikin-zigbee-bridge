@@ -1,3 +1,7 @@
 - Implement Temperature Measurement Sensor Cluster
   https://docs.silabs.com/zigbee/8.2.2/zigbee-fundamentals/06-zigbee-cluster-library#example-temperature-measurement-sensor-cluster
-- Move attribute change callback such as _on_setpoint_change() after the confirmation that esp_zb_zcl_set_attribute_val() is successful
+- Use ESP_ZB_DEFAULT_THERMOSTAT_CONFIG() from ha\esp_zigbee_ha_standard.h as default config. Overrides some fields with our values to make it Stelpro proof.
+- Create a StelproAttrState structure that contains all getter/setter attributes. Create a getAll() attributes.
+- Create `StelproAttrState _previous;` to compare with previous values.
+- Find out why actual_local_temperature=-1 at initialization. Add code that rounds local_temperature to closest 0.5 degree C.
+- Create a ZigbeeAttribute interface and a ZigbeeAttributeBase. And create multiple template classes that define the specifics for an attribute.
