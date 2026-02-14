@@ -41,6 +41,7 @@
 #include "logging.h"
 #include "scope_debugger.h"
 #include "zb_helper.h"
+#include "ZigbeeAttributeT.hpp"
 
 #ifdef ENABLE_DAIKINHTTP
 #include <WiFi.h>
@@ -282,7 +283,43 @@ void printAllAttributes() {
     }
   }
 
+  ZigbeeAttribute<uint16_t> not_found(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, 0x6666);
+  ZigbeeAttribute<uint16_t> local_temperature(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);
+  ZigbeeAttribute<int32_t> occupied_heating_setpoint(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID);
+  ZigbeeAttribute<uint8_t> ui_config_display_mode(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
+
+  not_found.setup();
+  local_temperature.setup();
+  occupied_heating_setpoint.setup();
+  ui_config_display_mode.setup();
+
+  logEntry("not_found.isInitialized()=%d", not_found.isInitialized());
+  logEntry("local_temperature.isInitialized()=%d", local_temperature.isInitialized());
+  logEntry("occupied_heating_setpoint.isInitialized()=%d", occupied_heating_setpoint.isInitialized());
+  logEntry("ui_config_display_mode.isInitialized()=%d", ui_config_display_mode.isInitialized());
+  logEntry("---");
+
+  local_temperature.set(1500);
+  //local_temperature.writeToZigbee();
+
+  logEntry("not_found.get()=%d", not_found.get());
+  logEntry("local_temperature.get()=%d", local_temperature.get());
+  logEntry("occupied_heating_setpoint.get()=%d", occupied_heating_setpoint.get());
+  logEntry("ui_config_display_mode.get()=%d", ui_config_display_mode.get());
+
+  logEntry("%s", not_found.toString().c_str());
+  logEntry("%s", local_temperature.toString().c_str());
+  logEntry("%s", occupied_heating_setpoint.toString().c_str());
+  logEntry("%s", ui_config_display_mode.toString().c_str());
+
   logEntry("};");
+
+  //logEntry(">>> DEBUG: typeString<int8_t>()='%s'", typeString<int8_t>());
+  //logEntry(">>> DEBUG: typeString<int16_t>()='%s'", typeString<int16_t>());
+  //logEntry(">>> DEBUG: typeString<int32_t>()='%s'", typeString<int32_t>());
+  //logEntry(">>> DEBUG: typeString<uint8_t>()='%s'", typeString<uint8_t>());
+  //logEntry(">>> DEBUG: typeString<uint16_t>()='%s'", typeString<uint16_t>());
+  //logEntry(">>> DEBUG: typeString<uint32_t>()='%s'", typeString<uint32_t>());
 }
 
 void simulateTemperature() {
