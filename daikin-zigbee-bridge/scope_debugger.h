@@ -10,11 +10,11 @@ class ScopeDebugger {
     ScopeDebugger(const char * name, int line) : 
         scope_name(name),
         line(line) {
-      logEntry("<ENTER-%s>, line %d", scope_name, line);
+      logEntry(">>> %s() <ENTER>, line %d", scope_name, line);
     }
 
     ~ScopeDebugger() {
-      logEntry("<LEAVE-%s>", scope_name);
+      logEntry(">>> %s() <LEAVE>", scope_name);
     }
 };
 #define LOG_SCOPE ScopeDebugger scope_debugger(__FUNCTION__,__LINE__);

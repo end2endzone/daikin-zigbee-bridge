@@ -2,6 +2,7 @@
 
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
+#include "type_helper.h"
 
 typedef enum {
   ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK = 0x00,
@@ -83,5 +84,69 @@ static size_t zb_constants_zcl_attr_type_size(esp_zb_zcl_attr_type_t value) {
     case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY:       return 16;
     case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
     default:                                     return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+  }
+}
+
+static TypeSign zb_constants_zcl_attr_type_signed(esp_zb_zcl_attr_type_t value) {
+  switch (value) {
+    case ESP_ZB_ZCL_ATTR_TYPE_NULL:              return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT:              return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_24BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_32BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_40BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_48BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_56BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_64BIT:             return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_BOOL:              return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_8BITMAP:           return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_16BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_24BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_32BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_40BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_48BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_56BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_64BITMAP:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U8:                return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U16:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U24:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U32:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U40:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U48:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U56:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_U64:               return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S8:                return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S16:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S24:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S32:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S40:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S48:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S56:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_S64:               return TYPE_SIGN_SIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM:         return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ENUM:        return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_SEMI:              return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_SINGLE:            return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE:            return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_OCTET_STRING:      return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING:       return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_LONG_OCTET_STRING: return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_LONG_CHAR_STRING:  return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_ARRAY:             return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ARRAY:       return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_32BIT_ARRAY:       return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE:         return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_SET:               return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_BAG:               return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY:       return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_DATE:              return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME:          return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_CLUSTER_ID:        return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_ATTRIBUTE_ID:      return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID:        return TYPE_SIGN_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR:         return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY:       return TYPE_SIGN_UNSIGNED;
+    case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return TYPE_SIGN_UNKNOWN;
+    default:                                     return TYPE_SIGN_UNKNOWN;
   }
 }

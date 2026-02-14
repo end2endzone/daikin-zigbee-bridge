@@ -7,8 +7,6 @@
 template <typename T>
 class ZigbeeAttribute : public ZigbeeAttributeBase
 {
-//private:
-//  T _value;
 public:
   ZigbeeAttribute() : ZigbeeAttributeBase() {
   }
@@ -19,41 +17,39 @@ public:
 
   virtual bool setup()
   {
-    bool result = ZigbeeAttributeBase::setup();
-    if (!result)
+    bool success = ZigbeeAttributeBase::setup();
+    _initialized = false; // force uninitialized again
+    if (!success)
       return false;
 
     // Assert attribute size
     if (_zbAttr == nullptr)
       return false;
-    if (!checkAssertions())
+    if (!isValidationOK())
       return false;
 
-    return true;
-  }
-
-  virtual bool isInitialized() const override {
-    if (!ZigbeeAttributeBase::isInitialized())
-      return false;
-
-    if (!checkAssertions())
-      return false;
-
+    checkInit(); // update _initialized
     return true;
   }
 
   T get() const {
     T value;
+    if (!isInitialized())
+      return value; // garbadge
     bool readed = getGenericAttribute(&value, sizeof(T));
     return value;
   }
 
   bool get(T& value) const {
+    if (!isInitialized())
+      return false; // unread
     bool readed = getGenericAttribute(&value, sizeof(T));
     return readed;
   }
 
   bool set(const T& value) {
+    if (!isInitialized())
+      return false; // unwrite
     bool written = setGenericAttribute(&value, sizeof(T));
     return written;
   }
@@ -67,13 +63,43 @@ public:
   }
 
 protected:
-  bool checkAssertions() const {
-    size_t zb_type_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)_zbAttr->type);
+  bool isValidationOK() const {
+    // Note: Can't check isInitialized() here since
+    // isValidationOK() is called during setup().
+
+    // Check size
+    size_t zb_type_size = getSafeZigbeeAttrSize();
     size_t template_size = sizeof(T);
     if (zb_type_size != template_size) {
-      logEntry("Size assertion failed for attribute %s. Class type is %s", toString().c_str(), typeString<T>());
+      const char * zb_type_desc = getSafeZigbeeAttrTypeDescritor();
+      const char * class_name = typeString<T>();
+      logEntry("*** Size assertion failed for attribute %s ! Zigbee type '%s' size (%d bit) does not match class type '%s' size (%d bit).",
+        toString().c_str(),
+        zb_type_desc,
+        zb_type_size*8,
+        class_name,
+        template_size*8
+        );
       return false;
     }
+
+    // Check signed
+    TypeSign zb_type_sign = getSafeZigbeeAttrTypeSign();
+    TypeSign template_sign = typeSign<T>();
+    
+    if (zb_type_sign != template_sign) {
+      const char * zb_type_desc = getSafeZigbeeAttrTypeDescritor();
+      const char * class_name = typeString<T>();
+      logEntry("*** Sign assertion failed for attribute %s ! Zigbee type '%s' sign (%s) does not match class type '%s' sign (%s).",
+        toString().c_str(),
+        zb_type_desc,
+        ::toString(zb_type_sign),
+        class_name,
+        ::toString(template_sign)
+        );
+      return false;
+    }
+    
     return true;
   }
 };

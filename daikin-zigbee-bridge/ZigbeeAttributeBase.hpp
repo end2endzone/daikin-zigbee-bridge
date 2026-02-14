@@ -10,6 +10,7 @@
 class ZigbeeAttributeBase : public IZigbeeAttribute
 {
 protected:
+  bool _initialized;
   uint8_t _endpoint;
   uint16_t _cluster_id;
   uint16_t _attr_id;
@@ -17,14 +18,16 @@ protected:
 
 public:
   ZigbeeAttributeBase()
-    : _cluster_id(0),
+    : _initialized(false),
+      _cluster_id(0),
       _attr_id(0),
       _endpoint(0),
       _zbAttr(nullptr) {
   }
 
   ZigbeeAttributeBase(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id)
-    : _endpoint(endpoint),
+    : _initialized(false),
+      _endpoint(endpoint),
       _cluster_id(cluster_id),
       _attr_id(attr_id),
       _zbAttr(nullptr) {
@@ -33,13 +36,11 @@ public:
   virtual ~ZigbeeAttributeBase() = default;
 
   virtual bool isInitialized() const override {
-    return (_endpoint != 0 &&
-            _cluster_id != 0 &&
-            _attr_id != 0 &&
-            _zbAttr != nullptr);
+    return _initialized;
   }
 
   virtual bool setup() {
+    _initialized = false;
     bool ret = true;
 
     esp_zb_lock_acquire(portMAX_DELAY);
@@ -61,6 +62,7 @@ public:
 
   unlock_and_return:
     esp_zb_lock_release();
+    checkInit(); // update _initialized
     return ret;
   }
 
@@ -69,7 +71,9 @@ public:
     _cluster_id = cluster_id;
     _attr_id = attr_id;
 
-    return setup();
+    bool success = setup();
+    checkInit(); // update _initialized
+    return success;
   }
 
   virtual uint8_t getEndpoint() const override { return _endpoint; }
@@ -78,9 +82,7 @@ public:
 
   virtual String toString() const override {
     // Compute data pointer
-    void* dataPtr = nullptr;
-    if (_zbAttr != nullptr)
-      dataPtr = _zbAttr->data_p;
+    void* dataPtr = getSafeDataPointer();
 
     // Convert data pointer content to hex
     char value_hex[32] = {0};
@@ -92,13 +94,11 @@ public:
       value_hex[0] = 'N';
       value_hex[1] = 'U';
       value_hex[2] = 'L';
-      value_hex[4] = 'L';
-      value_hex[5] = '\0';
+      value_hex[3] = 'L';
+      value_hex[4] = '\0';
     }
     
-    const char * attr_type_desc = "";
-    if (_zbAttr != nullptr)
-      attr_type_desc = zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)_zbAttr->type);
+    const char * attr_type_desc = getSafeZigbeeAttrTypeDescritor();
 
     esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)_cluster_id;
     const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
@@ -108,6 +108,12 @@ public:
   }
 
 protected:
+  void checkInit() {
+    _initialized = (
+        !(_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) &&
+        _zbAttr != nullptr);
+  }
+
   bool getGenericAttribute(void* output_ptr, size_t output_size) const {
     if (output_ptr == nullptr || output_size == 0)
       return false;
@@ -151,4 +157,31 @@ protected:
     return ret;
   }
 
+  size_t getSafeZigbeeAttrSize() const {
+    size_t attr_size = 0;
+    if (_zbAttr != nullptr)
+      attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)_zbAttr->type);
+    return attr_size;
+  }
+
+  TypeSign getSafeZigbeeAttrTypeSign() const {
+    TypeSign attr_sign = TYPE_SIGN_UNKNOWN;
+    if (_zbAttr != nullptr)
+      attr_sign = zb_constants_zcl_attr_type_signed((esp_zb_zcl_attr_type_t)_zbAttr->type);
+    return attr_sign;
+  }
+
+  const char * getSafeZigbeeAttrTypeDescritor() const {
+    const char * desc = "NULL";
+    if (_zbAttr != nullptr)
+      desc = zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)_zbAttr->type);
+    return desc;
+  }
+
+  void * getSafeDataPointer() const {
+    void * ptr = nullptr;
+    if (_zbAttr != nullptr)
+      ptr = _zbAttr->data_p;
+    return ptr;
+  }
 };
