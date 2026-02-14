@@ -76,12 +76,6 @@ public:
   virtual uint16_t getClusterId() const override { return _cluster_id; }
   virtual uint16_t getAttributeId() const override { return _attr_id; }
 
-  virtual size_t getDataSize() const override {
-    if (_zbAttr == nullptr)
-      return 0;
-    return zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)_zbAttr->type);
-  }
-
   virtual String toString() const override {
     // Compute data pointer
     void* dataPtr = nullptr;
@@ -92,7 +86,7 @@ public:
     char value_hex[32] = {0};
     value_hex[0] = '0';
     value_hex[1] = 'x';
-    toHex(dataPtr, getDataSize(), &value_hex[2]);
+    toHex(dataPtr, size(), &value_hex[2]);
     if (value_hex[2] == '\0') { // if toHex() returned an empty string
       // NULL output
       value_hex[0] = 'N';
@@ -110,7 +104,7 @@ public:
     const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
     const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, _attr_id);
 
-    return format("{endpoint: 0x%02x, attr: 0x%04x (%s), cluster: 0x%04x (%s), type: %s, size: %d, value: %s}", _endpoint, _attr_id, attr_name, _cluster_id, cluster_name, attr_type_desc, getDataSize(), value_hex);
+    return format("{endpoint: 0x%02x, attr: 0x%04x (%s), cluster: 0x%04x (%s), type: %s, size: %d, value: %s}", _endpoint, _attr_id, attr_name, _cluster_id, cluster_name, attr_type_desc, size(), value_hex);
   }
 
 protected:

@@ -7,8 +7,8 @@
 template <typename T>
 class ZigbeeAttribute : public ZigbeeAttributeBase
 {
-private:
-  T _value;
+//private:
+//  T _value;
 public:
   ZigbeeAttribute() : ZigbeeAttributeBase() {
   }
@@ -42,21 +42,28 @@ public:
     return true;
   }
 
-  virtual bool readFromZigbee() override {
-    bool readed = getGenericAttribute(&_value, sizeof(T));
+  T get() const {
+    T value;
+    bool readed = getGenericAttribute(&value, sizeof(T));
+    return value;
+  }
+
+  bool get(T& value) const {
+    bool readed = getGenericAttribute(&value, sizeof(T));
     return readed;
   }
 
-  virtual bool writeToZigbee() override {
-    bool written = setGenericAttribute(&_value, sizeof(T));
+  bool set(const T& value) {
+    bool written = setGenericAttribute(&value, sizeof(T));
     return written;
   }
 
-  T get() const { return _value; }
-  void set(T v) { _value = v; }
+  virtual size_t size() const override {
+    return sizeof(T);
+  }
 
   virtual void *newValue() const {
-    return new uint8_t;
+    return new T;
   }
 
 protected:
