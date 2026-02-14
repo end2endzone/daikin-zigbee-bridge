@@ -29,7 +29,7 @@ static const char* UNKNOWN_CALLBACK_ID = "Unknown Callback";
 static const char* UNKNOWN_SIGNAL_ID = "Unknown Signal";
 static const char* UNKNOWN_SMART_CLUSTER_ATTR = "Unknown Smart Cluster Attribute";
 
-const char* zb_constants_ha_standard_device_id_to_string(esp_zb_ha_standard_devices_t value) {
+static const char* zb_constants_ha_standard_device_id_to_string(esp_zb_ha_standard_devices_t value) {
   switch (value) {
     case ESP_ZB_HA_ON_OFF_SWITCH_DEVICE_ID:              return "General On/Off Switch";
     case ESP_ZB_HA_LEVEL_CONTROL_SWITCH_DEVICE_ID:       return "Level Control Switch";
@@ -72,7 +72,7 @@ const char* zb_constants_ha_standard_device_id_to_string(esp_zb_ha_standard_devi
   }
 }
 
-const char* zb_constants_cluster_id_to_string(esp_zb_zcl_cluster_id_t value) {
+static const char* zb_constants_cluster_id_to_string(esp_zb_zcl_cluster_id_t value) {
   switch (value) {
     case ESP_ZB_ZCL_CLUSTER_ID_BASIC:                       return "Basic";
     case ESP_ZB_ZCL_CLUSTER_ID_POWER_CONFIG:                return "Power Configuration";
@@ -124,7 +124,7 @@ const char* zb_constants_cluster_id_to_string(esp_zb_zcl_cluster_id_t value) {
   }
 }
 
-const char* zb_constants_zcl_status_to_string(esp_zb_zcl_status_t value) {
+static const char* zb_constants_zcl_status_to_string(esp_zb_zcl_status_t value) {
   switch (value) {
     case ESP_ZB_ZCL_STATUS_SUCCESS:               return "ZCL Success";
     case ESP_ZB_ZCL_STATUS_FAIL:                  return "ZCL Fail";
@@ -162,7 +162,7 @@ const char* zb_constants_zcl_status_to_string(esp_zb_zcl_status_t value) {
   }
 }
 
-const char* zb_constants_zcl_attr_type_to_string(esp_zb_zcl_attr_type_t value) {
+static const char* zb_constants_zcl_attr_type_to_string(esp_zb_zcl_attr_type_t value) {
   switch (value) {
     case ESP_ZB_ZCL_ATTR_TYPE_NULL:              return "Null Data Type";
     case ESP_ZB_ZCL_ATTR_TYPE_8BIT:              return "8-bit Value";
@@ -226,7 +226,7 @@ const char* zb_constants_zcl_attr_type_to_string(esp_zb_zcl_attr_type_t value) {
   }
 }
 
-const char* zb_constants_zcl_attr_access_to_string(esp_zb_zcl_attr_access_t value) {
+static const char* zb_constants_zcl_attr_access_to_string(esp_zb_zcl_attr_access_t value) {
   switch (value) {
     case 0:                                   return "Unset"; // UNDOCUMENTED. Assumption
 
@@ -267,7 +267,7 @@ const char* zb_constants_zcl_attr_access_to_string(esp_zb_zcl_attr_access_t valu
   }
 }
 
-const char* zb_constants_zcl_basic_cluster_attr_to_string(esp_zb_zcl_basic_attr_t value) {
+static const char* zb_constants_zcl_basic_cluster_attr_to_string(esp_zb_zcl_basic_attr_t value) {
   switch (value) {
     case ESP_ZB_ZCL_ATTR_BASIC_ZCL_VERSION_ID:              return "ZCL Version";
     case ESP_ZB_ZCL_ATTR_BASIC_APPLICATION_VERSION_ID:      return "Application Version";
@@ -294,7 +294,7 @@ const char* zb_constants_zcl_basic_cluster_attr_to_string(esp_zb_zcl_basic_attr_
   }
 }
 
-const char* zb_constants_zcl_power_config_cluster_attr_to_string(esp_zb_zcl_power_config_attr_t value) {
+static const char* zb_constants_zcl_power_config_cluster_attr_to_string(esp_zb_zcl_power_config_attr_t value) {
   switch (value) {
     /* Mains Attributes */
     case ESP_ZB_ZCL_ATTR_POWER_CONFIG_MAINS_VOLTAGE_ID:            return "Mains Voltage";
@@ -365,7 +365,7 @@ const char* zb_constants_zcl_power_config_cluster_attr_to_string(esp_zb_zcl_powe
   }
 }
 
-const char* zb_constants_zcl_device_temp_config_cluster_attr_to_string(esp_zb_zcl_device_temp_config_attr_e value) {
+static const char* zb_constants_zcl_device_temp_config_cluster_attr_to_string(esp_zb_zcl_device_temp_config_attr_e value) {
   switch (value) {
     case ESP_ZB_ZCL_ATTR_DEVICE_TEMP_CONFIG_CURRENT_TEMP_ID:                return "Current Temperature";
     case ESP_ZB_ZCL_ATTR_DEVICE_TEMP_CONFIG_MIN_TEMP_EXPERIENCED_ID:        return "Minimum Temperature Experienced";
@@ -380,14 +380,14 @@ const char* zb_constants_zcl_device_temp_config_cluster_attr_to_string(esp_zb_zc
   }
 }
 
-const char* zb_constants_zcl_identify_cluster_attr_to_string(esp_zb_zcl_identify_attr_t value) {
+static const char* zb_constants_zcl_identify_cluster_attr_to_string(esp_zb_zcl_identify_attr_t value) {
   switch (value) {
     case ESP_ZB_ZCL_ATTR_IDENTIFY_IDENTIFY_TIME_ID:   return "Identify Time";
     default: return UNKNOWN_IDENTIFY_CLUSTER_ATTR;
   }
 }
 
-const char* zb_constants_zcl_thermostat_cluster_attr_to_string(esp_zb_zcl_thermostat_attr_t value) {
+static const char* zb_constants_zcl_thermostat_cluster_attr_to_string(esp_zb_zcl_thermostat_attr_t value) {
   switch (value) {
     /* Core Temperature & Control Attributes */
     case ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID:             return "Local Temperature";
@@ -457,7 +457,7 @@ const char* zb_constants_zcl_thermostat_cluster_attr_to_string(esp_zb_zcl_thermo
   }
 }
 
-const char* zb_constants_zcl_thermostat_ui_cluster_attr_to_string(esp_zb_zcl_thermostat_ui_config_attr_t value) {
+static const char* zb_constants_zcl_thermostat_ui_cluster_attr_to_string(esp_zb_zcl_thermostat_ui_config_attr_t value) {
   switch (value) {
     case ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID:        return "Temperature Display Mode";
     case ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID:                  return "Keypad Lockout";
@@ -466,7 +466,7 @@ const char* zb_constants_zcl_thermostat_ui_cluster_attr_to_string(esp_zb_zcl_the
   }
 }
 
-const char* zb_constants_zcl_metering_cluster_attr_to_string(esp_zb_zcl_metering_attr_t value) {
+static const char* zb_constants_zcl_metering_cluster_attr_to_string(esp_zb_zcl_metering_attr_t value) {
   switch (value) {
     case ESP_ZB_ZCL_ATTR_METERING_INSTANTANEOUS_DEMAND_ID:            return "Instantaneous Demand";
     case ESP_ZB_ZCL_ATTR_METERING_CURRENT_SUMMATION_DELIVERED_ID:     return "Current Summation Delivered";
@@ -477,7 +477,7 @@ const char* zb_constants_zcl_metering_cluster_attr_to_string(esp_zb_zcl_metering
   }
 }
 
-const char* zb_constants_zdp_status_to_string(esp_zb_zdp_status_t status) {
+static const char* zb_constants_zdp_status_to_string(esp_zb_zdp_status_t status) {
   switch (status) {
     case ESP_ZB_ZDP_STATUS_SUCCESS:            return "Success";
     case ESP_ZB_ZDP_STATUS_INV_REQUESTTYPE:    return "Invalid Request Type";
@@ -499,7 +499,7 @@ const char* zb_constants_zdp_status_to_string(esp_zb_zdp_status_t status) {
   }
 }
 
-const char* zb_constants_core_action_callback_id_to_string(esp_zb_core_action_callback_id_t value) {
+static const char* zb_constants_core_action_callback_id_to_string(esp_zb_core_action_callback_id_t value) {
   switch (value) {
     case ESP_ZB_CORE_SET_ATTR_VALUE_CB_ID:                      return "Set Attribute Value";
     case ESP_ZB_CORE_SCENES_STORE_SCENE_CB_ID:                  return "Scenes Store Scene";
@@ -589,7 +589,7 @@ const char* zb_constants_core_action_callback_id_to_string(esp_zb_core_action_ca
   }
 }
 
-const char* zb_constants_app_signal_type_to_string(esp_zb_app_signal_type_t signal) {
+static const char* zb_constants_app_signal_type_to_string(esp_zb_app_signal_type_t signal) {
   switch (signal) {
     case ESP_ZB_ZDO_SIGNAL_DEFAULT_START:               return "ZDO Default Start";
     case ESP_ZB_ZDO_SIGNAL_SKIP_STARTUP:                return "ZDO Skip Startup";
@@ -630,7 +630,7 @@ const char* zb_constants_app_signal_type_to_string(esp_zb_app_signal_type_t sign
   }
 }
 
-const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_id_t cluster, int value) {
+static const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_id_t cluster, int value) {
   switch (cluster) {
     case ESP_ZB_ZCL_CLUSTER_ID_BASIC:                       return zb_constants_zcl_basic_cluster_attr_to_string((esp_zb_zcl_basic_attr_t)value);
     case ESP_ZB_ZCL_CLUSTER_ID_POWER_CONFIG:                return zb_constants_zcl_power_config_cluster_attr_to_string((esp_zb_zcl_power_config_attr_t)value);
