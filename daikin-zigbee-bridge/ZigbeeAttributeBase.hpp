@@ -39,20 +39,8 @@ public:
             _zbAttr != nullptr);
   }
 
-  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
-    _endpoint = endpoint;
-    _cluster_id = cluster_id;
-    _attr_id = attr_id;
-
-    return setup();
-  }
-
   virtual bool setup() {
-    // TODO: Find the existing esp_zb_zcl_attr_t to initialize _zbAttr
     bool ret = true;
-    size_t attr_size = 0;
-
-    // logEntry("Reading attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
 
     esp_zb_lock_acquire(portMAX_DELAY);
     
@@ -62,7 +50,6 @@ public:
       _cluster_id,
       ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
       _attr_id);
-
     if (attr == nullptr) {
       logEntry("Failed to setup attribute %s", toString().c_str());
       ret = false;
@@ -77,20 +64,18 @@ public:
     return ret;
   }
 
+  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
+    _endpoint = endpoint;
+    _cluster_id = cluster_id;
+    _attr_id = attr_id;
+
+    return setup();
+  }
+
+  virtual uint8_t getEndpoint() const override { return _endpoint; }
   virtual uint16_t getClusterId() const override { return _cluster_id; }
   virtual uint16_t getAttributeId() const override { return _attr_id; }
-  virtual uint8_t getEndpoint() const override { return _endpoint; }
 
-private:
-  /*
-  void* getDataPtr() {
-    if (_zbAttr == nullptr)
-      return nullptr;
-    return _zbAttr->data_p;
-  }
-  */
-
-public:
   virtual size_t getDataSize() const override {
     if (_zbAttr == nullptr)
       return 0;

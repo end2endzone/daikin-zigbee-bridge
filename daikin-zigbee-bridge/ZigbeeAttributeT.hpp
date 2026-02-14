@@ -26,18 +26,20 @@ public:
     // Assert attribute size
     if (_zbAttr == nullptr)
       return false;
-
-    if (!assertDataSize())
+    if (!checkAssertions())
       return false;
 
     return true;
   }
 
   virtual bool isInitialized() const override {
-    if (!assertDataSize())
+    if (!ZigbeeAttributeBase::isInitialized())
       return false;
 
-    return ZigbeeAttributeBase::isInitialized() && (_zbAttr != nullptr);
+    if (!checkAssertions())
+      return false;
+
+    return true;
   }
 
   virtual bool readFromZigbee() override {
@@ -57,9 +59,8 @@ public:
     return new uint8_t;
   }
 
-  //void *getDataPtr() override { return &_value; }
 protected:
-  bool assertDataSize() const {
+  bool checkAssertions() const {
     size_t zb_type_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)_zbAttr->type);
     size_t template_size = sizeof(T);
     if (zb_type_size != template_size) {
