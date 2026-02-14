@@ -24,7 +24,7 @@ static void toHex(uint8_t byte, char *out) {
   out[1] = hex[byte & 0x0F];         // low nibble
 }
 
-void toHex(const void *input, size_t input_size, char *out) {
+static void toHex(const void *input, size_t input_size, char *out) {
   if (out == nullptr) {
     return;
   }
@@ -35,9 +35,15 @@ void toHex(const void *input, size_t input_size, char *out) {
 
   const uint8_t *bytes = (const uint8_t *)input;
 
+  // For each byte in the output string
   for (size_t i = 0; i < input_size; i++) {
-    toHex(bytes[i], out + (i * 2));
-  }
+
+    // Reverse byte read order (to be able to print the value and get the expected 0x12345678)
+    uint8_t b = bytes[input_size - 1 - i];
+
+    // Encode
+    toHex(b, out + (i * 2));
+  }  
 
   out[input_size * 2] = '\0';
 }
