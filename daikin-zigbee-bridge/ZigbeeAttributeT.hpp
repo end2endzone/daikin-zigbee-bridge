@@ -3,6 +3,7 @@
 #include "zb_helper.h"
 #include "zb_constants_helper.h"
 #include "type_helper.h"
+#include "scope_debugger.h"
 
 template <typename T>
 class ZigbeeAttribute : public ZigbeeAttributeBase
@@ -15,21 +16,17 @@ public:
     ZigbeeAttributeBase(endpoint, cluster_id, attr_id) {
   }
 
-  virtual bool setup()
+  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) override {
+    bool base = ZigbeeAttributeBase::setup(endpoint, cluster_id, attr_id);
+    logEntry("Setup() initialization is %d for %s", _initialized, toString().c_str());
+    return base;
+  }
+
+  virtual bool setup() override
   {
-    bool success = ZigbeeAttributeBase::setup();
-    _initialized = false; // force uninitialized again
-    if (!success)
-      return false;
-
-    // Assert attribute size
-    if (_zbAttr == nullptr)
-      return false;
-    if (!isValidationOK())
-      return false;
-
-    checkInit(); // update _initialized
-    return true;
+    bool base = ZigbeeAttributeBase::setup();
+    logEntry("Setup() initialization is %d for %s", _initialized, toString().c_str());
+    return base;
   }
 
   T get() const {
@@ -63,9 +60,10 @@ public:
   }
 
 protected:
-  bool isValidationOK() const {
-    // Note: Can't check isInitialized() here since
-    // isValidationOK() is called during setup().
+  bool isValid() const override {
+    bool baseValid = ZigbeeAttributeBase::isValid();
+    if (!baseValid)
+      return false;
 
     // Check size
     size_t zb_type_size = getSafeZigbeeAttrSize();

@@ -6,6 +6,7 @@
 #include "zb_constants_helper.h"
 #include "logging.h"
 #include "format_helper.h"
+#include "scope_debugger.h"
 
 class ZigbeeAttributeBase : public IZigbeeAttribute
 {
@@ -39,9 +40,9 @@ public:
     return _initialized;
   }
 
-  virtual bool setup() {
+private:
+  bool setupInternal() {
     _initialized = false;
-    bool ret = true;
 
     esp_zb_lock_acquire(portMAX_DELAY);
     
@@ -53,7 +54,6 @@ public:
       _attr_id);
     if (attr == nullptr) {
       logEntry("Failed to setup attribute %s", toString().c_str());
-      ret = false;
       goto unlock_and_return;
     }
 
@@ -62,8 +62,13 @@ public:
 
   unlock_and_return:
     esp_zb_lock_release();
-    checkInit(); // update _initialized
-    return ret;
+    _initialized = isValid(); // update _initialized
+    return _initialized;
+  }
+
+public:
+  virtual bool setup() {
+    return setupInternal();
   }
 
   virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
@@ -71,9 +76,7 @@ public:
     _cluster_id = cluster_id;
     _attr_id = attr_id;
 
-    bool success = setup();
-    checkInit(); // update _initialized
-    return success;
+    return setupInternal();
   }
 
   virtual uint8_t getEndpoint() const override { return _endpoint; }
@@ -108,10 +111,11 @@ public:
   }
 
 protected:
-  void checkInit() {
-    _initialized = (
+  bool isValid() const {
+    bool valid = (
         !(_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) &&
         _zbAttr != nullptr);
+    return valid;
   }
 
   bool getGenericAttribute(void* output_ptr, size_t output_size) const {
