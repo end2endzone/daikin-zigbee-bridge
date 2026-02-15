@@ -355,29 +355,6 @@ bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
   return success;
 }
 
-// Thermostat UI cluster
-bool ZigbeeStelproH420Thermostat::setTemperatureDisplayMode(uint8_t mode) {
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID, mode);
-  if (!success)
-    return false;
-
-  if (callbacks._on_display_mode_change) {
-    callbacks._on_display_mode_change(mode);
-  }
-  return success;
-}
-
-bool ZigbeeStelproH420Thermostat::setKeypadLockout(uint8_t lockout) {
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID, lockout);
-  if (!success)
-    return false;
-
-  if (callbacks._on_keypad_lockout_change) {
-    callbacks._on_keypad_lockout_change(lockout);
-  }
-  return success;
-}
-
 // Thermostat cluster, additional attributes
 bool ZigbeeStelproH420Thermostat::setRunningState(uint16_t state) {
   bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID, state);
@@ -419,6 +396,29 @@ bool ZigbeeStelproH420Thermostat::setOccupancy(zb_uint8_t occupancy) {
 
   if (callbacks._on_occupancy_change) {
     callbacks._on_occupancy_change(occupancy);
+  }
+  return success;
+}
+
+// Thermostat UI cluster
+bool ZigbeeStelproH420Thermostat::setTemperatureDisplayMode(uint8_t mode) {
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID, mode);
+  if (!success)
+    return false;
+
+  if (callbacks._on_display_mode_change) {
+    callbacks._on_display_mode_change(mode);
+  }
+  return success;
+}
+
+bool ZigbeeStelproH420Thermostat::setKeypadLockout(uint8_t lockout) {
+  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID, lockout);
+  if (!success)
+    return false;
+
+  if (callbacks._on_keypad_lockout_change) {
+    callbacks._on_keypad_lockout_change(lockout);
   }
   return success;
 }
