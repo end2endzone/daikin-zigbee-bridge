@@ -17,7 +17,7 @@ public:
   virtual uint16_t getClusterId() const = 0;
   virtual uint16_t getAttributeId() const = 0;
 
-  virtual size_t size() const = 0;
+  virtual size_t getSize() const = 0;
 
   virtual void *newValue() const = 0;
 
