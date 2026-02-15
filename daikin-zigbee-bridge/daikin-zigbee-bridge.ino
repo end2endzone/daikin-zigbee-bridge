@@ -32,6 +32,11 @@
 #error "Zigbee end device mode is not selected in Tools->Zigbee mode"
 #endif
 
+//// FORCE USAGE OF ZIGBEEATTRIBUTE CLASSES
+//#ifndef USE_ZB_CLASSES
+//#define USE_ZB_CLASSES
+//#endif
+
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 #include "ZigbeeStelproH420Thermostat.h"
@@ -41,7 +46,10 @@
 #include "logging.h"
 #include "scope_debugger.h"
 #include "zb_helper.h"
+#ifdef USE_ZB_CLASSES
 #include "ZigbeeAttributeT.hpp"
+#else // USE_ZB_CLASSES
+#endif // USE_ZB_CLASSES
 
 #ifdef ENABLE_DAIKINHTTP
 #include <WiFi.h>
@@ -226,36 +234,35 @@ void printAllAttributes() {
   
   logEntry("attributes: {");
 
-  ZigbeeAttribute<uint16_t> not_found(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, 0x6666);
-  ZigbeeAttribute<uint16_t> local_temperature(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);
-  ZigbeeAttribute<int32_t> occupied_heating_setpoint(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID);
-  ZigbeeAttribute<uint8_t> ui_config_display_mode(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
+#ifdef USE_ZB_CLASSES
 
-  not_found.setup();
+  /*
   local_temperature.setup();
   occupied_heating_setpoint.setup();
   ui_config_display_mode.setup();
 
-  logEntry("  not_found.isInitialized()=%d", not_found.isInitialized());
-  logEntry("  local_temperature.isInitialized()=%d", local_temperature.isInitialized());
-  logEntry("  occupied_heating_setpoint.isInitialized()=%d", occupied_heating_setpoint.isInitialized());
-  logEntry("  ui_config_display_mode.isInitialized()=%d", ui_config_display_mode.isInitialized());
+  logEntry("not_found.isInitialized()=%d", not_found.isInitialized());
+  logEntry("local_temperature.isInitialized()=%d", local_temperature.isInitialized());
+  logEntry("occupied_heating_setpoint.isInitialized()=%d", occupied_heating_setpoint.isInitialized());
+  logEntry("ui_config_display_mode.isInitialized()=%d", ui_config_display_mode.isInitialized());
 
   local_temperature.set(1500);
   //local_temperature.writeToZigbee();
 
-  logEntry("  not_found.get()=%d", not_found.get());
-  logEntry("  local_temperature.get()=%d", local_temperature.get());
-  logEntry("  occupied_heating_setpoint.get()=%d", occupied_heating_setpoint.get());
-  logEntry("  ui_config_display_mode.get()=%d", ui_config_display_mode.get());
+  logEntry("not_found.get()=%d", not_found.get());
+  logEntry("local_temperature.get()=%d", local_temperature.get());
+  logEntry("occupied_heating_setpoint.get()=%d", occupied_heating_setpoint.get());
+  logEntry("ui_config_display_mode.get()=%d", ui_config_display_mode.get());
 
-  logEntry("  %s", not_found.toString().c_str());
-  logEntry("  %s", local_temperature.toString().c_str());
-  logEntry("  %s", occupied_heating_setpoint.toString().c_str());
-  logEntry("  %s", ui_config_display_mode.toString().c_str());
+  logEntry("%s", not_found.toString().c_str());
+  logEntry("%s", local_temperature.toString().c_str());
+  logEntry("%s", occupied_heating_setpoint.toString().c_str());
+  logEntry("%s", ui_config_display_mode.toString().c_str());
 
   logEntry("---");
-
+  */
+  
+#else // USE_ZB_CLASSES
   // Thermostat cluster
   {
     int16_t actual_local_temperature                = 0;
@@ -313,6 +320,7 @@ void printAllAttributes() {
       if (zbThermostat.getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint))    logEntry("  actual_abs_max_cool_setpoint=%d", actual_abs_max_cool_setpoint);
     }
   }
+#endif // USE_ZB_CLASSES
 
   logEntry("};");
 }
@@ -547,6 +555,9 @@ void setup() {
   // Init identifyTimer
   identifyTimer.setTimeOutTime(0);
   identifyTimer.reset();
+
+  // Init zbThermostat's zigbee attributes
+  zbThermostat.setup();
 
   Serial.println("Connecting to network...");
   size_t dotCount = 0;

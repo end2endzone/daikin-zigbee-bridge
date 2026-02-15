@@ -83,6 +83,8 @@ public:
   virtual uint16_t getClusterId() const override { return _cluster_id; }
   virtual uint16_t getAttributeId() const override { return _attr_id; }
 
+  bool inline matches(uint16_t cluster_id, uint16_t attr_id) { return (cluster_id == _cluster_id && attr_id == _attr_id); }
+
   virtual String toString() const override {
     // Compute data pointer
     void* dataPtr = getSafeDataPointer();
