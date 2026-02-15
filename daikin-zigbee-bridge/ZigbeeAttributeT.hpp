@@ -12,6 +12,8 @@ public:
   ZigbeeAttribute() : ZigbeeAttributeBase() {
   }
 
+  virtual ~ZigbeeAttribute() {}
+  
   ZigbeeAttribute(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) :
     ZigbeeAttributeBase(endpoint, cluster_id, attr_id) {
   }
@@ -60,7 +62,7 @@ public:
   }
 
 protected:
-  bool isValid() const override {
+  virtual bool isValid() const override {
     bool baseValid = ZigbeeAttributeBase::isValid();
     if (!baseValid)
       return false;

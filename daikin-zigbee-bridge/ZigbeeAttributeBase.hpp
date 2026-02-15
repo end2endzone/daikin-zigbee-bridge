@@ -111,7 +111,7 @@ public:
   }
 
 protected:
-  bool isValid() const {
+  virtual bool isValid() const {
     bool valid = (
         !(_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) &&
         _zbAttr != nullptr);
