@@ -47,3 +47,37 @@ static void toHex(const void *input, size_t input_size, char *out) {
 
   out[input_size * 2] = '\0';
 }
+
+static void toHexSafe(const void *input, size_t input_size, char* buffer, size_t buffer_size) {
+  if (buffer == nullptr)
+    return;
+  if (buffer_size > 0)
+    buffer[0] = '\0'; // EMPTY output by default
+  
+  // Validate empty input
+  if (input_size == 0)
+    return;
+  
+  // NULL input
+  if (input == nullptr) {
+    if (buffer_size >= 5) {
+      strcpy(buffer, "NULL");
+    } else if (buffer_size >= 4) {
+      strcpy(buffer, "NUL");
+    } else {
+      // EMPTY output
+    }
+    return;
+  }
+
+  // Validate minimum size for `0x0`
+  if (buffer_size < 4)
+    return; // EMPTY output
+
+  // print the hex representation of input
+  buffer[0] = '0';
+  buffer[1] = 'x';
+  toHex(input, input_size, &buffer[2]);
+}
+
+
