@@ -689,6 +689,9 @@ bool ZigbeeStelproH420Thermostat::setup() {
   success = success && _ui_config_display_mode        .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);   if (!success) logEntry("_ui_config_display_mode        has failed to setup()!");
   success = success && _ui_config_keypad_lockout      .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);             if (!success) logEntry("_ui_config_keypad_lockout      has failed to setup()!");
 
+  //DEBUG
+  if (!success) { LOG_LINE; }
+
   IZigbeeAttribute* attributes[] = {
     &_local_temperature            ,
     &_occupied_cooling_setpoint    ,
@@ -710,7 +713,14 @@ bool ZigbeeStelproH420Thermostat::setup() {
     &_ui_config_display_mode       ,
     &_ui_config_keypad_lockout
   };
+
+  //DEBUG
+  if (!success) { LOG_LINE; }
+
   constexpr size_t attributes_count = sizeof(attributes) / sizeof(attributes[0]);
+
+  //DEBUG
+  if (!success) { LOG_LINE; }
 
   if (!success) {
     const char * error_msg1 = "************************************************************************************";

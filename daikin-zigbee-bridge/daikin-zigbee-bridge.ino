@@ -50,6 +50,7 @@
 #include "ZigbeeAttributeT.hpp"
 #else // USE_ZB_CLASSES
 #endif // USE_ZB_CLASSES
+#include "ZigbeeAttributeT.hpp"
 
 #ifdef ENABLE_DAIKINHTTP
 #include <WiFi.h>
@@ -233,6 +234,31 @@ void longClickDetected(Button2& btn) {
 void printAllAttributes() {
   
   logEntry("attributes: {");
+
+  //#define TEST_STACK_CORRUPTION
+  #ifdef TEST_STACK_CORRUPTION
+  {
+    #pragma pack(push, 1)
+    typedef struct {
+        char before[6];
+        ZigbeeAttribute<int16_t> local_temperature;
+        char after[6];
+    } PackedStruct;
+    #pragma pack(pop)
+    PackedStruct s;
+    strcpy(s.before, "HELLO");
+    strcpy(s.after, "hello");
+
+    logEntry("-----> local_temperature.setup(...)=%d", s.local_temperature.setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID));
+    logEntry("-----> local_temperature.isInitialized()=%d", s.local_temperature.isInitialized());
+    logEntry("-----> local_temperature.get()=%d", s.local_temperature.get());
+    logEntry("-----> local_temperature.set()=%d", s.local_temperature.set(1500));
+    logEntry("-----> local_temperature.get()=%d", s.local_temperature.get());
+    logEntry("-----> local_temperature.toString()=%s", s.local_temperature.toString().c_str());
+    logEntry("-----> s.before=%s", s.before);
+    logEntry("-----> s.after=%s", s.after);
+  }
+  #endif // TEST_STACK_CORRUPTION
 
 #ifdef USE_ZB_CLASSES
 
@@ -551,13 +577,17 @@ void setup() {
     ESP.restart();
   }
   Serial.println("Zigbee stack ready.");
+
+  // Init zbThermostat's zigbee attributes
+  zbThermostat.setup();
+  
+  // Initialize simulation stuff
+  zbThermostat.setLocalTemperature(SIMULATION_DEFAULT_ROOM_TEMPERATURE);
+  zbThermostat.setOccupiedHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
   
   // Init identifyTimer
   identifyTimer.setTimeOutTime(0);
   identifyTimer.reset();
-
-  // Init zbThermostat's zigbee attributes
-  zbThermostat.setup();
 
   Serial.println("Connecting to network...");
   size_t dotCount = 0;
@@ -582,9 +612,6 @@ void setup() {
   // Connected - switch to blue pulse
   updateLEDStatus();
   blinker.loop();
-  
-  // Initialize simulation stuff
-  zbThermostat.setOccupiedHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
 
   // DEBUG
   printAllAttributes();
