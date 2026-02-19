@@ -3,7 +3,7 @@
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 
-String debugIntegerToString(int value) {
+static String debugIntegerToString(int value) {
   String output;
   output += "0x";
   output += String(value, HEX);
@@ -13,7 +13,7 @@ String debugIntegerToString(int value) {
   return output;
 }
 
-inline String debugMakeIndentString(int indent) {
+static inline String debugMakeIndentString(int indent) {
   String s;
   for(int i=0; i<indent; i++) {
     s += ' ';
@@ -21,7 +21,7 @@ inline String debugMakeIndentString(int indent) {
   return s;
 }
 
-void debugPrintAttributeList(esp_zb_attribute_list_t * attr_list, int indent_size) {
+static void debugPrintAttributeList(esp_zb_attribute_list_t * attr_list, int indent_size) {
   String indent_str = debugMakeIndentString(indent_size);
 
   esp_zb_attribute_list_t *current_attr_list_ptr = attr_list;
@@ -49,7 +49,7 @@ void debugPrintAttributeList(esp_zb_attribute_list_t * attr_list, int indent_siz
   }
 }
 
-void debugPrintClusterList(esp_zb_cluster_list_t* cluster_list, int indent_size) {
+static void debugPrintClusterList(esp_zb_cluster_list_t* cluster_list, int indent_size) {
   String indent_str = debugMakeIndentString(indent_size);
 
   esp_zb_cluster_list_t *current_cluster_list_ptr = cluster_list;
@@ -95,6 +95,13 @@ void debugPrintClusterList(esp_zb_cluster_list_t* cluster_list, int indent_size)
   }
 }
 
-void debugPrintClusterList(esp_zb_cluster_list_t* cluster_list) {
+static void debugPrintClusterList(esp_zb_cluster_list_t* cluster_list) {
   debugPrintClusterList(cluster_list, 0);
+}
+
+static void debugPrintStackWaterMark() {
+  // Get the remaining stack space for the current task (the loop task)
+  UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL);
+  Serial.print("Remaining Stack (Bytes): ");
+  Serial.println(highWaterMark);
 }
