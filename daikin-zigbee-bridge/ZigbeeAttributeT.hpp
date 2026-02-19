@@ -67,7 +67,8 @@ public:
   }
 
   virtual void *newValue() const {
-    return new T;
+    void* buffer = malloc(sizeof(T));
+    return buffer;
   }
 
 protected:

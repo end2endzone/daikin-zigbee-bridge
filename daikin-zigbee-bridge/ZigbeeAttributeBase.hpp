@@ -52,6 +52,13 @@ private:
   bool setupInternal() {
     _initialized = false;
 
+    // Prevent crashing the system if Zigbee stack is not started.
+    // Calling esp_zb_lock_acquire() before the stack is ready will crash the 
+    // ESP32 with error: "Zigbee lock is not ready".
+    if (!esp_zb_is_started()) {
+      return false;
+    }
+
     esp_zb_lock_acquire(portMAX_DELAY);
     
     // get attribute descriptor
