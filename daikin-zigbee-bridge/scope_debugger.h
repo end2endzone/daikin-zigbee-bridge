@@ -4,18 +4,19 @@
 
 class ScopeDebugger {
   private:
-    const char * scope_name;
+    const char * file_name;
+    const char * function_name;
     int line;
   public:
-    ScopeDebugger(const char * name, int line) : 
-        scope_name(name),
+    ScopeDebugger(const char * file_name, const char * function_name, int line) : 
+        file_name(file_name),
+        function_name(function_name),
         line(line) {
-      logEntry(">>> %s() <ENTER>, line %d", scope_name, line);
+      logEntry(">>> %s::%s() <ENTER>, line %d", file_name, function_name, line);
     }
 
     ~ScopeDebugger() {
-      logEntry(">>> %s() <LEAVE>", scope_name);
+      logEntry(">>> %s::%s() <LEAVE> (matching line %d)", file_name, function_name, line);
     }
 };
-#define LOG_SCOPE ScopeDebugger scope_debugger(__FUNCTION__,__LINE__);
-#define LOG_LINE logEntry("%s(), line %d", __FUNCTION__, __LINE__);
+#define LOG_SCOPE ScopeDebugger scope_debugger(CURRENT_LOG_FILE, __FUNCTION__, __LINE__);
