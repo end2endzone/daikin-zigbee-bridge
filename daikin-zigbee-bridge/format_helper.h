@@ -6,15 +6,27 @@
 #include "esp_zigbee_type.h"
 
 static String format(const char* fmt, ...) {
-  char buffer[2048];
   va_list args;
-  
-  // Convert arguments to string
+
+  // Calculate the required length
   va_start(args, fmt);
-  vsnprintf(buffer, sizeof(buffer), fmt, args);
+  int len = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+  if (len < 0) return String("");
+
+  // Allocate bufferfor the string + null terminator
+  char* buffer = (char*)malloc(len + 1);
+  if (!buffer) return String("");
+
+  // Run vsnprintf again to fill buffer
+  va_start(args, fmt);
+  vsnprintf(buffer, len + 1, fmt, args);
   va_end(args);
 
-  return buffer;
+  // Return buffer as String
+  String output(buffer, (unsigned int)len);
+  free(buffer);
+  return output;
 }
 
 static void toHex(uint8_t byte, char *out) {
