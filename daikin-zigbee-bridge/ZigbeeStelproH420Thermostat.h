@@ -7,10 +7,10 @@
 
 #pragma once
 
-//// FORCE USAGE OF ZIGBEEATTRIBUTE CLASSES
-//#ifndef USE_ZB_CLASSES
-//#define USE_ZB_CLASSES
-//#endif
+// FORCE USAGE OF ZIGBEEATTRIBUTE CLASSES
+#ifndef USE_ZB_CLASSES
+#define USE_ZB_CLASSES
+#endif
 
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
@@ -293,6 +293,7 @@ public:
   bool setup();
 
 #ifdef USE_ZB_CLASSES
+  void printZigbeeAttributes();
 #else // USE_ZB_CLASSES
 private:
   bool getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const;
@@ -369,6 +370,30 @@ private:
   // Thermostat UI cluster mandatory attributes
   ZigbeeAttribute<uint8_t> _ui_config_display_mode  ;
   ZigbeeAttribute<uint8_t> _ui_config_keypad_lockout;
+
+  #define ALL_ZIGBEE_ATTRIBUTES       \
+  {                                   \
+    &_local_temperature            ,  \
+    &_occupied_cooling_setpoint    ,  \
+    &_occupied_heating_setpoint    ,  \
+    &_control_sequence_of_operation,  \
+    &_system_mode                  ,  \
+    &_running_state                ,  \
+    &_pi_heating_demand            ,  \
+    &_outdoor_temperature          ,  \
+    &_occupancy                    ,  \
+    &_min_heat_setpoint_limit      ,  \
+    &_max_heat_setpoint_limit      ,  \
+    &_abs_min_heat_setpoint_limit  ,  \
+    &_abs_max_heat_setpoint_limit  ,  \
+    &_min_cool_setpoint_limit      ,  \
+    &_max_cool_setpoint_limit      ,  \
+    &_abs_min_cool_setpoint_limit  ,  \
+    &_abs_max_cool_setpoint_limit  ,  \
+    &_ui_config_display_mode       ,  \
+    &_ui_config_keypad_lockout        \
+  };
+
 #else // USE_ZB_CLASSES
   uint16_t _running_state;
   uint8_t _pi_heating_demand;

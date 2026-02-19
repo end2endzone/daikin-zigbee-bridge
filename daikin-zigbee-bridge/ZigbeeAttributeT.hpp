@@ -20,14 +20,12 @@ public:
 
   virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) override {
     bool base = ZigbeeAttributeBase::setup(endpoint, cluster_id, attr_id);
-    logEntry("Setup() initialization returns %d, _initialized is %d for %s", base, _initialized, toString().c_str());
     return base;
   }
 
   virtual bool setup() override
   {
     bool base = ZigbeeAttributeBase::setup();
-    logEntry("Setup() initialization returns %d, _initialized is %d for %s", base, _initialized, toString().c_str());
     return base;
   }
 

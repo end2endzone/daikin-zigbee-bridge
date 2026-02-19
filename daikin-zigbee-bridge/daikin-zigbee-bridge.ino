@@ -32,10 +32,10 @@
 #error "Zigbee end device mode is not selected in Tools->Zigbee mode"
 #endif
 
-//// FORCE USAGE OF ZIGBEEATTRIBUTE CLASSES
-//#ifndef USE_ZB_CLASSES
-//#define USE_ZB_CLASSES
-//#endif
+// FORCE USAGE OF ZIGBEEATTRIBUTE CLASSES
+#ifndef USE_ZB_CLASSES
+#define USE_ZB_CLASSES
+#endif
 
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
@@ -262,6 +262,8 @@ void printAllAttributes() {
 
 #ifdef USE_ZB_CLASSES
 
+  zbThermostat.printZigbeeAttributes();
+  
   /*
   local_temperature.setup();
   occupied_heating_setpoint.setup();
@@ -564,6 +566,7 @@ void setup() {
 
   // DEBUG
   //zbThermostat.debugClusterList();
+  //Serial.println("DEBUG: Infinite loop from this point!");
   //while(true) {}
   
   // Add endpoint to Zigbee Core
@@ -579,7 +582,9 @@ void setup() {
   Serial.println("Zigbee stack ready.");
 
   // Init zbThermostat's zigbee attributes
-  zbThermostat.setup();
+  if (!zbThermostat.setup()) {
+    Serial.println("WARNING: zbThermostat.setup() has failed!");
+  }
   
   // Initialize simulation stuff
   zbThermostat.setLocalTemperature(SIMULATION_DEFAULT_ROOM_TEMPERATURE);

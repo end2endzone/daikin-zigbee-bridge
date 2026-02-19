@@ -692,31 +692,7 @@ bool ZigbeeStelproH420Thermostat::setup() {
   //DEBUG
   if (!success) { LOG_LINE; }
 
-  IZigbeeAttribute* attributes[] = {
-    &_local_temperature            ,
-    &_occupied_cooling_setpoint    ,
-    &_occupied_heating_setpoint    ,
-    &_control_sequence_of_operation,
-    &_system_mode                  ,
-    &_running_state                ,
-    &_pi_heating_demand            ,
-    &_outdoor_temperature          ,
-    &_occupancy                    ,
-    &_min_heat_setpoint_limit      ,
-    &_max_heat_setpoint_limit      ,
-    &_abs_min_heat_setpoint_limit  ,
-    &_abs_max_heat_setpoint_limit  ,
-    &_min_cool_setpoint_limit      ,
-    &_max_cool_setpoint_limit      ,
-    &_abs_min_cool_setpoint_limit  ,
-    &_abs_max_cool_setpoint_limit  ,
-    &_ui_config_display_mode       ,
-    &_ui_config_keypad_lockout
-  };
-
-  //DEBUG
-  if (!success) { LOG_LINE; }
-
+  IZigbeeAttribute* attributes[] = ALL_ZIGBEE_ATTRIBUTES;
   constexpr size_t attributes_count = sizeof(attributes) / sizeof(attributes[0]);
 
   //DEBUG
@@ -739,12 +715,37 @@ bool ZigbeeStelproH420Thermostat::setup() {
       }
     }
   }
+
+  return success;
+
 #else // USE_ZB_CLASSES
   return true;
 #endif // USE_ZB_CLASSES
 }
 
+
 #ifdef USE_ZB_CLASSES
+void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
+  logEntry("-----> _local_temperature            .get()=%d", _local_temperature            .get());
+  logEntry("-----> _occupied_cooling_setpoint    .get()=%d", _occupied_cooling_setpoint    .get());
+  logEntry("-----> _occupied_heating_setpoint    .get()=%d", _occupied_heating_setpoint    .get());
+  logEntry("-----> _control_sequence_of_operation.get()=%d", _control_sequence_of_operation.get());
+  logEntry("-----> _system_mode                  .get()=%d", _system_mode                  .get());
+  logEntry("-----> _running_state                .get()=%d", _running_state                .get());
+  logEntry("-----> _pi_heating_demand            .get()=%d", _pi_heating_demand            .get());
+  logEntry("-----> _outdoor_temperature          .get()=%d", _outdoor_temperature          .get());
+  logEntry("-----> _occupancy                    .get()=%d", _occupancy                    .get());
+  logEntry("-----> _min_heat_setpoint_limit      .get()=%d", _min_heat_setpoint_limit      .get());
+  logEntry("-----> _max_heat_setpoint_limit      .get()=%d", _max_heat_setpoint_limit      .get());
+  logEntry("-----> _abs_min_heat_setpoint_limit  .get()=%d", _abs_min_heat_setpoint_limit  .get());
+  logEntry("-----> _abs_max_heat_setpoint_limit  .get()=%d", _abs_max_heat_setpoint_limit  .get());
+  logEntry("-----> _min_cool_setpoint_limit      .get()=%d", _min_cool_setpoint_limit      .get());
+  logEntry("-----> _max_cool_setpoint_limit      .get()=%d", _max_cool_setpoint_limit      .get());
+  logEntry("-----> _abs_min_cool_setpoint_limit  .get()=%d", _abs_min_cool_setpoint_limit  .get());
+  logEntry("-----> _abs_max_cool_setpoint_limit  .get()=%d", _abs_max_cool_setpoint_limit  .get());
+  logEntry("-----> _ui_config_display_mode       .get()=%d", _ui_config_display_mode       .get());
+  logEntry("-----> _ui_config_keypad_lockout     .get()=%d", _ui_config_keypad_lockout     .get());
+}
 #else // USE_ZB_CLASSES
 bool ZigbeeStelproH420Thermostat::getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const {
   if (output_ptr == nullptr || output_size == 0)
