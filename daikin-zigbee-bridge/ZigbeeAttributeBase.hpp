@@ -139,60 +139,57 @@ public:
   }
 
   bool getGenericAttribute(void* output_ptr, size_t output_size) const {
-    return false;
-  //  if (output_ptr == nullptr || output_size == 0)
-  //    return false;
-  //  if (!isValid())
-  //    return false;
-  //
-  //  bool success = false;
-  //  esp_zb_lock_acquire(portMAX_DELAY);
-  //  
-  //  // get attribute descriptor
-  //  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
-  //    _endpoint,
-  //    _cluster_id,
-  //    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-  //    _attr_id);
-  //  if (attr == nullptr) {
-  //    logEntry("Failed to read attribute %s", toString().c_str());
-  //    goto unlock_and_return;
-  //  }
-  //
-  //  // Read/Copy the value
-  //  memcpy(output_ptr, attr->data_p, output_size);
-  //  success = true;
-  //
-  //unlock_and_return:
-  //  esp_zb_lock_release();
-  //  return success;
+    if (output_ptr == nullptr || output_size == 0)
+      return false;
+    if (!isValid())
+      return false;
+  
+    bool success = false;
+    esp_zb_lock_acquire(portMAX_DELAY);
+    
+    // get attribute descriptor
+    esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
+      _endpoint,
+      _cluster_id,
+      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+      _attr_id);
+    if (attr == nullptr) {
+      logEntry("Failed to read attribute %s", toString().c_str());
+      goto unlock_and_return;
+    }
+  
+    // Read/Copy the value
+    memcpy(output_ptr, attr->data_p, output_size);
+    success = true;
+  
+  unlock_and_return:
+    esp_zb_lock_release();
+    return success;
   }
 
   bool setGenericAttribute(const void* value_ptr, size_t value_size) const {
-    return false;
-
-  //  if (value_ptr == nullptr || value_size == 0)
-  //    return false;
-  //  if (!isValid())
-  //    return false;
-  //
-  //  esp_zb_zcl_status_t status = ESP_ZB_ZCL_STATUS_SUCCESS;
-  //  esp_zb_lock_acquire(portMAX_DELAY);
-  //
-  //  // set attribute value
-  //  status = esp_zb_zcl_set_attribute_val(
-  //    _endpoint,
-  //    _cluster_id,
-  //    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-  //    _attr_id,
-  //    (void*)value_ptr,
-  //    false
-  //  );
-  //  if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-  //    logEntry("Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
-  //  }
-  //
-  //  esp_zb_lock_release();
-  //  return (status == ESP_ZB_ZCL_STATUS_SUCCESS);
+    if (value_ptr == nullptr || value_size == 0)
+      return false;
+    if (!isValid())
+      return false;
+  
+    esp_zb_zcl_status_t status = ESP_ZB_ZCL_STATUS_SUCCESS;
+    esp_zb_lock_acquire(portMAX_DELAY);
+  
+    // set attribute value
+    status = esp_zb_zcl_set_attribute_val(
+      _endpoint,
+      _cluster_id,
+      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+      _attr_id,
+      (void*)value_ptr,
+      false
+    );
+    if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
+      logEntry("Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
+    }
+  
+    esp_zb_lock_release();
+    return (status == ESP_ZB_ZCL_STATUS_SUCCESS);
   }
 };

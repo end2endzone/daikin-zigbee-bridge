@@ -636,8 +636,6 @@ void setup() {
 }
 
 void loop() {
-  LOG_SCOPE;
-  
   // Update LED status based on connection state
   updateLEDStatus();
   

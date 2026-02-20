@@ -34,7 +34,6 @@ void logUnhandledMessageError(uint16_t cluster_id, uint16_t attr_id, uint16_t ty
 ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : 
   ZigbeeEP(endpoint)
 {
-  LOG_SCOPE;
 #define ENABLE_SERIAL_DEBUGGING_IN_CTOR
 #ifdef ENABLE_SERIAL_DEBUGGING_IN_CTOR
   // HACK for debugging logEntry() calls since ZigbeeStelproH420Thermostat as a static object before setup() is called.
@@ -52,11 +51,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) :
 
 #ifdef USE_ZB_CLASSES
   // Init all attributes
-  LOG_LINE;
-  LOG_LINE;
-  LOG_LINE;
-  LOG_LINE;
-  LOG_LINE;
   _local_temperature                          .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);                           
   _occupied_cooling_setpoint                  .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID);                   
   _occupied_heating_setpoint                  .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID);                   
@@ -76,9 +70,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) :
   _abs_max_cool_setpoint_limit                .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID);                 
   _ui_config_display_mode                     .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
   _ui_config_keypad_lockout                   .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
-  LOG_LINE;
 
-  LOG_LINE;
   // Assert all attributes are initialized
   //{
   //  IZigbeeAttribute* attributes[] = ALL_ZIGBEE_ATTRIBUTES;
@@ -89,25 +81,20 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) :
   //    }
   //  }
   //}
-  LOG_LINE;
 
   // Set zigbee default attribute initialization values.
   // The following zigbee attributes are custom and not created by esp_zb_thermostat_cluster_create()
   // We need to initialize their default value before they are created in the zigbee stack.
-  LOG_LINE;
   _running_state                              .setDefaultValue(THERMOSTAT_RUNNING_STATE_IDLE);
   _pi_heating_demand                          .setDefaultValue(0);
   _outdoor_temperature                        .setDefaultValue(0);
   _occupancy                                  .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE);
-  LOG_LINE;
 #else // USE_ZB_CLASSES
 #endif // USE_ZB_CLASSES
 
   // Build cluster lists
-  LOG_LINE;
   zigbee_stelpro_thermostat_cfg_t thermostat_cfg = ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG();
   _cluster_list = zigbee_stelpro_thermostat_clusters_create(&thermostat_cfg);
-  LOG_LINE;
 
   // Set endpoint configuration
   _ep_config = {
