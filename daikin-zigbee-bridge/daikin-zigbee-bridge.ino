@@ -410,6 +410,10 @@ void simulateTemperature() {
                 (running_state == THERMOSTAT_RUNNING_STATE_HEAT) ? "HEATING" : "IDLE",
                 power_watts);
 
+  // Report 'reportable' attributes (even if they have not changed)
+  if (!zbThermostat->report()) {
+    logEntry("WARNING: zbThermostat->report() has failed!");
+  }
 
   //
   printAllAttributes();

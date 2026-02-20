@@ -290,6 +290,8 @@ public:
   // Update energy calculations (call in loop)
   void updateEnergy();
 
+  bool report();
+
   bool setup();
 
 #ifdef USE_ZB_CLASSES

@@ -99,6 +99,9 @@ public:
   virtual uint8_t getEndpoint() const override { return _endpoint; }
   virtual uint16_t getClusterId() const override { return _cluster_id; }
   virtual uint16_t getAttributeId() const override { return _attr_id; }
+  virtual esp_zb_zcl_attr_type_t getTypeId() const override { return _type_id; }
+  virtual esp_zb_zcl_attr_access_t getAccessId() const override { return _access_id; }
+  virtual uint16_t getManufCode() const override { return _manuf_code; }
 
   bool inline matches(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) const { return (cluster_id == _cluster_id && attr_id == _attr_id); }
 
@@ -127,6 +130,11 @@ public:
     return name;
   }
 
+  inline const char * zbAccessName() const {
+    const char * name = zb_constants_zcl_attr_access_to_string((esp_zb_zcl_attr_access_t)_access_id);
+    return name;
+  }
+
   virtual String toString() const override {    
     const char* cluster_name = zbClusterName();
     const char* attr_name = zbAttributeName();
@@ -143,6 +151,7 @@ public:
     return true;
   }
 
+protected:
   bool getGenericAttribute(void* output_ptr, size_t output_size) const {
     if (output_ptr == nullptr || output_size == 0)
       return false;
@@ -159,7 +168,7 @@ public:
       ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
       _attr_id);
     if (attr == nullptr) {
-      logEntry("Failed to read attribute %s", toString().c_str());
+      logEntry("WARNING: Failed to read attribute %s", toString().c_str());
       goto unlock_and_return;
     }
   
@@ -191,10 +200,48 @@ public:
       false
     );
     if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-      logEntry("Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
+      logEntry("WARNING: Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
     }
   
     esp_zb_lock_release();
     return (status == ESP_ZB_ZCL_STATUS_SUCCESS);
   }
+
+  bool reportAttribute(const void* value_ptr, size_t value_size) const {
+    if (value_ptr == nullptr || value_size == 0)
+      return false;
+    if (!isValid())
+      return false;
+  
+    // Send report attributes command
+    esp_zb_zcl_report_attr_cmd_t report_attr_cmd;
+    memset(&report_attr_cmd, 0, sizeof(report_attr_cmd));
+    //report_attr_cmd.zcl_basic_cmd.dst_addr_u.addr_short = 0x0000;   // coordinator
+    //report_attr_cmd.zcl_basic_cmd.dst_endpoint = 1;
+    //report_attr_cmd.zcl_basic_cmd.src_endpoint = _endpoint;
+    //report_attr_cmd.address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
+    //report_attr_cmd.clusterID = _cluster_id;
+    //report_attr_cmd.attributeID = _attr_id;
+    //report_attr_cmd.direction = ESP_ZB_ZCL_CMD_DIRECTION_TO_CLI;
+    //report_attr_cmd.manuf_specific = ESP_ZB_ZCL_ATTR_NON_MANUFACTURER_SPECIFIC;
+    //report_attr_cmd.manuf_code = 0; // _manuf_code
+    report_attr_cmd.zcl_basic_cmd.src_endpoint = _endpoint;
+    report_attr_cmd.address_mode = ESP_ZB_APS_ADDR_MODE_DST_ADDR_ENDP_NOT_PRESENT;
+    report_attr_cmd.clusterID = _cluster_id;
+    report_attr_cmd.direction = ESP_ZB_ZCL_CMD_DIRECTION_TO_CLI;
+    report_attr_cmd.manuf_code = _manuf_code;
+    report_attr_cmd.attributeID = _attr_id;
+
+    esp_zb_lock_acquire(portMAX_DELAY);
+    esp_err_t err = esp_zb_zcl_report_attr_cmd_req(&report_attr_cmd);
+    esp_zb_lock_release();
+    if (err != ESP_OK) {
+      const char * err_name = esp_err_to_name(err);
+      const char * access_name = zbAccessName();
+      logEntry("WARNING: Failed to report attribute %s. Error: 0x%x: (%s). Attribute access: %s (0x%02x)", toString().c_str(), err, err_name, access_name, _access_id);
+      return false;
+    }
+    return true;
+  }
+
 };

@@ -42,6 +42,15 @@ public:
     return written;
   }
 
+  virtual bool report() const {
+    T value = {0};
+    bool readed = get(value);
+    if (!readed)
+      return false;
+    bool reported = reportAttribute(&value, sizeof(T));
+    return reported;
+  }
+
   virtual size_t getSize() const override {
     return sizeof(T);
   }

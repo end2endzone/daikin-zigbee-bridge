@@ -747,6 +747,31 @@ void ZigbeeStelproH420Thermostat::updateEnergy() {
 #endif // ENABLE_STELPRO_POWER_MEASUREMENTS
 }
 
+bool ZigbeeStelproH420Thermostat::report() {
+  bool success = true;
+#ifdef USE_ZB_CLASSES
+  for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
+    IZigbeeAttribute* attr_p = _zigbee_attribute_list[i];
+
+    esp_zb_zcl_attr_access_t access_id = attr_p->getAccessId();
+    bool isReportable = ((access_id & ESP_ZB_ZCL_ATTR_ACCESS_REPORTING) > 0);
+    if (isReportable) {
+      bool hasReported = attr_p->report();
+
+      // Assert attribute has reported properly
+      if (!hasReported) {
+        // No need to print an error, attr_p->report() has already printed a warning.
+      }
+
+      // show a warning once if any attribute has failed reporting.
+      success = success && hasReported;
+    }
+  }
+#else // USE_ZB_CLASSES
+#endif // USE_ZB_CLASSES
+  return success;
+}
+
 bool ZigbeeStelproH420Thermostat::setup() {
 #ifdef USE_ZB_CLASSES
   bool success = true;
