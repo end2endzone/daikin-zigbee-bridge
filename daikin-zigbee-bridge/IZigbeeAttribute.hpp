@@ -8,7 +8,7 @@ class IZigbeeAttribute
 public:
   virtual ~IZigbeeAttribute() = default;
 
-  virtual bool init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) = 0;
+  virtual void init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) = 0;
   virtual bool isInitialized() const = 0;
   
   virtual bool setup() = 0;

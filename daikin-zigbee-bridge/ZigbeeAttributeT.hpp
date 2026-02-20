@@ -21,7 +21,7 @@ public:
   }
 
   T get() const {
-    T value;
+    T value = {0};
     if (!isValid())
       return value; // garbadge
     bool readed = getGenericAttribute(&value, sizeof(T));
@@ -47,7 +47,7 @@ public:
   }
 
   virtual void zbDataToHex(char* buffer, size_t buffer_size) const {
-    T value;
+    T value = {0};
     if (buffer_size >= 1)
       buffer[0] = '\0';
     if (get(value)) {

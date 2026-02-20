@@ -80,7 +80,7 @@ public:
     return lookupAttribute();
   }
 
-  virtual bool init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
+  virtual void init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
     _endpoint = endpoint;
     _cluster_id = cluster_id;
     _attr_id = attr_id;
@@ -170,7 +170,7 @@ public:
 
   bool setGenericAttribute(const void* value_ptr, size_t value_size) const {
     return false;
-    
+
   //  if (value_ptr == nullptr || value_size == 0)
   //    return false;
   //  if (!isValid())
