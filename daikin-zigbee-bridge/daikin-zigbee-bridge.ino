@@ -84,6 +84,15 @@ enum LED_MODE {
 };
 LED_MODE previousLedMode = LED_MODE_OFF;
 
+// DEBUG
+int forceSerialPortInit() {
+  Serial.begin(115200);
+  while (!Serial && millis() < 3000);
+  logEntry("Hello from %s() !", __FUNCTION__);
+  return 0;
+}
+int _zombie = forceSerialPortInit();
+
 // Zigbee thermostat (contains EnergyCalculator internally)
 ZigbeeStelproH420Thermostat zbThermostat(STELPRO_ENDPOINT);
 
@@ -263,7 +272,7 @@ void printAllAttributes() {
 #ifdef USE_ZB_CLASSES
 
   zbThermostat.printZigbeeAttributes();
-  
+
   /*
   local_temperature.setup();
   occupied_heating_setpoint.setup();
@@ -623,6 +632,8 @@ void setup() {
 }
 
 void loop() {
+  LOG_SCOPE;
+  
   // Update LED status based on connection state
   updateLEDStatus();
   
