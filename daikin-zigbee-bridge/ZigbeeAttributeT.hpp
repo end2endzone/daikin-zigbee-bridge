@@ -8,6 +8,8 @@
 template <typename T>
 class ZigbeeAttribute : public ZigbeeAttributeBase
 {
+private:
+  T _default_value;
 public:
   ZigbeeAttribute() : ZigbeeAttributeBase() {
   }
@@ -18,34 +20,23 @@ public:
     ZigbeeAttributeBase(endpoint, cluster_id, attr_id) {
   }
 
-  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) override {
-    bool base = ZigbeeAttributeBase::setup(endpoint, cluster_id, attr_id);
-    return base;
-  }
-
-  virtual bool setup() override
-  {
-    bool base = ZigbeeAttributeBase::setup();
-    return base;
-  }
-
   T get() const {
     T value;
-    if (!isInitialized())
+    if (!isValid())
       return value; // garbadge
     bool readed = getGenericAttribute(&value, sizeof(T));
     return value;
   }
 
   bool get(T& value) const {
-    if (!isInitialized())
+    if (!isValid())
       return false; // unread
     bool readed = getGenericAttribute(&value, sizeof(T));
     return readed;
   }
 
   bool set(const T& value) {
-    if (!isInitialized())
+    if (!isValid())
       return false; // unwrite
     bool written = setGenericAttribute(&value, sizeof(T));
     return written;
@@ -64,12 +55,14 @@ public:
     }
   }
 
-  virtual void *newValue() const {
-    void* buffer = malloc(sizeof(T));
-    return buffer;
+  virtual void *getDefaultDataPointer() {
+    return &_default_value;
   }
 
-protected:
+  void setDefaultValue(const T& new_value) {
+    _default_value = new_value;
+  }
+
   virtual bool isValid() const override {
     bool baseValid = ZigbeeAttributeBase::isValid();
     if (!baseValid)

@@ -11,7 +11,6 @@
 class ZigbeeAttributeBase : public IZigbeeAttribute
 {
 protected:
-  bool _initialized;
   uint8_t _endpoint;
   uint16_t _cluster_id;
   uint16_t _attr_id;
@@ -21,8 +20,7 @@ protected:
 
 public:
   ZigbeeAttributeBase()
-    : _initialized(false),
-      _cluster_id(0),
+    : _cluster_id(0),
       _attr_id(0),
       _endpoint(0),
       _type_id(ESP_ZB_ZCL_ATTR_TYPE_INVALID),
@@ -32,8 +30,7 @@ public:
   }
 
   ZigbeeAttributeBase(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id)
-    : _initialized(false),
-      _endpoint(endpoint),
+    : _endpoint(endpoint),
       _cluster_id(cluster_id),
       _attr_id(attr_id),
       _type_id(ESP_ZB_ZCL_ATTR_TYPE_INVALID),
@@ -44,14 +41,8 @@ public:
 
   virtual ~ZigbeeAttributeBase() = default;
 
-  virtual bool isInitialized() const override {
-    return _initialized;
-  }
-
 private:
-  bool setupInternal() {
-    _initialized = false;
-
+  inline bool lookupAttribute() {
     // Prevent crashing the system if Zigbee stack is not started.
     // Calling esp_zb_lock_acquire() before the stack is ready will crash the 
     // ESP32 with error: "Zigbee lock is not ready".
@@ -72,28 +63,32 @@ private:
       goto unlock_and_return;
     }
 
-    // Keep the attr info
+    // Keep the attribute's type and access
     _type_id = (esp_zb_zcl_attr_type_t)attr->type;
     _access_id = (esp_zb_zcl_attr_access_t)attr->access;
     _manuf_code = attr->manuf_code;
 
   unlock_and_return:
     esp_zb_lock_release();
-    _initialized = isValid(); // update _initialized
-    return _initialized;
+    return isValid();
   }
 
 public:
   virtual bool setup() {
-    return setupInternal();
+    if (!isInitialized())
+      return false;
+    return lookupAttribute();
   }
 
-  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
+  virtual bool init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
     _endpoint = endpoint;
     _cluster_id = cluster_id;
     _attr_id = attr_id;
+  }
 
-    return setupInternal();
+  virtual bool isInitialized() const override {
+    if (_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false;
+    return true;
   }
 
   virtual uint8_t getEndpoint() const override { return _endpoint; }
@@ -137,65 +132,67 @@ public:
       _endpoint, attr_name, _attr_id, cluster_name, _cluster_id, attr_type_name, attr_type_size);
   }
 
-protected:
   virtual bool isValid() const {
-    if (_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false;
-    if (_type_id == ESP_ZB_ZCL_ATTR_TYPE_INVALID || _access_id == 0) return false;
+    if (_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false; // not initialized
+    if (_type_id == ESP_ZB_ZCL_ATTR_TYPE_INVALID || _access_id == 0) return false; // not registered, call setup() again
     return true;
   }
 
   bool getGenericAttribute(void* output_ptr, size_t output_size) const {
-    if (output_ptr == nullptr || output_size == 0)
-      return false;
-    if (!_initialized)
-      return false;
-
-    bool success = false;
-    esp_zb_lock_acquire(portMAX_DELAY);
-    
-    // get attribute descriptor
-    esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
-      _endpoint,
-      _cluster_id,
-      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-      _attr_id);
-    if (attr == nullptr) {
-      logEntry("Failed to read attribute %s", toString().c_str());
-      goto unlock_and_return;
-    }
-
-    // Read/Copy the value
-    memcpy(output_ptr, attr->data_p, output_size);
-    success = true;
-
-  unlock_and_return:
-    esp_zb_lock_release();
-    return success;
+    return false;
+  //  if (output_ptr == nullptr || output_size == 0)
+  //    return false;
+  //  if (!isValid())
+  //    return false;
+  //
+  //  bool success = false;
+  //  esp_zb_lock_acquire(portMAX_DELAY);
+  //  
+  //  // get attribute descriptor
+  //  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
+  //    _endpoint,
+  //    _cluster_id,
+  //    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+  //    _attr_id);
+  //  if (attr == nullptr) {
+  //    logEntry("Failed to read attribute %s", toString().c_str());
+  //    goto unlock_and_return;
+  //  }
+  //
+  //  // Read/Copy the value
+  //  memcpy(output_ptr, attr->data_p, output_size);
+  //  success = true;
+  //
+  //unlock_and_return:
+  //  esp_zb_lock_release();
+  //  return success;
   }
 
   bool setGenericAttribute(const void* value_ptr, size_t value_size) const {
-    if (value_ptr == nullptr || value_size == 0)
-      return false;
-    if (!_initialized)
-      return false;
-
-    esp_zb_zcl_status_t status = ESP_ZB_ZCL_STATUS_SUCCESS;
-    esp_zb_lock_acquire(portMAX_DELAY);
-
-    // set attribute value
-    status = esp_zb_zcl_set_attribute_val(
-      _endpoint,
-      _cluster_id,
-      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-      _attr_id,
-      (void*)value_ptr,
-      false
-    );
-    if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-      logEntry("Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
-    }
-
-    esp_zb_lock_release();
-    return (status == ESP_ZB_ZCL_STATUS_SUCCESS);
+    return false;
+    
+  //  if (value_ptr == nullptr || value_size == 0)
+  //    return false;
+  //  if (!isValid())
+  //    return false;
+  //
+  //  esp_zb_zcl_status_t status = ESP_ZB_ZCL_STATUS_SUCCESS;
+  //  esp_zb_lock_acquire(portMAX_DELAY);
+  //
+  //  // set attribute value
+  //  status = esp_zb_zcl_set_attribute_val(
+  //    _endpoint,
+  //    _cluster_id,
+  //    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+  //    _attr_id,
+  //    (void*)value_ptr,
+  //    false
+  //  );
+  //  if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
+  //    logEntry("Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
+  //  }
+  //
+  //  esp_zb_lock_release();
+  //  return (status == ESP_ZB_ZCL_STATUS_SUCCESS);
   }
 };
