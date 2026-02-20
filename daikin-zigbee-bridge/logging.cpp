@@ -42,6 +42,7 @@ void logEntry(const char* fmt, ...) {
 
   // Also output on the serial port. 
   Serial.println(buffer);
+  Serial.flush();
 
   free(buffer);
 }
