@@ -178,10 +178,10 @@ public:
   }
   // Thermostat UI cluster
   void onDisplayModeChange(void (*callback)(uint8_t)) {
-    callbacks._on_display_mode_change = callback;
+    callbacks._on_ui_config_display_mode_change = callback;
   }
   void onKeypadLockoutChange(void (*callback)(uint8_t)) {
-    callbacks._on_keypad_lockout_change = callback;
+    callbacks._on_ui_config_keypad_lockout_change = callback;
   }
   // Thermostat cluster, additional attributes
   void onRunningStateChange(void (*callback)(uint16_t)) {
@@ -331,8 +331,8 @@ private:
     void (*_on_control_sequence_of_operation_change)(uint8_t);
     void (*_on_system_mode_change)(uint8_t);
     // Thermostat UI cluster
-    void (*_on_display_mode_change)(uint8_t);
-    void (*_on_keypad_lockout_change)(uint8_t);
+    void (*_on_ui_config_display_mode_change)(uint8_t);
+    void (*_on_ui_config_keypad_lockout_change)(uint8_t);
     // Thermostat cluster, additional attributes
     void (*_on_running_state_change)(uint16_t);
     void (*_on_pi_heating_demand_change)(uint8_t);
@@ -369,6 +369,8 @@ private:
   // Thermostat UI cluster mandatory attributes
   ZigbeeAttribute<uint8_t>    _ui_config_display_mode           ;
   ZigbeeAttribute<uint8_t>    _ui_config_keypad_lockout         ;
+
+  ZigbeeAttributeList _zigbee_attribute_list;
 
 #else // USE_ZB_CLASSES
   uint16_t _running_state;

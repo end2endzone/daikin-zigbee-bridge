@@ -84,15 +84,6 @@ enum LED_MODE {
 };
 LED_MODE previousLedMode = LED_MODE_OFF;
 
-// DEBUG
-int forceSerialPortInit() {
-  Serial.begin(115200);
-  while (!Serial && millis() < 3000);
-  logEntry("Hello from %s() !", __FUNCTION__);
-  return 0;
-}
-int _zombie = forceSerialPortInit();
-
 // The class ZigbeeStelproH420Thermostat calls zigbee functions in its constructor.
 // Create the instance on the heap, during setup() to prevent calling zigbee functions during static initialization (before setup()).
 ZigbeeStelproH420Thermostat * zbThermostat = nullptr;

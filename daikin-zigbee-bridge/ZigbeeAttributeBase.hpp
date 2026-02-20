@@ -11,6 +11,7 @@
 class ZigbeeAttributeBase : public IZigbeeAttribute
 {
 protected:
+  const char * _name;
   uint8_t _endpoint;
   uint16_t _cluster_id;
   uint16_t _attr_id;
@@ -20,17 +21,19 @@ protected:
 
 public:
   ZigbeeAttributeBase()
-    : _cluster_id(0),
-      _attr_id(0),
+    : _name(nullptr),
       _endpoint(0),
+      _cluster_id(0),
+      _attr_id(0),
       _type_id(ESP_ZB_ZCL_ATTR_TYPE_INVALID),
       _access_id((esp_zb_zcl_attr_access_t)0),
       _manuf_code(0)
       {
   }
 
-  ZigbeeAttributeBase(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id)
-    : _endpoint(endpoint),
+  ZigbeeAttributeBase(const char * name, uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id)
+    : _name(name),
+      _endpoint(endpoint),
       _cluster_id(cluster_id),
       _attr_id(attr_id),
       _type_id(ESP_ZB_ZCL_ATTR_TYPE_INVALID),
@@ -80,22 +83,24 @@ public:
     return lookupAttribute();
   }
 
-  virtual void init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
+  virtual void init(const char * name, uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) {
+    _name = name;
     _endpoint = endpoint;
     _cluster_id = cluster_id;
     _attr_id = attr_id;
   }
 
   virtual bool isInitialized() const override {
-    if (_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false;
+    if (_name == nullptr && _endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false;
     return true;
   }
 
+  virtual const char * getName() const override { return _name; }
   virtual uint8_t getEndpoint() const override { return _endpoint; }
   virtual uint16_t getClusterId() const override { return _cluster_id; }
   virtual uint16_t getAttributeId() const override { return _attr_id; }
 
-  bool inline matches(uint16_t cluster_id, uint16_t attr_id) { return (cluster_id == _cluster_id && attr_id == _attr_id); }
+  bool inline matches(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) const { return (cluster_id == _cluster_id && attr_id == _attr_id); }
 
   inline size_t zbTypeSize() const {
     size_t size = zb_constants_zcl_attr_type_size(_type_id);
@@ -128,12 +133,12 @@ public:
     const char * attr_type_name = zbTypeName();
     size_t attr_type_size = zbTypeSize();
 
-    return format("{endpoint: 0x%02x, attr: %s (0x%04x), cluster: %s (0x%04x), type: %s, size: %d}",
-      _endpoint, attr_name, _attr_id, cluster_name, _cluster_id, attr_type_name, attr_type_size);
+    return format("{name: '%s', endpoint: 0x%02x, attr: %s (0x%04x), cluster: %s (0x%04x), type: %s, size: %d}",
+      _name, _endpoint, attr_name, _attr_id, cluster_name, _cluster_id, attr_type_name, attr_type_size);
   }
 
   virtual bool isValid() const {
-    if (_endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false; // not initialized
+    if (_name == 0 && _endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false; // not initialized
     if (_type_id == ESP_ZB_ZCL_ATTR_TYPE_INVALID || _access_id == 0) return false; // not registered, call setup() again
     return true;
   }
