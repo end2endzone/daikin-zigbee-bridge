@@ -31,25 +31,68 @@ void logUnhandledMessageError(uint16_t cluster_id, uint16_t attr_id, uint16_t ty
     cluster_name, cluster_id, attr_name, attr_id, zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)type_id), type_id );
 }
 
-ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : ZigbeeEP(endpoint) {
-  /*
+ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : 
+  ZigbeeEP(endpoint)
+{
+#define ENABLE_SERIAL_DEBUGGING_IN_CTOR
+#ifdef ENABLE_SERIAL_DEBUGGING_IN_CTOR
   // HACK for debugging logEntry() calls since ZigbeeStelproH420Thermostat as a static object before setup() is called.
   // Wait up to 3s for serial
   Serial.begin(115200);
   while (!Serial && millis() < 3000);
-  */
+#endif // #ifdef ENABLE_SERIAL_DEBUGGING_IN_CTOR
 
   _device_id = ESP_ZB_HA_THERMOSTAT_DEVICE_ID;
   
-  // Initialize callbacks to nullptr
-  memset(&callbacks, 0, sizeof(callbacks));
-
   // Initialize default values
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   _stelpro_outdoor_temp = 0;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
-  // logUnexpectedDataTypeReceivedration
+#ifdef USE_ZB_CLASSES
+  // Init all attributes
+  _local_temperature                          .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);                           
+  _occupied_cooling_setpoint                  .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID);                   
+  _occupied_heating_setpoint                  .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID);                   
+  _control_sequence_of_operation              .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_CONTROL_SEQUENCE_OF_OPERATION_ID);               
+  _system_mode                                .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID);                                 
+  _running_state                              .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID);                    
+  _pi_heating_demand                          .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID);                           
+  _outdoor_temperature                        .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID);                         
+  _occupancy                                  .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID);                                   
+  _min_heat_setpoint_limit                    .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID);                     
+  _max_heat_setpoint_limit                    .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID);                     
+  _abs_min_heat_setpoint_limit                .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID);                 
+  _abs_max_heat_setpoint_limit                .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID);                 
+  _min_cool_setpoint_limit                    .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID);                     
+  _max_cool_setpoint_limit                    .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID);                     
+  _abs_min_cool_setpoint_limit                .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID);                 
+  _abs_max_cool_setpoint_limit                .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID);                 
+  _ui_config_display_mode                     .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
+  _ui_config_keypad_lockout                   .init(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
+
+  // Assert all attributes are initialized
+  //{
+  //  IZigbeeAttribute* attributes[] = ALL_ZIGBEE_ATTRIBUTES;
+  //  constexpr size_t attributes_count = sizeof(attributes) / sizeof(attributes[0]);
+  //  for(size_t i=0; i<attributes_count; i++) {
+  //    if (!attributes[i]->isInitialized()) {
+  //      logEntry("WARNING: Attribute [%d] is not initialized: %s", i, attributes[i]->toString().c_str());
+  //    }
+  //  }
+  //}
+
+  // Set zigbee default attribute initialization values.
+  // The following zigbee attributes are custom and not created by esp_zb_thermostat_cluster_create()
+  // We need to initialize their default value before they are created in the zigbee stack.
+  _running_state                              .setDefaultValue(THERMOSTAT_RUNNING_STATE_IDLE);
+  _pi_heating_demand                          .setDefaultValue(0);
+  _outdoor_temperature                        .setDefaultValue(0);
+  _occupancy                                  .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE);
+#else // USE_ZB_CLASSES
+#endif // USE_ZB_CLASSES
+
+  // Build cluster lists
   zigbee_stelpro_thermostat_cfg_t thermostat_cfg = ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG();
   _cluster_list = zigbee_stelpro_thermostat_clusters_create(&thermostat_cfg);
 
@@ -669,52 +712,52 @@ void ZigbeeStelproH420Thermostat::updateEnergy() {
 bool ZigbeeStelproH420Thermostat::setup() {
 #ifdef USE_ZB_CLASSES
   bool success = true;
-  success = success && _local_temperature             .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);                              if (!success) logEntry("_local_temperature             has failed to setup()!");
-  success = success && _occupied_cooling_setpoint     .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID);                      if (!success) logEntry("_occupied_cooling_setpoint     has failed to setup()!");
-  success = success && _occupied_heating_setpoint     .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID);                      if (!success) logEntry("_occupied_heating_setpoint     has failed to setup()!");
-  success = success && _control_sequence_of_operation .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_CONTROL_SEQUENCE_OF_OPERATION_ID);                  if (!success) logEntry("_control_sequence_of_operation has failed to setup()!");
-  success = success && _system_mode                   .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID);                                    if (!success) logEntry("_system_mode                   has failed to setup()!");
-  success = success && _running_state                 .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID);                       if (!success) logEntry("_running_state                 has failed to setup()!");
-  success = success && _pi_heating_demand             .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID);                              if (!success) logEntry("_pi_heating_demand             has failed to setup()!");
-  success = success && _outdoor_temperature           .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID);                            if (!success) logEntry("_outdoor_temperature           has failed to setup()!");
-  success = success && _occupancy                     .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID);                                      if (!success) logEntry("_occupancy                     has failed to setup()!");
-  success = success && _min_heat_setpoint_limit       .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID);                        if (!success) logEntry("_min_heat_setpoint_limit       has failed to setup()!");
-  success = success && _max_heat_setpoint_limit       .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID);                        if (!success) logEntry("_max_heat_setpoint_limit       has failed to setup()!");
-  success = success && _abs_min_heat_setpoint_limit   .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID);                    if (!success) logEntry("_abs_min_heat_setpoint_limit   has failed to setup()!");
-  success = success && _abs_max_heat_setpoint_limit   .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID);                    if (!success) logEntry("_abs_max_heat_setpoint_limit   has failed to setup()!");
-  success = success && _min_cool_setpoint_limit       .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID);                        if (!success) logEntry("_min_cool_setpoint_limit       has failed to setup()!");
-  success = success && _max_cool_setpoint_limit       .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID);                        if (!success) logEntry("_max_cool_setpoint_limit       has failed to setup()!");
-  success = success && _abs_min_cool_setpoint_limit   .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID);                    if (!success) logEntry("_abs_min_cool_setpoint_limit   has failed to setup()!");
-  success = success && _abs_max_cool_setpoint_limit   .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID);                    if (!success) logEntry("_abs_max_cool_setpoint_limit   has failed to setup()!");
-  success = success && _ui_config_display_mode        .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);   if (!success) logEntry("_ui_config_display_mode        has failed to setup()!");
-  success = success && _ui_config_keypad_lockout      .setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);             if (!success) logEntry("_ui_config_keypad_lockout      has failed to setup()!");
+  success = success && _local_temperature             .setup(); if (!success) logEntry("_local_temperature             has failed to setup()!");
+  success = success && _occupied_cooling_setpoint     .setup(); if (!success) logEntry("_occupied_cooling_setpoint     has failed to setup()!");
+  success = success && _occupied_heating_setpoint     .setup(); if (!success) logEntry("_occupied_heating_setpoint     has failed to setup()!");
+  success = success && _control_sequence_of_operation .setup(); if (!success) logEntry("_control_sequence_of_operation has failed to setup()!");
+  success = success && _system_mode                   .setup(); if (!success) logEntry("_system_mode                   has failed to setup()!");
+  success = success && _running_state                 .setup(); if (!success) logEntry("_running_state                 has failed to setup()!");
+  success = success && _pi_heating_demand             .setup(); if (!success) logEntry("_pi_heating_demand             has failed to setup()!");
+  success = success && _outdoor_temperature           .setup(); if (!success) logEntry("_outdoor_temperature           has failed to setup()!");
+  success = success && _occupancy                     .setup(); if (!success) logEntry("_occupancy                     has failed to setup()!");
+  success = success && _min_heat_setpoint_limit       .setup(); if (!success) logEntry("_min_heat_setpoint_limit       has failed to setup()!");
+  success = success && _max_heat_setpoint_limit       .setup(); if (!success) logEntry("_max_heat_setpoint_limit       has failed to setup()!");
+  success = success && _abs_min_heat_setpoint_limit   .setup(); if (!success) logEntry("_abs_min_heat_setpoint_limit   has failed to setup()!");
+  success = success && _abs_max_heat_setpoint_limit   .setup(); if (!success) logEntry("_abs_max_heat_setpoint_limit   has failed to setup()!");
+  success = success && _min_cool_setpoint_limit       .setup(); if (!success) logEntry("_min_cool_setpoint_limit       has failed to setup()!");
+  success = success && _max_cool_setpoint_limit       .setup(); if (!success) logEntry("_max_cool_setpoint_limit       has failed to setup()!");
+  success = success && _abs_min_cool_setpoint_limit   .setup(); if (!success) logEntry("_abs_min_cool_setpoint_limit   has failed to setup()!");
+  success = success && _abs_max_cool_setpoint_limit   .setup(); if (!success) logEntry("_abs_max_cool_setpoint_limit   has failed to setup()!");
+  success = success && _ui_config_display_mode        .setup(); if (!success) logEntry("_ui_config_display_mode        has failed to setup()!");
+  success = success && _ui_config_keypad_lockout      .setup(); if (!success) logEntry("_ui_config_keypad_lockout      has failed to setup()!");
 
   //DEBUG
   if (!success) { LOG_LINE; }
 
-  IZigbeeAttribute* attributes[] = ALL_ZIGBEE_ATTRIBUTES;
-  constexpr size_t attributes_count = sizeof(attributes) / sizeof(attributes[0]);
-
-  //DEBUG
-  if (!success) { LOG_LINE; }
-
-  if (!success) {
-    const char * error_msg1 = "************************************************************************************";
-    const char * error_msg2 = "*                                                                                  *";
-    const char * error_msg3 = "*                 Some zigbee attributes has failed to initialize!                 *";
-    logEntry(error_msg1);
-    logEntry(error_msg2);
-    logEntry(error_msg2);
-    logEntry(error_msg3);
-    logEntry(error_msg2);
-    logEntry(error_msg2);
-    logEntry(error_msg1);
-    for(size_t i=0; i<attributes_count; i++) {
-      if (!attributes[i]->isInitialized()) {
-        logEntry("attr[%d] has failed to initialize: %s", i, attributes[i]->toString().c_str());
-      }
-    }
-  }
+  //IZigbeeAttribute* attributes[] = ALL_ZIGBEE_ATTRIBUTES;
+  //constexpr size_t attributes_count = sizeof(attributes) / sizeof(attributes[0]);
+  //
+  ////DEBUG
+  //if (!success) { LOG_LINE; }
+  //
+  //if (!success) {
+  //  const char * error_msg1 = "************************************************************************************";
+  //  const char * error_msg2 = "*                                                                                  *";
+  //  const char * error_msg3 = "*                 Some zigbee attributes has failed to initialize!                 *";
+  //  logEntry(error_msg1);
+  //  logEntry(error_msg2);
+  //  logEntry(error_msg2);
+  //  logEntry(error_msg3);
+  //  logEntry(error_msg2);
+  //  logEntry(error_msg2);
+  //  logEntry(error_msg1);
+  //  for(size_t i=0; i<attributes_count; i++) {
+  //    if (!attributes[i]->isInitialized()) {
+  //      logEntry("attr[%d] has failed to initialize: %s", i, attributes[i]->toString().c_str());
+  //    }
+  //  }
+  //}
 
   return success;
 
@@ -861,10 +904,10 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
 
   // Thermostat cluster, additional attributes
 #ifdef USE_ZB_CLASSES
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID, _running_state.newValue());         logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID       , _pi_heating_demand.newValue());     logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID     , _outdoor_temperature.newValue());   logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID               , _occupancy.newValue());             logError(err, __FILE__, __LINE__);
+  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _running_state          .getAttributeId(),  _running_state          .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
+  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _pi_heating_demand      .getAttributeId() , _pi_heating_demand      .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
+  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _outdoor_temperature    .getAttributeId() , _outdoor_temperature    .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
+  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _occupancy              .getAttributeId() , _occupancy              .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
 #else // USE_ZB_CLASSES
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID, &_running_state);    logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, &_pi_heating_demand);       logError(err, __FILE__, __LINE__);

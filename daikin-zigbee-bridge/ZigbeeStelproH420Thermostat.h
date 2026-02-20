@@ -339,7 +339,7 @@ private:
     void (*_on_outdoor_temperature_change)(int16_t);
     void (*_on_occupancy_change)(zb_uint8_t);
   } zb_zcl_thermostat_callbacks_t;
-  zb_zcl_thermostat_callbacks_t callbacks;
+  zb_zcl_thermostat_callbacks_t callbacks = {0};
 
   // Thermostat state variables
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
@@ -348,51 +348,27 @@ private:
   
 #ifdef USE_ZB_CLASSES
   // Thermostat cluster mandatory attributes
-  ZigbeeAttribute<int16_t>                  _local_temperature;
-  ZigbeeAttribute<int16_t>          _occupied_cooling_setpoint;
-  ZigbeeAttribute<int16_t>          _occupied_heating_setpoint;
-  ZigbeeAttribute<uint8_t>      _control_sequence_of_operation;
-  ZigbeeAttribute<uint8_t>                        _system_mode;
+  ZigbeeAttribute<int16_t>    _local_temperature                ;
+  ZigbeeAttribute<int16_t>    _occupied_cooling_setpoint        ;
+  ZigbeeAttribute<int16_t>    _occupied_heating_setpoint        ;
+  ZigbeeAttribute<uint8_t>    _control_sequence_of_operation    ;
+  ZigbeeAttribute<uint8_t>    _system_mode                      ;
   // Thermostat cluster additional attributes
-  ZigbeeAttribute<uint16_t>   _running_state              ;
-  ZigbeeAttribute<uint8_t>    _pi_heating_demand          ;
-  ZigbeeAttribute<int16_t>    _outdoor_temperature        ;
-  ZigbeeAttribute<zb_uint8_t> _occupancy                  ;
-  ZigbeeAttribute<int16_t>    _min_heat_setpoint_limit    ;
-  ZigbeeAttribute<int16_t>    _max_heat_setpoint_limit    ;
-  ZigbeeAttribute<int16_t>    _abs_min_heat_setpoint_limit;
-  ZigbeeAttribute<int16_t>    _abs_max_heat_setpoint_limit;
-  ZigbeeAttribute<int16_t>    _min_cool_setpoint_limit    ;
-  ZigbeeAttribute<int16_t>    _max_cool_setpoint_limit    ;
-  ZigbeeAttribute<int16_t>    _abs_min_cool_setpoint_limit;
-  ZigbeeAttribute<int16_t>    _abs_max_cool_setpoint_limit;
-
+  ZigbeeAttribute<uint16_t>   _running_state                    ;
+  ZigbeeAttribute<uint8_t>    _pi_heating_demand                ;
+  ZigbeeAttribute<int16_t>    _outdoor_temperature              ;
+  ZigbeeAttribute<zb_uint8_t> _occupancy                        ;
+  ZigbeeAttribute<int16_t>    _min_heat_setpoint_limit          ;
+  ZigbeeAttribute<int16_t>    _max_heat_setpoint_limit          ;
+  ZigbeeAttribute<int16_t>    _abs_min_heat_setpoint_limit      ;
+  ZigbeeAttribute<int16_t>    _abs_max_heat_setpoint_limit      ;
+  ZigbeeAttribute<int16_t>    _min_cool_setpoint_limit          ;
+  ZigbeeAttribute<int16_t>    _max_cool_setpoint_limit          ;
+  ZigbeeAttribute<int16_t>    _abs_min_cool_setpoint_limit      ;
+  ZigbeeAttribute<int16_t>    _abs_max_cool_setpoint_limit      ;
   // Thermostat UI cluster mandatory attributes
-  ZigbeeAttribute<uint8_t> _ui_config_display_mode  ;
-  ZigbeeAttribute<uint8_t> _ui_config_keypad_lockout;
-
-  #define ALL_ZIGBEE_ATTRIBUTES       \
-  {                                   \
-    &_local_temperature            ,  \
-    &_occupied_cooling_setpoint    ,  \
-    &_occupied_heating_setpoint    ,  \
-    &_control_sequence_of_operation,  \
-    &_system_mode                  ,  \
-    &_running_state                ,  \
-    &_pi_heating_demand            ,  \
-    &_outdoor_temperature          ,  \
-    &_occupancy                    ,  \
-    &_min_heat_setpoint_limit      ,  \
-    &_max_heat_setpoint_limit      ,  \
-    &_abs_min_heat_setpoint_limit  ,  \
-    &_abs_max_heat_setpoint_limit  ,  \
-    &_min_cool_setpoint_limit      ,  \
-    &_max_cool_setpoint_limit      ,  \
-    &_abs_min_cool_setpoint_limit  ,  \
-    &_abs_max_cool_setpoint_limit  ,  \
-    &_ui_config_display_mode       ,  \
-    &_ui_config_keypad_lockout        \
-  };
+  ZigbeeAttribute<uint8_t>    _ui_config_display_mode           ;
+  ZigbeeAttribute<uint8_t>    _ui_config_keypad_lockout         ;
 
 #else // USE_ZB_CLASSES
   uint16_t _running_state;

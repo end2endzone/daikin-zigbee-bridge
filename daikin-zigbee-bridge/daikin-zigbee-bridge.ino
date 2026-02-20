@@ -84,8 +84,18 @@ enum LED_MODE {
 };
 LED_MODE previousLedMode = LED_MODE_OFF;
 
-// Zigbee thermostat (contains EnergyCalculator internally)
-ZigbeeStelproH420Thermostat zbThermostat(STELPRO_ENDPOINT);
+// DEBUG
+int forceSerialPortInit() {
+  Serial.begin(115200);
+  while (!Serial && millis() < 3000);
+  logEntry("Hello from %s() !", __FUNCTION__);
+  return 0;
+}
+int _zombie = forceSerialPortInit();
+
+// The class ZigbeeStelproH420Thermostat calls zigbee functions in its constructor.
+// Create the instance on the heap, during setup() to prevent calling zigbee functions during static initialization (before setup()).
+ZigbeeStelproH420Thermostat * zbThermostat = nullptr;
 
 // Button handler
 Button2 button;
@@ -262,8 +272,8 @@ void printAllAttributes() {
 
 #ifdef USE_ZB_CLASSES
 
-  zbThermostat.printZigbeeAttributes();
-  
+  zbThermostat->printZigbeeAttributes();
+
   /*
   local_temperature.setup();
   occupied_heating_setpoint.setup();
@@ -298,19 +308,19 @@ void printAllAttributes() {
     int16_t actual_occupied_heating_setpoint        = 0;
     uint8_t actual_control_sequence_of_operation    = 0;
     uint8_t actual_system_mode                      = 0;
-    if (zbThermostat.getLocalTemperature(           actual_local_temperature              ))    logEntry("  actual_local_temperature=%d",             actual_local_temperature);
-    if (zbThermostat.getOccupiedCoolingSetpoint(    actual_occupied_cooling_setpoint      ))    logEntry("  actual_occupied_cooling_setpoint=%d",     actual_occupied_cooling_setpoint);
-    if (zbThermostat.getOccupiedHeatingSetpoint(    actual_occupied_heating_setpoint      ))    logEntry("  actual_occupied_heating_setpoint=%d",     actual_occupied_heating_setpoint);
-    if (zbThermostat.getControlSequenceOfOperation( actual_control_sequence_of_operation  ))    logEntry("  actual_control_sequence_of_operation=%d", actual_control_sequence_of_operation);
-    if (zbThermostat.getSystemMode(                 actual_system_mode                    ))    logEntry("  actual_system_mode=%d",                   actual_system_mode);
+    if (zbThermostat->getLocalTemperature(           actual_local_temperature              ))    logEntry("  actual_local_temperature=%d",             actual_local_temperature);
+    if (zbThermostat->getOccupiedCoolingSetpoint(    actual_occupied_cooling_setpoint      ))    logEntry("  actual_occupied_cooling_setpoint=%d",     actual_occupied_cooling_setpoint);
+    if (zbThermostat->getOccupiedHeatingSetpoint(    actual_occupied_heating_setpoint      ))    logEntry("  actual_occupied_heating_setpoint=%d",     actual_occupied_heating_setpoint);
+    if (zbThermostat->getControlSequenceOfOperation( actual_control_sequence_of_operation  ))    logEntry("  actual_control_sequence_of_operation=%d", actual_control_sequence_of_operation);
+    if (zbThermostat->getSystemMode(                 actual_system_mode                    ))    logEntry("  actual_system_mode=%d",                   actual_system_mode);
   }
 
   // Thermostat UI cluster
   {
     uint8_t actual_temperature_display_mode     = 0;
     uint8_t actual_keypad_lockout               = 0;
-    if (zbThermostat.getTemperatureDisplayMode( actual_temperature_display_mode       ))    logEntry("  actual_temperature_display_mode=%d",            actual_temperature_display_mode);
-    if (zbThermostat.getKeypadLockout(          actual_keypad_lockout                 ))    logEntry("  actual_keypad_lockout=%d",                      actual_keypad_lockout);
+    if (zbThermostat->getTemperatureDisplayMode( actual_temperature_display_mode       ))    logEntry("  actual_temperature_display_mode=%d",            actual_temperature_display_mode);
+    if (zbThermostat->getKeypadLockout(          actual_keypad_lockout                 ))    logEntry("  actual_keypad_lockout=%d",                      actual_keypad_lockout);
   }
 
   // Thermostat cluster, additional attributes
@@ -319,10 +329,10 @@ void printAllAttributes() {
     uint8_t     actual_pi_heating_demand          = 0;
     int16_t     actual_outdoor_temperature        = 0;
     zb_uint8_t  actual_occupancy                  = 0;
-    if (zbThermostat.getRunningState(       actual_running_state                     ))    logEntry("  actual_running_state=%d",              actual_running_state);
-    if (zbThermostat.getPIHeatingDemand(    actual_pi_heating_demand                 ))    logEntry("  actual_pi_heating_demand=%d",          actual_pi_heating_demand);
-    if (zbThermostat.getOutdoorTemperature( actual_outdoor_temperature               ))    logEntry("  actual_outdoor_temperature=%d",        actual_outdoor_temperature);
-    if (zbThermostat.getOccupancy(          actual_occupancy                         ))    logEntry("  actual_occupancy=%d",                  actual_occupancy);
+    if (zbThermostat->getRunningState(       actual_running_state                     ))    logEntry("  actual_running_state=%d",              actual_running_state);
+    if (zbThermostat->getPIHeatingDemand(    actual_pi_heating_demand                 ))    logEntry("  actual_pi_heating_demand=%d",          actual_pi_heating_demand);
+    if (zbThermostat->getOutdoorTemperature( actual_outdoor_temperature               ))    logEntry("  actual_outdoor_temperature=%d",        actual_outdoor_temperature);
+    if (zbThermostat->getOccupancy(          actual_occupancy                         ))    logEntry("  actual_occupancy=%d",                  actual_occupancy);
 
     // Heating setpoints
     {
@@ -330,10 +340,10 @@ void printAllAttributes() {
       int16_t actual_max_heat_setpoint      = 0;
       int16_t actual_abs_min_heat_setpoint  = 0;
       int16_t actual_abs_max_heat_setpoint  = 0;
-      if (zbThermostat.getMinHeatingSetpointLimit(    actual_min_heat_setpoint    ))    logEntry("  actual_min_heat_setpoint=%d",     actual_min_heat_setpoint);
-      if (zbThermostat.getMaxHeatingSetpointLimit(    actual_max_heat_setpoint    ))    logEntry("  actual_max_heat_setpoint=%d",     actual_max_heat_setpoint);
-      if (zbThermostat.getAbsMinHeatingSetpointLimit( actual_abs_min_heat_setpoint))    logEntry("  actual_abs_min_heat_setpoint=%d", actual_abs_min_heat_setpoint);
-      if (zbThermostat.getAbsMaxHeatingSetpointLimit( actual_abs_max_heat_setpoint))    logEntry("  actual_abs_max_heat_setpoint=%d", actual_abs_max_heat_setpoint);
+      if (zbThermostat->getMinHeatingSetpointLimit(    actual_min_heat_setpoint    ))    logEntry("  actual_min_heat_setpoint=%d",     actual_min_heat_setpoint);
+      if (zbThermostat->getMaxHeatingSetpointLimit(    actual_max_heat_setpoint    ))    logEntry("  actual_max_heat_setpoint=%d",     actual_max_heat_setpoint);
+      if (zbThermostat->getAbsMinHeatingSetpointLimit( actual_abs_min_heat_setpoint))    logEntry("  actual_abs_min_heat_setpoint=%d", actual_abs_min_heat_setpoint);
+      if (zbThermostat->getAbsMaxHeatingSetpointLimit( actual_abs_max_heat_setpoint))    logEntry("  actual_abs_max_heat_setpoint=%d", actual_abs_max_heat_setpoint);
     }
 
     // Cooling setpoints
@@ -342,10 +352,10 @@ void printAllAttributes() {
       int16_t actual_max_cool_setpoint      = 0;
       int16_t actual_abs_min_cool_setpoint  = 0;
       int16_t actual_abs_max_cool_setpoint  = 0;
-      if (zbThermostat.getMinCoolingSetpointLimit(    actual_min_cool_setpoint    ))    logEntry("  actual_min_cool_setpoint=%d",     actual_min_cool_setpoint);
-      if (zbThermostat.getMaxCoolingSetpointLimit(    actual_max_cool_setpoint    ))    logEntry("  actual_max_cool_setpoint=%d",     actual_max_cool_setpoint);
-      if (zbThermostat.getAbsMinCoolingSetpointLimit( actual_abs_min_cool_setpoint))    logEntry("  actual_abs_min_cool_setpoint=%d", actual_abs_min_cool_setpoint);
-      if (zbThermostat.getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint))    logEntry("  actual_abs_max_cool_setpoint=%d", actual_abs_max_cool_setpoint);
+      if (zbThermostat->getMinCoolingSetpointLimit(    actual_min_cool_setpoint    ))    logEntry("  actual_min_cool_setpoint=%d",     actual_min_cool_setpoint);
+      if (zbThermostat->getMaxCoolingSetpointLimit(    actual_max_cool_setpoint    ))    logEntry("  actual_max_cool_setpoint=%d",     actual_max_cool_setpoint);
+      if (zbThermostat->getAbsMinCoolingSetpointLimit( actual_abs_min_cool_setpoint))    logEntry("  actual_abs_min_cool_setpoint=%d", actual_abs_min_cool_setpoint);
+      if (zbThermostat->getAbsMaxCoolingSetpointLimit( actual_abs_max_cool_setpoint))    logEntry("  actual_abs_max_cool_setpoint=%d", actual_abs_max_cool_setpoint);
     }
   }
 #endif // USE_ZB_CLASSES
@@ -365,9 +375,9 @@ void simulateTemperature() {
   int16_t current_temp = 0;
   int16_t setpoint = 0;
   uint8_t system_mode = 0;
-  zbThermostat.getLocalTemperature(current_temp);
-  zbThermostat.getOccupiedHeatingSetpoint(setpoint);
-  zbThermostat.getSystemMode(system_mode);
+  zbThermostat->getLocalTemperature(current_temp);
+  zbThermostat->getOccupiedHeatingSetpoint(setpoint);
+  zbThermostat->getSystemMode(system_mode);
 
   // Simulate temperature based on heating demand
   if (system_mode == THERMOSTAT_SYSTEM_MODE_OFF) {
@@ -391,13 +401,13 @@ void simulateTemperature() {
   }
   
   // Update temperature in thermostat (which updates internal EnergyCalculator)
-  zbThermostat.setLocalTemperature(current_temp);
+  zbThermostat->setLocalTemperature(current_temp);
   
   // Get calculated values for logging
   uint8_t pi_heating_demand = 0;
-  zbThermostat.getPIHeatingDemand(pi_heating_demand);
+  zbThermostat->getPIHeatingDemand(pi_heating_demand);
   uint16_t running_state = 0;
-  zbThermostat.getRunningState(running_state);
+  zbThermostat->getRunningState(running_state);
   
   // Calculate power for display (internal calculator will compute accurately)
   int32_t power_watts = (STELPRO_MAX_POWER_WATTS * pi_heating_demand) / 100;
@@ -544,34 +554,37 @@ void setup() {
   // Initialize temperature update timer
   initTempSimulationUpdateTimer();
   
+  // Create the thermostat on the heap.
+  zbThermostat = new ZigbeeStelproH420Thermostat(STELPRO_ENDPOINT);
+
   // Set callback functions for Zigbee
   // Thermostat cluster
-  zbThermostat.onIdentify(onIdentify);
-  zbThermostat.onLocalTemperatureChange(onLocalTemperatureChange);
-  zbThermostat.onOccupiedCoolSetpointChange(onOccupiedCoolSetpointChange);
-  zbThermostat.onOccupiedHeatSetpointChange(onOccupiedHeatSetpointChange);
-  zbThermostat.onControlSequenceOfOperationChange(onControlSequenceOfOperationChange);
-  zbThermostat.onSystemModeChange(onSystemModeChange);
+  zbThermostat->onIdentify(onIdentify);
+  zbThermostat->onLocalTemperatureChange(onLocalTemperatureChange);
+  zbThermostat->onOccupiedCoolSetpointChange(onOccupiedCoolSetpointChange);
+  zbThermostat->onOccupiedHeatSetpointChange(onOccupiedHeatSetpointChange);
+  zbThermostat->onControlSequenceOfOperationChange(onControlSequenceOfOperationChange);
+  zbThermostat->onSystemModeChange(onSystemModeChange);
   // Thermostat UI cluster
-  zbThermostat.onDisplayModeChange(onDisplayModeChange);
-  zbThermostat.onKeypadLockoutChange(onKeypadLockoutChange);
+  zbThermostat->onDisplayModeChange(onDisplayModeChange);
+  zbThermostat->onKeypadLockoutChange(onKeypadLockoutChange);
   // Thermostat cluster, additional attributes
-  zbThermostat.onRunningStateChange(onRunningStateChange);
-  zbThermostat.onPIHeatingDemandChange(onPIHeatingDemandChange);
-  zbThermostat.onOutdoorTemperatureChange(onOutdoorTemperatureChange);
-  zbThermostat.onOccupancyChange(onOccupancyChange);
+  zbThermostat->onRunningStateChange(onRunningStateChange);
+  zbThermostat->onPIHeatingDemandChange(onPIHeatingDemandChange);
+  zbThermostat->onOutdoorTemperatureChange(onOutdoorTemperatureChange);
+  zbThermostat->onOccupancyChange(onOccupancyChange);
 
   // Set manufacturer and model
-  zbThermostat.setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
+  zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
 
   // DEBUG
-  //zbThermostat.debugClusterList();
+  //zbThermostat->debugClusterList();
   //Serial.println("DEBUG: Infinite loop from this point!");
   //while(true) {}
   
   // Add endpoint to Zigbee Core
   Serial.println("Adding Zigbee Thermostat endpoint to Zigbee Core");
-  Zigbee.addEndpoint(&zbThermostat);
+  Zigbee.addEndpoint(zbThermostat);
   
   Serial.println("Starting Zigbee stack...");
   if (!Zigbee.begin()) {
@@ -582,13 +595,13 @@ void setup() {
   Serial.println("Zigbee stack ready.");
 
   // Init zbThermostat's zigbee attributes
-  if (!zbThermostat.setup()) {
-    Serial.println("WARNING: zbThermostat.setup() has failed!");
+  if (!zbThermostat->setup()) {
+    Serial.println("WARNING: zbThermostat->setup() has failed!");
   }
   
   // Initialize simulation stuff
-  zbThermostat.setLocalTemperature(SIMULATION_DEFAULT_ROOM_TEMPERATURE);
-  zbThermostat.setOccupiedHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
+  zbThermostat->setLocalTemperature(SIMULATION_DEFAULT_ROOM_TEMPERATURE);
+  zbThermostat->setOccupiedHeatingSetpoint(SIMULATION_TEMPERATURE_SETPOINT);
   
   // Init identifyTimer
   identifyTimer.setTimeOutTime(0);
@@ -635,7 +648,7 @@ void loop() {
   // Update all components
   blinker.loop();
   button.loop();
-  zbThermostat.updateEnergy();  // Update energy simulation calculations and Zigbee attributes
+  zbThermostat->updateEnergy();  // Update energy simulation calculations and Zigbee attributes
   
   // Simulate temperature changes of zbThermostat
   if (Zigbee.connected()) {

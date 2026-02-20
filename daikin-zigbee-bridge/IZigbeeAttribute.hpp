@@ -8,10 +8,12 @@ class IZigbeeAttribute
 public:
   virtual ~IZigbeeAttribute() = default;
 
+  virtual void init(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) = 0;
   virtual bool isInitialized() const = 0;
-
+  
   virtual bool setup() = 0;
-  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) = 0;
+
+  virtual bool isValid() const = 0;
   
   virtual uint8_t getEndpoint() const = 0;
   virtual uint16_t getClusterId() const = 0;
@@ -19,7 +21,7 @@ public:
 
   virtual size_t getSize() const = 0;
 
-  virtual void *newValue() const = 0;
+  virtual void *getDefaultDataPointer() = 0;
 
   virtual String toString() const = 0;
 };
