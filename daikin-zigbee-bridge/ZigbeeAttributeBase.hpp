@@ -216,15 +216,6 @@ protected:
     // Send report attributes command
     esp_zb_zcl_report_attr_cmd_t report_attr_cmd;
     memset(&report_attr_cmd, 0, sizeof(report_attr_cmd));
-    //report_attr_cmd.zcl_basic_cmd.dst_addr_u.addr_short = 0x0000;   // coordinator
-    //report_attr_cmd.zcl_basic_cmd.dst_endpoint = 1;
-    //report_attr_cmd.zcl_basic_cmd.src_endpoint = _endpoint;
-    //report_attr_cmd.address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
-    //report_attr_cmd.clusterID = _cluster_id;
-    //report_attr_cmd.attributeID = _attr_id;
-    //report_attr_cmd.direction = ESP_ZB_ZCL_CMD_DIRECTION_TO_CLI;
-    //report_attr_cmd.manuf_specific = ESP_ZB_ZCL_ATTR_NON_MANUFACTURER_SPECIFIC;
-    //report_attr_cmd.manuf_code = 0; // _manuf_code
     report_attr_cmd.zcl_basic_cmd.src_endpoint = _endpoint;
     report_attr_cmd.address_mode = ESP_ZB_APS_ADDR_MODE_DST_ADDR_ENDP_NOT_PRESENT;
     report_attr_cmd.clusterID = _cluster_id;

@@ -83,7 +83,7 @@ public:
     if (zb_type_size != template_size) {
       const char * zb_type_desc = zbTypeName();
       const char * class_name = typeString<T>();
-      logEntry("*** Size assertion failed for attribute %s ! Zigbee type '%s' size (%d bit) does not match class type '%s' size (%d bit).",
+      logEntry("*** Size assertion failed for attribute %s ! Zigbee type '%s' which is %d bit does not match class type '%s' which is %d bit.",
         toString().c_str(),
         zb_type_desc,
         zb_type_size*8,
@@ -100,7 +100,7 @@ public:
     if (zb_type_sign != template_sign) {
       const char * zb_type_desc = zbTypeName();
       const char * class_name = typeString<T>();
-      logEntry("*** Sign assertion failed for attribute %s ! Zigbee type '%s' sign (%s) does not match class type '%s' sign (%s).",
+      logEntry("*** Sign assertion failed for attribute %s ! Zigbee type '%s' which is '%s' does not match class type '%s' which is '%s'.",
         toString().c_str(),
         zb_type_desc,
         ::toString(zb_type_sign),
