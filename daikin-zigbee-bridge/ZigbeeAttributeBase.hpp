@@ -140,9 +140,10 @@ public:
     const char* attr_name = zbAttributeName();
     const char * attr_type_name = zbTypeName();
     size_t attr_type_size = zbTypeSize();
+    const char * access_name = zbAccessName();
 
-    return format("{name: '%s', endpoint: 0x%02x, attr: %s (0x%04x), cluster: %s (0x%04x), type: %s, size: %d}",
-      _name, _endpoint, attr_name, _attr_id, cluster_name, _cluster_id, attr_type_name, attr_type_size);
+    return format("{name: '%s', endpoint: 0x%02x, attr: %s (0x%04x), cluster: %s (0x%04x), type: %s, access: %s (0x%04x), size: %d}",
+      _name, _endpoint, attr_name, _attr_id, cluster_name, _cluster_id, attr_type_name, access_name, _access_id, attr_type_size);
   }
 
   virtual bool isValid() const {
@@ -202,9 +203,38 @@ protected:
     if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
       logEntry("WARNING: Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
     }
-  
+
     esp_zb_lock_release();
     return (status == ESP_ZB_ZCL_STATUS_SUCCESS);
+  }
+
+  bool setGenericAttributeRaw(const void* value_ptr, size_t value_size) const {
+    if (value_ptr == nullptr || value_size == 0)
+      return false;
+    if (!isValid())
+      return false;
+  
+    bool success = false;
+    esp_zb_lock_acquire(portMAX_DELAY);
+    
+    // get attribute descriptor
+    esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
+      _endpoint,
+      _cluster_id,
+      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+      _attr_id);
+    if (attr == nullptr) {
+      logEntry("WARNING: Failed to write attribute raw value %s", toString().c_str());
+      goto unlock_and_return;
+    }
+  
+    // Write the value
+    memcpy(attr->data_p, value_ptr, value_size);
+    success = true;
+  
+  unlock_and_return:
+    esp_zb_lock_release();
+    return success;
   }
 
   bool reportAttribute(const void* value_ptr, size_t value_size) const {
