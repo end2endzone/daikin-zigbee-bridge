@@ -50,14 +50,24 @@
 #define STELPRO_MAX_COOL_SETPOINT             (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
 #define STELPRO_OCCUPIED_COOLING_SETPOINT     (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
 
-
-// HT402 only supports HEAT mode
-#define THERMOSTAT_SYSTEM_MODE_OFF 0x00
-#define THERMOSTAT_SYSTEM_MODE_HEAT 0x04
-
-// Running state values
+// Running state values (each bit is the state of something)
 #define THERMOSTAT_RUNNING_STATE_IDLE 0x0000
-#define THERMOSTAT_RUNNING_STATE_HEAT 0x0001
+#define THERMOSTAT_RUNNING_STATE_HEAT (THERMOSTAT_RUNNING_STATE_IDLE | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)
+
+// According to the Zigbee Cluster Library Specification (ZCL v7, Section 2.5.2.2), the values 0xFF (for 8-bit attributes) and 0xFFFF / 0x8000 (for 16-bit attributes)
+// are reserved as "invalid" or "uninitialized" markers. Espressif updated the default value of local_temperature to 0xFFFF to comply with this rule.
+// See definitions of `ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE` and `ESP_ZB_ZCL_VALUE_FF`:
+// ```
+// #define ESP_ZB_ZCL_VALUE_FF             (-1)
+// #define ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE (ESP_ZB_ZCL_VALUE_FF)
+// ```
+// Some ZBOSS‑based stacks may incorrectly reject writes of values that appear to conflict with these invalid markers,
+// which explains why setting attributes such as `pi_heating_demand` to 0 may fail even though 0 is a valid value in the Zigbee specification.
+// To work around this, we define THERMOSTAT_PI_HEATING_DEMAND_UNINITIALIZED_VALUE specifically for this reason.
+// We also change the behavior of setPIHeatingDemand() to use setRawAndReport() instead of the normal set() when specifically dealing with value 0.
+// Without this workaround, the zigbee stack returns `Status: 0x87: (Invalid value)`.
+#define THERMOSTAT_PI_HEATING_DEMAND_UNINITIALIZED_VALUE ESP_ZB_ZCL_VALUE_U8_FF
+#define ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
 
 // Custom Stelpro custom attributes ID
 //
@@ -290,8 +300,8 @@ public:
   // Update energy calculations (call in loop)
   void updateEnergy();
 
+  bool update();
   bool report();
-
   bool setup();
 
 #ifdef USE_ZB_CLASSES
@@ -348,6 +358,37 @@ private:
   int16_t _stelpro_outdoor_temp;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   
+public:  
+  typedef struct zb_zcl_stelpro_thermostat_snapshot_s {
+    // Thermostat cluster
+    int16_t     local_temperature                 ;
+    int16_t     occupied_cooling_setpoint         ;
+    int16_t     occupied_heating_setpoint         ;
+    uint8_t     control_sequence_of_operation     ;
+    uint8_t     system_mode                       ;
+    // Thermostat cluster additional attributes
+    uint16_t    running_state                     ;
+    uint8_t     pi_heating_demand                 ;
+    int16_t     outdoor_temperature               ;
+    zb_uint8_t  occupancy                         ;
+    int16_t     min_heat_setpoint_limit           ;
+    int16_t     max_heat_setpoint_limit           ;
+    int16_t     abs_min_heat_setpoint_limit       ;
+    int16_t     abs_max_heat_setpoint_limit       ;
+    int16_t     min_cool_setpoint_limit           ;
+    int16_t     max_cool_setpoint_limit           ;
+    int16_t     abs_min_cool_setpoint_limit       ;
+    int16_t     abs_max_cool_setpoint_limit       ;
+    // Thermostat UI cluster mandatory attributes
+    uint8_t     ui_config_display_mode            ;
+    uint8_t     ui_config_keypad_lockout          ;
+  } zb_zcl_stelpro_thermostat_snapshot_t;
+  zb_zcl_stelpro_thermostat_snapshot_t _previous = {0};
+
+  bool getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot);
+  void printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot);
+
+private:
 #ifdef USE_ZB_CLASSES
   // Thermostat cluster mandatory attributes
   ZigbeeAttribute<int16_t>    _local_temperature                ;
@@ -357,7 +398,7 @@ private:
   ZigbeeAttribute<uint8_t>    _system_mode                      ;
   // Thermostat cluster additional attributes
   ZigbeeAttribute<uint16_t>   _running_state                    ;
-  ZigbeeAttribute<uint8_t>    _pi_heating_demand                ;
+  ZigbeeAttribute<uint8_t>    _pi_heating_demand                ;   // Percentage of heating demand, see ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE & ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE
   ZigbeeAttribute<int16_t>    _outdoor_temperature              ;
   ZigbeeAttribute<zb_uint8_t> _occupancy                        ;
   ZigbeeAttribute<int16_t>    _min_heat_setpoint_limit          ;
