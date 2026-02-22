@@ -3,6 +3,8 @@
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 #include "type_helper.h"
+#include "logging.h"
+#include "zb_constants_helper.h"
 
 typedef enum {
   ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK = 0x00,
@@ -149,4 +151,119 @@ static TypeSign zb_constants_zcl_attr_type_signed(esp_zb_zcl_attr_type_t value) 
     case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return TYPE_SIGN_UNKNOWN;
     default:                                     return TYPE_SIGN_UNKNOWN;
   }
+}
+
+template<typename T>
+static bool zb_assert_attribute_size(const char* function, esp_zb_zcl_attr_type_t type_id) {
+  size_t attr_size = zb_constants_zcl_attr_type_size(type_id);
+  size_t value_size = sizeof(T);
+  if (value_size != attr_size) {
+    const char * attr_type_name = zb_constants_zcl_attr_type_to_string(type_id);
+    const char * value_type_name = typeString<T>();
+    logEntry("ERROR: *** Size assertion failed in %s() ! Attribute type '%s' is %d bit does not match value type '%s' which is %d bit.",
+      function,
+      attr_type_name,
+      attr_size*8,
+      value_type_name,
+      value_size*8
+      );
+    return false;
+  }
+  return true;
+}
+
+template<typename T>
+static bool zb_assert_attribute_sign(const char* function, esp_zb_zcl_attr_type_t type_id) {
+  TypeSign attr_sign = zb_constants_zcl_attr_type_signed(type_id);
+  TypeSign value_sign = typeSign<T>();
+  if (value_sign != attr_sign) {
+    const char * attr_type_name = zb_constants_zcl_attr_type_to_string(type_id);
+    const char * value_type_name = typeString<T>();
+    logEntry("ERROR: *** Sign assertion failed in %s() ! Attribute type '%s' is '%s' does not match value type '%s' which is '%s'.",
+      function,
+      attr_type_name,
+      ::toString(attr_sign),
+      value_type_name,
+      ::toString(value_sign)
+      );
+    return false;
+  }
+  return true;
+}
+
+static esp_zb_zcl_attr_t* zb_find_attribute_in_attr_list(esp_zb_attribute_list_t* list, uint16_t attribute_id)
+{
+  esp_zb_attribute_list_t *cur = list;
+  while (cur != nullptr) {
+    if (cur->attribute.id == attribute_id) {
+      return &cur->attribute;
+    }
+    cur = cur->next;
+  }
+  return nullptr; // Not found
+}
+
+static esp_zb_zcl_attr_t* zb_find_attribute_in_cluster_list(esp_zb_cluster_list_t* list, uint16_t cluster_id, uint16_t attribute_id)
+{
+  esp_zb_cluster_list_t *cur_cluster = list;
+
+  while (cur_cluster != nullptr) {
+    esp_zb_zcl_cluster_t *cluster = &cur_cluster->cluster;
+
+    // Is that the cluster we are looking for ?
+    if (cluster != nullptr && cluster->cluster_id == cluster_id) {
+      // Only handle clusters that use the linked-list attribute model
+      esp_zb_attribute_list_t *attr_list = cluster->attr_list;
+      if (attr_list != nullptr) {
+        esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attr_list(attr_list, attribute_id);
+        if (attr != nullptr) {
+          return attr;  // Found
+        }
+      }
+    }
+
+    cur_cluster = cur_cluster->next;
+  }
+
+  return nullptr; // Not found in any cluster
+}
+
+template<typename T>
+static bool zb_set_attribute_value_in_attr_list(esp_zb_attribute_list_t *list, uint16_t attribute_id, const T &new_value)
+{
+  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attr_list(list, attribute_id);
+  if (attr == nullptr || attr->data_p == nullptr) {
+    return false;
+  }
+
+  // Assert correct size
+  if (!zb_assert_attribute_size<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  // Assert correct sign
+  if (!zb_assert_attribute_sign<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  memcpy(attr->data_p, &new_value, sizeof(T));
+  return true;
+}
+
+template<typename T>
+static bool zb_set_attribute_value_in_cluster_list(esp_zb_cluster_list_t *list, uint16_t cluster_id, uint16_t attribute_id, const T &new_value)
+{
+  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_cluster_list(list, cluster_id, attribute_id);
+  if (attr == nullptr || attr->data_p == nullptr) {
+    return false;
+  }
+
+  // Assert correct size
+  if (!zb_assert_attribute_size<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  // Assert correct sign
+  if (!zb_assert_attribute_sign<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  memcpy(attr->data_p, &new_value, sizeof(T));
+  return true;
 }

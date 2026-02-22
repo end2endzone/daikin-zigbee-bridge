@@ -18,6 +18,8 @@ static const char* UNKNOWN_ZCL_STATUS_ID = "Unknown ZCL Status";
 static const char* UNKNOWN_ZDP_STATUS_ID = "Unknown ZDP Status";
 static const char* UNKNOWN_ATTR_TYPE = "Unknown Attribute Type";
 static const char* UNKNOWN_ATTR_ACCESS = "Unknown Access Type";
+static const char* UNKNOWN_THERMOSTAT_SYSTEM_MODE = "Unknown Thermostat System Mode";
+static const char* UNKNOWN_THERMOSTAT_RUNNING_STATE = "Unknown Thermostat Running State";
 static const char* UNKNOWN_BASIC_CLUSTER_ATTR = "Unknown Basic Cluster Attribute";
 static const char* UNKNOWN_POWER_CONFIG_CLUSTER_ATTR = "Unknown Power Config Cluster Attribute";
 static const char* UNKNOWN_DEVICE_TEMPERATURE_CLUSTER_ATTR = "Unknown Device Temperature Cluster Attribute";
@@ -265,6 +267,47 @@ static const char* zb_constants_zcl_attr_access_to_string(esp_zb_zcl_attr_access
 
     default: return UNKNOWN_ATTR_ACCESS;
   }
+}
+
+static const char* zb_constants_zcl_thermostat_system_mode_attr_to_string(esp_zb_zcl_thermostat_system_mode_t value) {
+  switch (value) {
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_OFF              :  return "Off";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_AUTO             :  return "Auto";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_COOL             :  return "Cool";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT             :  return "Heat";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_EMERGENCY_HEATING:  return "Emergency-heating";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_PRECOOLING       :  return "Precooling";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_FAN_ONLY         :  return "Fan-only";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_DRY              :  return "Dry";
+    case ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_SLEEP            :  return "Sleep";
+    default: return UNKNOWN_THERMOSTAT_SYSTEM_MODE;
+  }
+}
+
+static String zb_constants_zcl_thermostat_running_state_attr_to_string(uint16_t value) {
+  static const String RUNNING_STATE_IDLE            = String("Idle");
+  static const String RUNNING_STATE_HEAT            = String("Heat");
+  static const String RUNNING_STATE_COOL            = String("Cool");
+  static const String RUNNING_STATE_FAN             = String("Fan");
+  static const String RUNNING_STATE_HEAT_2ND_STAGE  = String("Heat-2nd-stage");
+  static const String RUNNING_STATE_COOL_2ND_STAGE  = String("Cool-2nd-stage");
+  static const String RUNNING_STATE_FAN_2ND_STAGE   = String("Fan-2nd-stage");
+  static const String RUNNING_STATE_FAN_3RD_STAGE   = String("Fan-3rd-stage");
+
+  static const char SEPARATOR = ',';
+  static const String UNKNOWN_THERMOSTAT_RUNNING_STATE_STRING = String(UNKNOWN_THERMOSTAT_RUNNING_STATE);
+
+  if (value == 0) return RUNNING_STATE_IDLE;
+  
+  String output;
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT          ) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_HEAT          ; }
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_COOL_STATE_ON_BIT          ) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_COOL          ; }
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_FAN_STATE_ON_BIT           ) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_FAN           ; }
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_2ND_STAGE_STATE_ON_BIT) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_HEAT_2ND_STAGE; }
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_COOL_2ND_STAGE_STATE_ON_BIT) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_COOL_2ND_STAGE; }
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_FAN_2ND_STAGE_STATE_ON_BIT ) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_FAN_2ND_STAGE ; }
+  if (value & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_FAN_3RD_STAGE_STATE_ON_BIT ) { if (!output.isEmpty()) output += SEPARATOR; output+=RUNNING_STATE_FAN_3RD_STAGE ; }
+  return output;
 }
 
 static const char* zb_constants_zcl_basic_cluster_attr_to_string(esp_zb_zcl_basic_attr_t value) {
