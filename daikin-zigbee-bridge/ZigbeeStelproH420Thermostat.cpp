@@ -493,6 +493,9 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
 // Zigbee attribute setters
 // Thermostat cluster mandatory attributes
 bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
+  // Round value to the nearest multiple of STELPRO_TEMP_MEASUREMENT_TOLERANCE
+  temperature = (((temperature + (STELPRO_TEMP_MEASUREMENT_TOLERANCE/2)) / STELPRO_TEMP_MEASUREMENT_TOLERANCE) * STELPRO_TEMP_MEASUREMENT_TOLERANCE);
+
 #ifdef USE_ZB_CLASSES
   bool success = _local_temperature.set(temperature);
 #else // USE_ZB_CLASSES
