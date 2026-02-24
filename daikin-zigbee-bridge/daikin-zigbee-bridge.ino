@@ -283,12 +283,16 @@ void simulateTemperature() {
     new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
     new_system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_OFF;
   } else {
+    // Temperature difference is above the threshold. Temperature must change and system must be updated.
 
     // Compute new system mode based on current situation setpoint vs local_temp.
     if (setpoint > local_temp) {
       // Thermostat must HEAT
       new_system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT;
       new_running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
+    } else {
+      new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
+      new_system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_OFF;
     }
 
     int16_t target_temp = setpoint;
