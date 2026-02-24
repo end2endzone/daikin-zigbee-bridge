@@ -364,18 +364,6 @@ void simulateTemperature() {
                 zb_constants_zcl_thermostat_running_state_attr_to_string(new_running_state).c_str(),
                 power_watts);
 
-  // Force setting attribute to see them reflected in the Zigbee2MQTT's UI.
-  // cycle keypad_lockout
-  uint8_t current_keypad_lockout = 0;
-  if (zbThermostat->getKeypadLockout(current_keypad_lockout)) {
-    uint8_t new_keypad_lockout = current_keypad_lockout + 1;
-    if (new_keypad_lockout > ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_LOCK2)
-      new_keypad_lockout = ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK;
-    zbThermostat->setKeypadLockout(new_keypad_lockout);
-  }
-
-
-
   //
   printAllAttributes();
 }
