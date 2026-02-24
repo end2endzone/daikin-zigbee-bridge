@@ -54,21 +54,6 @@
 #define THERMOSTAT_RUNNING_STATE_IDLE 0x0000
 #define THERMOSTAT_RUNNING_STATE_HEAT (THERMOSTAT_RUNNING_STATE_IDLE | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)
 
-// According to the Zigbee Cluster Library Specification (ZCL v7, Section 2.5.2.2), the values 0xFF (for 8-bit attributes) and 0xFFFF / 0x8000 (for 16-bit attributes)
-// are reserved as "invalid" or "uninitialized" markers. Espressif updated the default value of local_temperature to 0xFFFF to comply with this rule.
-// See definitions of `ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE` and `ESP_ZB_ZCL_VALUE_FF`:
-// ```
-// #define ESP_ZB_ZCL_VALUE_FF             (-1)
-// #define ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE (ESP_ZB_ZCL_VALUE_FF)
-// ```
-// Some ZBOSS‑based stacks may incorrectly reject writes of values that appear to conflict with these invalid markers,
-// which explains why setting attributes such as `pi_heating_demand` to 0 may fail even though 0 is a valid value in the Zigbee specification.
-// To work around this, we define THERMOSTAT_PI_HEATING_DEMAND_UNINITIALIZED_VALUE specifically for this reason.
-// We also change the behavior of setPIHeatingDemand() to use setRawAndReport() instead of the normal set() when specifically dealing with value 0.
-// Without this workaround, the zigbee stack returns `Status: 0x87: (Invalid value)`.
-#define THERMOSTAT_PI_HEATING_DEMAND_UNINITIALIZED_VALUE ESP_ZB_ZCL_VALUE_U8_FF
-#define ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-
 // Custom Stelpro custom attributes ID
 //
 // Stelpro outdoor temperature:
@@ -108,7 +93,6 @@
  * Presets:
  *   https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/lib/exposes.ts#L950
  */
- ;
 typedef struct {
   esp_zb_basic_cluster_cfg_t basic_cfg;                                 /*!<  Basic cluster configuration, @ref esp_zb_basic_cluster_cfg_s */
   esp_zb_identify_cluster_cfg_t identify_cfg;                           /*!<  Identify cluster configuration, @ref esp_zb_identify_cluster_cfg_s */
@@ -272,7 +256,7 @@ public:
   bool setSystemMode(uint8_t mode);
   // Thermostat cluster additional attributes
   bool setRunningState(uint16_t running);
-  bool setPIHeatingDemand(uint8_t demand);
+  bool setPIHeatingDemand(uint8_t demand);  // Can only be set when HEATING bit of running_state is set. Must be set to 0 before turning off the HEATING bit. Must be set to non-zero after turning on the HEATING bit.
   bool setOutdoorTemperature(int16_t temperature);
   bool setOccupancy(zb_uint8_t occupancy);
   //bool setMinHeatingSetpointLimit(int16_t value);
@@ -358,7 +342,7 @@ private:
   int16_t _stelpro_outdoor_temp;
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   
-public:  
+public:
   typedef struct zb_zcl_stelpro_thermostat_snapshot_s {
     // Thermostat cluster
     int16_t     local_temperature                 ;
@@ -390,6 +374,40 @@ public:
 
 private:
 #ifdef USE_ZB_CLASSES
+  /*
+  zigbee attribute definitions: {
+      {name: '_local_temperature', endpoint: 0x19, attr: Local Temperature (0x0000), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Reporting, Read Only (0x0005), size: 2}
+      {name: '_occupied_cooling_setpoint', endpoint: 0x19, attr: Occupied Cooling Setpoint (0x0011), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Scene, Read/Write (0x0013), size: 2}
+      {name: '_occupied_heating_setpoint', endpoint: 0x19, attr: Occupied Heating Setpoint (0x0012), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Scene, Read/Write (0x0013), size: 2}
+      {name: '_control_sequence_of_operation', endpoint: 0x19, attr: Control Sequence Of Operation (0x001b), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
+      {name: '_system_mode', endpoint: 0x19, attr: System Mode (0x001c), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Scene, Read/Write (0x0013), size: 1}
+      {name: '_running_state', endpoint: 0x19, attr: Thermostat Running State (0x0029), cluster: Thermostat (0x0201), type: 16-bit Bitmap, access: Read Only (0x0001), size: 2}
+      {name: '_pi_heating_demand', endpoint: 0x19, attr: PI Heating Demand (0x0008), cluster: Thermostat (0x0201), type: Unsigned 8-bit Value, access: Reporting, Read Only (0x0005), size: 1}
+      {name: '_outdoor_temperature', endpoint: 0x19, attr: Outdoor Temperature (0x0001), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
+      {name: '_occupancy', endpoint: 0x19, attr: Occupancy (0x0002), cluster: Thermostat (0x0201), type: 8-bit Bitmap, access: Read Only (0x0001), size: 1}
+      {name: '_min_heat_setpoint_limit', endpoint: 0x19, attr: Min Heat Setpoint Limit (0x0015), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
+      {name: '_max_heat_setpoint_limit', endpoint: 0x19, attr: Max Heat Setpoint Limit (0x0016), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
+      {name: '_abs_min_heat_setpoint_limit', endpoint: 0x19, attr: Abs Min Heat Setpoint Limit (0x0003), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
+      {name: '_abs_max_heat_setpoint_limit', endpoint: 0x19, attr: Abs Max Heat Setpoint Limit (0x0004), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
+      {name: '_min_cool_setpoint_limit', endpoint: 0x19, attr: Min Cool Setpoint Limit (0x0017), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
+      {name: '_max_cool_setpoint_limit', endpoint: 0x19, attr: Max Cool Setpoint Limit (0x0018), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
+      {name: '_abs_min_cool_setpoint_limit', endpoint: 0x19, attr: Abs Min Cool Setpoint Limit (0x0005), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
+      {name: '_abs_max_cool_setpoint_limit', endpoint: 0x19, attr: Abs Max Cool Setpoint Limit (0x0006), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
+      {name: '_ui_config_display_mode', endpoint: 0x19, attr: Temperature Display Mode (0x0000), cluster: Thermostat UI Configuration (0x0204), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
+      {name: '_ui_config_keypad_lockout', endpoint: 0x19, attr: Keypad Lockout (0x0001), cluster: Thermostat UI Configuration (0x0204), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
+  }
+
+  Notes on specific attributes:
+    pi_heating_demand:
+      * Percentage of heating demand, see ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE & ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE.
+      * Zigbee2mqtt assume values are in [0,255] range. Other zigbee projects (including esp-zigbee-sdk library) assume values in [0,100] range.
+        * TODO: validate with a real Stelpro thermostat.
+      * Can only be set when HEATING bit of running_state is set. Must be set to 0 before turning off the HEATING bit. Must be set to non-zero after turning on the HEATING bit.
+    _ui_config_keypad_lockout:
+      * Can be set by the device itself but the new value won't be reflected in zigbee2mqtt. zigbee2mqtt might simple not watching the attribute for changes.
+        * TODO: validate with a real Stelpro thermostat.
+  */
+
   // Thermostat cluster mandatory attributes
   ZigbeeAttribute<int16_t>    _local_temperature                ;
   ZigbeeAttribute<int16_t>    _occupied_cooling_setpoint        ;
@@ -398,7 +416,7 @@ private:
   ZigbeeAttribute<uint8_t>    _system_mode                      ;
   // Thermostat cluster additional attributes
   ZigbeeAttribute<uint16_t>   _running_state                    ;
-  ZigbeeAttribute<uint8_t>    _pi_heating_demand                ;   // Percentage of heating demand, see ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE & ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE
+  ZigbeeAttribute<uint8_t>    _pi_heating_demand                ;
   ZigbeeAttribute<int16_t>    _outdoor_temperature              ;
   ZigbeeAttribute<zb_uint8_t> _occupancy                        ;
   ZigbeeAttribute<int16_t>    _min_heat_setpoint_limit          ;

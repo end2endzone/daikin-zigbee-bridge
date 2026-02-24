@@ -64,7 +64,7 @@
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
 
 // Temperature simulation timing
-#define SIMULATION_UPDATE_INTERVAL             2000 // 10.0 seconds
+#define SIMULATION_UPDATE_INTERVAL             5000 //  5.0 seconds
 #define SIMULATION_DEFAULT_ROOM_TEMPERATURE   2000  // 20.0°C
 #define SIMULATION_DEFAULT_HEATING_SETPOINT   2400  // 24.0°C
 #define SIMULATION_TEMPERATURE_DIFF_HIGH       500  //  5.0°C
@@ -238,31 +238,6 @@ void printAllAttributes() {
   
   logEntry("attributes: {");
 
-  //#define TEST_STACK_CORRUPTION
-  #ifdef TEST_STACK_CORRUPTION
-  {
-    #pragma pack(push, 1)
-    typedef struct {
-        char before[6];
-        ZigbeeAttribute<int16_t> local_temperature;
-        char after[6];
-    } PackedStruct;
-    #pragma pack(pop)
-    PackedStruct s;
-    strcpy(s.before, "HELLO");
-    strcpy(s.after, "hello");
-
-    logEntry("-----> local_temperature.setup(...)=%d", s.local_temperature.setup(STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID));
-    logEntry("-----> local_temperature.isInitialized()=%d", s.local_temperature.isInitialized());
-    logEntry("-----> local_temperature.get()=%d", s.local_temperature.get());
-    logEntry("-----> local_temperature.set()=%d", s.local_temperature.set(1500));
-    logEntry("-----> local_temperature.get()=%d", s.local_temperature.get());
-    logEntry("-----> local_temperature.toString()=%s", s.local_temperature.toString().c_str());
-    logEntry("-----> s.before=%s", s.before);
-    logEntry("-----> s.after=%s", s.after);
-  }
-  #endif // TEST_STACK_CORRUPTION
-
   // Get and show all thermostat attributes
   ZigbeeStelproH420Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {0};
   bool readed = zbThermostat->getSnapshot(actuals);
@@ -344,20 +319,41 @@ void simulateTemperature() {
     }
   }
 
-  // Update thermostat attribute, if changed
-  if (new_system_mode != system_mode) {
-    zbThermostat->setSystemMode(new_system_mode);
+  // Note:
+  // Zigbee attribute `pi_heating_demand` can not be set to a value (even 0) if :
+  // * attribute `system_mode` is IDLE or
+  // * HEATING bit in `running_state` is not set.
+  // So we must set this flag sometimes before (and sometimes after) `system_mode` and `running_state` to make sure it is accepted.
+  bool pi_heating_demand_is_dirty = (new_pi_heating_demand != pi_heating_demand);
+  uint16_t tmp_running_state = 0;
+  if (pi_heating_demand_is_dirty && zbThermostat->getRunningState(tmp_running_state) && (tmp_running_state & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)) {
+    // If heating bit is already set, it is safe to update pi_heating_demand now.
+    // This cover use case when `running_state` transitions from `HEATING` --> `IDLE`.
+    // We must update `pi_heating_demand` before HEATING flag in `runnig_state` is cleared.
+    zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
+    pi_heating_demand_is_dirty = false;
   }
+
+  // Update thermostat attribute, if changed
   if (new_running_state != running_state) {
     zbThermostat->setRunningState(new_running_state);
-  }
-  if (new_pi_heating_demand != pi_heating_demand) {
-    zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
   }
   if (new_local_temp != local_temp) {
     zbThermostat->setLocalTemperature(new_local_temp);
   }
+  if (new_system_mode != system_mode) {
+    zbThermostat->setSystemMode(new_system_mode);
+  }
   
+  // If pi_heating_demand is still dirty, we must update it now
+  if (pi_heating_demand_is_dirty) {
+    // If pi_heating_demand is still dirty, we update it.
+    // This cover use case when `running_state` has just transitioned from `IDLE` --> `HEATING`.
+    // We must update `pi_heating_demand` after HEATING flag in `runnig_state` is set.
+    zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
+    pi_heating_demand_is_dirty = false;
+  }
+
   // Calculate power for display (internal calculator will compute accurately)
   int32_t power_watts = (STELPRO_MAX_POWER_WATTS * pi_heating_demand) / 100;
   
@@ -367,6 +363,18 @@ void simulateTemperature() {
                 new_pi_heating_demand,
                 zb_constants_zcl_thermostat_running_state_attr_to_string(new_running_state).c_str(),
                 power_watts);
+
+  // Force setting attribute to see them reflected in the Zigbee2MQTT's UI.
+  // cycle keypad_lockout
+  uint8_t current_keypad_lockout = 0;
+  if (zbThermostat->getKeypadLockout(current_keypad_lockout)) {
+    uint8_t new_keypad_lockout = current_keypad_lockout + 1;
+    if (new_keypad_lockout > ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_LOCK2)
+      new_keypad_lockout = ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK;
+    zbThermostat->setKeypadLockout(new_keypad_lockout);
+  }
+
+
 
   //
   printAllAttributes();

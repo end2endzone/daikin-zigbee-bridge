@@ -110,10 +110,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_display_mode                     .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE);
   _ui_config_keypad_lockout                   .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE);
 
-  #ifdef ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-  _pi_heating_demand                          .setDefaultValue(THERMOSTAT_PI_HEATING_DEMAND_UNINITIALIZED_VALUE);
-  #endif // ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-
 #else // USE_ZB_CLASSES
 #endif // USE_ZB_CLASSES
 
@@ -131,12 +127,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE ))   logEntry("Failed to set attribute 'DISPLAY_MODE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE ))             logEntry("Failed to set attribute 'KEYPAD_LOCKOUT' value in cluster list!");
   
-  #ifdef ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-  if (!zb_set_attribute_value_in_cluster_list<uint8_t>(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, THERMOSTAT_PI_HEATING_DEMAND_UNINITIALIZED_VALUE)) {
-    logEntry("Failed to set attribute PI_HEATING_DEMAND value in cluster list!");
-  }
-  #endif // ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-
   // Set endpoint configuration
   _ep_config = {
     .endpoint = _endpoint,
@@ -595,26 +585,9 @@ bool ZigbeeStelproH420Thermostat::setRunningState(uint16_t state) {
 
 bool ZigbeeStelproH420Thermostat::setPIHeatingDemand(uint8_t demand) {
 #ifdef USE_ZB_CLASSES
-  #ifdef ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-  bool success = _pi_heating_demand.setRawAndReport(demand);
-  #else
-  if (demand < 1) demand = 1; // Override minimum value to 1 even through ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE is defined as 0.
   bool success = _pi_heating_demand.set(demand);
-  #endif // ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
 #else // USE_ZB_CLASSES
-  #ifdef ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-  if (demand < 1) demand = 1; // Override minimum value to 1 even through ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE is defined as 0.
-  #endif // ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
   bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, demand);
-  #ifdef ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-  if (!success) {
-    for(uint8_t i=0; i<20 && success == false; i++) {
-      logEntry("%s() --> demand=%d", __FUNCTION__, i);
-      success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, i);
-    }
-  }
-  #endif // ENABLE_THERMOSTAT_PI_HEATING_DEMAND_WORKAROUND
-
 #endif // USE_ZB_CLASSES
   if (!success)
     return false;
