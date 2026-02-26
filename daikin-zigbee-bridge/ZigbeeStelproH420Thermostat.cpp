@@ -64,7 +64,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_display_mode                     .init("_ui_config_display_mode"                , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
   _ui_config_keypad_lockout                   .init("_ui_config_keypad_lockout"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID, STELPRO_MANUFACTURER_CODE);
+  _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID);
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   // Fill the attribute list to allowing processing all fields
@@ -1125,23 +1125,32 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
 
   // Manufacturer attributes variables
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+  // Note:
+  // When adding the attribute with function esp_zb_cluster_add_manufacturer_attr(), zigbee2mqtt is unable to read or write the attribute.
+  // The following error is reported:
+  // ```
+  // [2/26/2026, 5:26:10 PM] z2m: Publish 'set' 'write' to '0x123abcdefa123456' failed: 'Error: ZCL command 0x123abcdefa123456/25 hvacThermostat.write(
+  // {"StelproOutdoorTemp":-10}, {"timeout":10000,"disableResponse":false,"disableRecovery":false,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false})
+  // failed (Status 'UNSUPPORTED_ATTRIBUTE')'
+  // ```
+  // Note that it could also be a bug in ESP ZIGBEE SDK's library which do not register attribute with custom manufacturer codes.
+  // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
+  // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
   #ifdef USE_ZB_CLASSES
-    err = esp_zb_cluster_add_manufacturer_attr(
+    err = esp_zb_cluster_add_attr(
       esp_zb_thermostat_cluster,
       _stelpro_outdoor_temperature.getClusterId(),
       _stelpro_outdoor_temperature.getAttributeId(),
-      STELPRO_MANUFACTURER_CODE,
       ESP_ZB_ZCL_ATTR_TYPE_S16,
       ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
       _stelpro_outdoor_temperature.getDefaultDataPointer()
     );
     logError(err, __FILE__, __LINE__);
   #else // USE_ZB_CLASSES
-    err = esp_zb_cluster_add_manufacturer_attr(
+    err = esp_zb_cluster_add_attr(
       esp_zb_thermostat_cluster,
       ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
       ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID,
-      STELPRO_MANUFACTURER_CODE,
       ESP_ZB_ZCL_ATTR_TYPE_S16,
       ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
       &_stelpro_outdoor_temperature
