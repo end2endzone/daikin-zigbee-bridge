@@ -433,6 +433,12 @@ void onOccupancyChange(zb_uint8_t occupancy) {
   logEntry("Occupancy changed from coordinator to: %d", occupancy);
 }
 
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+void onStelproOutdoorTemperatureChange(int16_t temperature) {
+  logEntry("Stelpro Outdoor Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
+}
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+
 // -------------------------------------------------------------------------
 //                            LED Status Update
 // -------------------------------------------------------------------------
@@ -522,6 +528,9 @@ void setup() {
   zbThermostat->onPIHeatingDemandChange(onPIHeatingDemandChange);
   zbThermostat->onOutdoorTemperatureChange(onOutdoorTemperatureChange);
   zbThermostat->onOccupancyChange(onOccupancyChange);
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+  zbThermostat->onStelproOutdoorTemperatureChange(onStelproOutdoorTemperatureChange);
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   // Set manufacturer and model
   zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);

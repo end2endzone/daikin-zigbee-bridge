@@ -62,7 +62,7 @@ private:
       ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
       _attr_id);
     if (attr == nullptr) {
-      logEntry("Failed to setup attribute %s", toString().c_str());
+      logEntry("WARNING: Attribute lookup fail: %s", toString().c_str());
       goto unlock_and_return;
     }
 

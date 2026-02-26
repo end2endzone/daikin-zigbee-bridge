@@ -34,7 +34,7 @@
 // Notes:
 //   HT402 uses endpoint 25, not 10!
 #define STELPRO_ENDPOINT 25
-#define STELPRO_MANUFACTURER_CODE 0x1297  // 4759 in decimal
+#define STELPRO_MANUFACTURER_CODE 0x1185
 #define STELPRO_MANUFACTURER_NAME "Stelpro"
 #define STELPRO_MODEL_NAME "HT402"
 
@@ -54,20 +54,42 @@
 #define THERMOSTAT_RUNNING_STATE_IDLE 0x0000
 #define THERMOSTAT_RUNNING_STATE_HEAT (THERMOSTAT_RUNNING_STATE_IDLE | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)
 
-// Custom Stelpro custom attributes ID
-//
 // Stelpro outdoor temperature:
-//    The outdoor temperature seems to be exposed as a custom attribute.
-//    The code in https://github.com/Koenkk/zigbee-herdsman-converters, seems to refer to
-//    strings such as `stelpro_thermostat_outdoor_temperature` and `StelproOutdoorTemp`.
-//    There is already a known attribute for outdoor temperature in the specification according to:
-//    https://docs.espressif.com/projects/esp-zigbee-sdk/en/latest/esp32/api-reference/zcl/esp_zigbee_zcl_thermostat.html
-//    Attribute `ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID` might be the actual measured temperature by a physical sensor
-//    on the device and not an attribute whose purpose is to "display a value on the thermostat".
-//    Do not expose this attribute for the moment.
+//  The displayed outdoor temperature is exposed as a custom attribute.
+//  The code in https://github.com/Koenkk/zigbee-herdsman-converters, to refer to
+//  strings such as `stelpro_thermostat_outdoor_temperature` and `StelproOutdoorTemp`.
+//  The Zigbee specification has already a known attribute for outdoor temperature in the specification according to:
+//  https://docs.espressif.com/projects/esp-zigbee-sdk/en/latest/esp32/api-reference/zcl/esp_zigbee_zcl_thermostat.html
+//  Attribute `ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID` is not related to this attribute. It refers to the actual measured temperature
+//  by a physical sensor on the device and not an attribute whose purpose is to "display a value on the thermostat".
+//  Setting this attribute to value 12 using zigbee2mqtt outputs the following error:
+//    ```
+//    [2/25/2026, 10:40:20 PM] z2m: Publish 'set' 'write' to '0x232cabcdef123456' failed: 'Error: ZCL command 0x232cabcdef123456/25 hvacThermostat.write({"StelproOutdoorTemp":12},
+//    {"timeout":10000,"disableResponse":false,"disableRecovery":false,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false}) failed
+//    (Delivery failed for '14298'.)'
+//    ```
+//    where 14298 is 0x37DA.
+//  Custom attributes should be greater than 0x4000.
+//  The `StelproOutdoorTemp` attribute definition is available at 
+//    * https://github.com/Koenkk/zigbee-specification/blob/3c96049cd632d0780b9f79ebc8aecc672d4c4505/src/zcl/definition/clusters.ts#L1906
+//    * https://github.com/Koenkk/zigbee-herdsman/blob/v0.33.6/src/zcl/definition/cluster.ts#L2022
+//  It is defined as `StelproOutdoorTemp: {ID: 0x4001, type: DataType.INT16}`.
+#define ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-#define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID 0xDEADBEEF // (maybe 0x4001)
+#define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID 0x4001
+#define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_MIN_VALUE  -3200
+#define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_MAX_VALUE  19900
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+
+// Stelpro outdoor temperature:
+//  This is Stelpro attribute exposed as a custom attribute.
+//  The `StelproSystemMode` attribute definition is available at
+//    * https://github.com/Koenkk/zigbee-specification/blob/3c96049cd632d0780b9f79ebc8aecc672d4c4505/src/zcl/definition/clusters.ts#L1905
+//    * https://github.com/Koenkk/zigbee-herdsman/blob/v0.33.6/src/zcl/definition/cluster.ts#L2021
+//  It is defined as `StelproSystemMode: {ID: 0x401c, type: DataType.ENUM8}`.
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE
+#define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_SYSTEM_MODE_ID 0x401c
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE
 
 // Power & Energy:
 //    According to https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/devices/stelpro.ts, lines 10 to 29,
@@ -94,53 +116,41 @@
  *   https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/lib/exposes.ts#L950
  */
 typedef struct {
+  // Minimum mandatory clusters for a thermostat (see esp_zb_thermostat_cfg_t for list)
   esp_zb_basic_cluster_cfg_t basic_cfg;                                 /*!<  Basic cluster configuration, @ref esp_zb_basic_cluster_cfg_s */
   esp_zb_identify_cluster_cfg_t identify_cfg;                           /*!<  Identify cluster configuration, @ref esp_zb_identify_cluster_cfg_s */
-  esp_zb_groups_cluster_cfg_t groups_cfg;                               /*!<  Groups cluster configuration, @ref esp_zb_groups_cluster_cfg_s */
   esp_zb_thermostat_cluster_cfg_t thermostat_cfg;                       /*!<  Thermostat cluster configuration, @ref esp_zb_thermostat_cluster_cfg_t */
+  
+  // Additional cluster configs
+  esp_zb_groups_cluster_cfg_t groups_cfg;                               /*!<  Groups cluster configuration, @ref esp_zb_groups_cluster_cfg_s */
   esp_zb_thermostat_ui_config_cluster_cfg_t thermostat_ui_config_cfg;   /*!<  Thermostat cluster configuration, @ref esp_zb_thermostat_ui_config_cluster_cfg_s */
   //esp_zb_temperature_meas_cluster_cfg_t temp_meas_cfg;                /*!<  Temperature measurement cluster configuration, @ref esp_zb_temperature_meas_cluster_cfg_s */
 } zigbee_stelpro_thermostat_cfg_t;
 
 /**
  * @brief Default configuration for Stelpro H420 thermostat
- * Notes:
- *   - For `occupied_cooling_setpoint`, do not use default value `ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_DEFAULT_VALUE` of 26.0°C.
- *     If you do, this will set an upper limit for `occupied_heating_setpoint` at 25.0°C.
- *     Controllers that try to set a value above 25.0°C will get a "Invalid Value" error such as:
- *     ```
- *     z2m: Publish 'set' 'occupied_heating_setpoint' to '0x404ccafffe563248' failed:
- *     'Error: ZCL command 0x404ccafffe563248/25 hvacThermostat.write(
- *     {"occupiedHeatingSetpoint":2900}, 
- *     {"timeout":10000,
- *       "disableResponse":false,
- *       "disableRecovery":false,
- *       "disableDefaultResponse":true,
- *       "direction":0,
- *       "reservedBits":0,
- *       "writeUndiv":false})
- *       failed (Status 'INVALID_VALUE')'
- *     ```
- *     I think the zigbee stack can not allow a situation where `occupied_heating_setpoint > occupied_cooling_setpoint`.
  */
+
 #define ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG()                                                    \
-  {                                                                                                   \
+{                                                                                                     \
+    /* Using same default values as ESP_ZB_DEFAULT_THERMOSTAT_CONFIG() macro */                       \
     .basic_cfg = {                                                                                    \
       .zcl_version = ESP_ZB_ZCL_BASIC_ZCL_VERSION_DEFAULT_VALUE,                                      \
-      .power_source = ESP_ZB_AF_NODE_POWER_SOURCE_CONSTANT_POWER,                                     \
+      .power_source = ESP_ZB_ZCL_BASIC_POWER_SOURCE_DEFAULT_VALUE,                                    \
     },                                                                                                \
     .identify_cfg = {                                                                                 \
       .identify_time = ESP_ZB_ZCL_IDENTIFY_IDENTIFY_TIME_DEFAULT_VALUE,                               \
     },                                                                                                \
-    .groups_cfg = {                                                                                   \
-      .groups_name_support_id = ESP_ZB_ZCL_GROUPS_NAME_SUPPORT_DEFAULT_VALUE,                         \
-    },                                                                                                \
     .thermostat_cfg = {                                                                               \
       .local_temperature = ESP_ZB_ZCL_THERMOSTAT_LOCAL_TEMPERATURE_DEFAULT_VALUE,                     \
-      .occupied_cooling_setpoint = STELPRO_OCCUPIED_COOLING_SETPOINT,                                 \
+      .occupied_cooling_setpoint = ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_DEFAULT_VALUE,     \
       .occupied_heating_setpoint = ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_DEFAULT_VALUE,     \
       .control_sequence_of_operation = ESP_ZB_ZCL_THERMOSTAT_CONTROL_SEQ_OF_OPERATION_DEFAULT_VALUE,  \
       .system_mode = ESP_ZB_ZCL_THERMOSTAT_CONTROL_SYSTEM_MODE_DEFAULT_VALUE,                         \
+    },                                                                                                \
+                                                                                                      \
+    .groups_cfg = {                                                                                   \
+      .groups_name_support_id = ESP_ZB_ZCL_GROUPS_NAME_SUPPORT_DEFAULT_VALUE,                         \
     },                                                                                                \
     .thermostat_ui_config_cfg = {                                                                     \
       .temperature_display_mode = ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE, \
@@ -190,6 +200,11 @@ public:
   void onOccupancyChange(void (*callback)(zb_uint8_t)) {
     callbacks._on_occupancy_change = callback;
   } 
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+  void onStelproOutdoorTemperatureChange(void (*callback)(int16_t)) {
+    callbacks._on_stelpro_outdoor_temperature_change = callback;
+  } 
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
 #ifdef USE_ZB_CLASSES
   // Zigbee atributes getters
@@ -244,7 +259,11 @@ public:
 #endif // USE_ZB_CLASSES
 
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  int16_t getStelproOutdoorTemp() const { return _stelpro_outdoor_temp; }
+#ifdef USE_ZB_CLASSES
+  bool getStelproOutdoorTemp(int16_t& output) const               { return _stelpro_outdoor_temperature   .get(output); }
+#else // USE_ZB_CLASSES
+  bool getStelproOutdoorTemp(int16_t& output) const               { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID,                         output); }
+#endif // USE_ZB_CLASSES
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   // Zigbee atributes setters
@@ -334,13 +353,11 @@ private:
     void (*_on_pi_heating_demand_change)(uint8_t);
     void (*_on_outdoor_temperature_change)(int16_t);
     void (*_on_occupancy_change)(zb_uint8_t);
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+    void (*_on_stelpro_outdoor_temperature_change)(int16_t);
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   } zb_zcl_thermostat_callbacks_t;
   zb_zcl_thermostat_callbacks_t callbacks = {0};
-
-  // Thermostat state variables
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  int16_t _stelpro_outdoor_temp;
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   
 public:
   typedef struct zb_zcl_stelpro_thermostat_snapshot_s {
@@ -366,6 +383,10 @@ public:
     // Thermostat UI cluster mandatory attributes
     uint8_t     ui_config_display_mode            ;
     uint8_t     ui_config_keypad_lockout          ;
+    // Manufacturer attributes variables
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+    int16_t     stelpro_outdoor_temperature       ;
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   } zb_zcl_stelpro_thermostat_snapshot_t;
   zb_zcl_stelpro_thermostat_snapshot_t _previous = {0};
 
@@ -430,6 +451,10 @@ private:
   // Thermostat UI cluster mandatory attributes
   ZigbeeAttribute<uint8_t>    _ui_config_display_mode           ;
   ZigbeeAttribute<uint8_t>    _ui_config_keypad_lockout         ;
+  // Manufacturer attributes variables
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+  ZigbeeAttribute<int16_t>    _stelpro_outdoor_temperature      ;
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   ZigbeeAttributeList _zigbee_attribute_list;
 
@@ -438,6 +463,11 @@ private:
   uint8_t _pi_heating_demand;
   int16_t _outdoor_temperature;
   zb_uint8_t _occupancy;
+  // Manufacturer attributes variables
+#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+  int16_t _stelpro_outdoor_temperature;
+#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+
 #endif // USE_ZB_CLASSES
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
