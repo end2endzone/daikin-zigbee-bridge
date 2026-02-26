@@ -10,6 +10,7 @@ public:
   virtual ~IZigbeeAttribute() = default;
 
   virtual void init(const char * name, uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) = 0;
+  virtual void init(const char * name, uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id, uint16_t manuf_code) = 0;
   virtual bool isInitialized() const = 0;
   
   virtual bool setup() = 0;

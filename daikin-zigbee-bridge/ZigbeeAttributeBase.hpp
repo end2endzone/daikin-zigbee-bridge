@@ -18,6 +18,7 @@ protected:
   esp_zb_zcl_attr_type_t _type_id; // uint8_t
   esp_zb_zcl_attr_access_t _access_id; // uint8_t
   uint16_t _manuf_code;
+  bool _is_manuf_specific;
 
 public:
   ZigbeeAttributeBase()
@@ -62,6 +63,15 @@ private:
       ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
       _attr_id);
     if (attr == nullptr) {
+      // Try again with manufacturer specific APIs...
+      attr = esp_zb_zcl_get_manufacturer_attribute(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _attr_id,
+        _manuf_code);      
+    }
+    if (attr == nullptr) {
       logEntry("WARNING: Attribute lookup fail: %s", toString().c_str());
       goto unlock_and_return;
     }
@@ -90,8 +100,18 @@ public:
     _attr_id = attr_id;
   }
 
+  virtual void init(const char * name, uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id, uint16_t manuf_code) {
+    _name = name;
+    _endpoint = endpoint;
+    _cluster_id = cluster_id;
+    _attr_id = attr_id;
+    _manuf_code = manuf_code;
+
+    _is_manuf_specific = true;
+  }
+
   virtual bool isInitialized() const override {
-    if (_name == nullptr && _endpoint == 0 && _cluster_id == 0 && _attr_id == 0) return false;
+    if (_name == nullptr && _endpoint == 0 && _cluster_id == 0 && _attr_id == 0 && _manuf_code != 0) return false;
     return true;
   }
 
@@ -163,11 +183,21 @@ protected:
     esp_zb_lock_acquire(portMAX_DELAY);
     
     // get attribute descriptor
-    esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
-      _endpoint,
-      _cluster_id,
-      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-      _attr_id);
+    esp_zb_zcl_attr_t * attr = nullptr;
+    if (!_is_manuf_specific) {
+      attr = esp_zb_zcl_get_attribute(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _attr_id);
+    } else {
+      attr = esp_zb_zcl_get_manufacturer_attribute(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _attr_id,
+        _manuf_code);      
+    }
     if (attr == nullptr) {
       logEntry("WARNING: Failed to read attribute %s", toString().c_str());
       goto unlock_and_return;
@@ -192,14 +222,27 @@ protected:
     esp_zb_lock_acquire(portMAX_DELAY);
   
     // set attribute value
-    status = esp_zb_zcl_set_attribute_val(
-      _endpoint,
-      _cluster_id,
-      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-      _attr_id,
-      (void*)value_ptr,
-      false
-    );
+    esp_zb_zcl_attr_t * attr = nullptr;
+    if (!_is_manuf_specific) {
+      status = esp_zb_zcl_set_attribute_val(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _attr_id,
+        (void*)value_ptr,
+        false
+      );
+    } else {
+      status = esp_zb_zcl_set_manufacturer_attribute_val(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _manuf_code,
+        _attr_id,
+        (void*)value_ptr,
+        false
+      );
+    }
     if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
       logEntry("WARNING: Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
     }
@@ -218,11 +261,21 @@ protected:
     esp_zb_lock_acquire(portMAX_DELAY);
     
     // get attribute descriptor
-    esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
-      _endpoint,
-      _cluster_id,
-      ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-      _attr_id);
+    esp_zb_zcl_attr_t * attr = nullptr;
+    if (!_is_manuf_specific) {
+      attr = esp_zb_zcl_get_attribute(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _attr_id);
+    } else {
+      attr = esp_zb_zcl_get_manufacturer_attribute(
+        _endpoint,
+        _cluster_id,
+        ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        _attr_id,
+        _manuf_code);      
+    }
     if (attr == nullptr) {
       logEntry("WARNING: Failed to write attribute raw value %s", toString().c_str());
       goto unlock_and_return;

@@ -64,7 +64,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_display_mode                     .init("_ui_config_display_mode"                , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
   _ui_config_keypad_lockout                   .init("_ui_config_keypad_lockout"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-  _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID);
+  _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID, STELPRO_MANUFACTURER_CODE);
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   // Fill the attribute list to allowing processing all fields
@@ -1126,28 +1126,17 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   // Manufacturer attributes variables
 #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   #ifdef USE_ZB_CLASSES
-    /*
     err = esp_zb_cluster_add_manufacturer_attr(
       esp_zb_thermostat_cluster,
       _stelpro_outdoor_temperature.getClusterId(),
       _stelpro_outdoor_temperature.getAttributeId(),
       STELPRO_MANUFACTURER_CODE,
-      ESP_ZB_ZCL_ATTR_TYPE_S16,
-      ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-      _stelpro_outdoor_temperature.getDefaultDataPointer()
-    );
-    */
-    err = esp_zb_cluster_add_attr(
-      esp_zb_thermostat_cluster,
-      _stelpro_outdoor_temperature.getClusterId(),
-      _stelpro_outdoor_temperature.getAttributeId(),
       ESP_ZB_ZCL_ATTR_TYPE_S16,
       ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
       _stelpro_outdoor_temperature.getDefaultDataPointer()
     );
     logError(err, __FILE__, __LINE__);
   #else // USE_ZB_CLASSES
-    /*
     err = esp_zb_cluster_add_manufacturer_attr(
       esp_zb_thermostat_cluster,
       ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
@@ -1157,18 +1146,8 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
       ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
       &_stelpro_outdoor_temperature
     );
-    */
-    err = esp_zb_cluster_add_attr(
-      esp_zb_thermostat_cluster,
-      ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-      ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID,
-      ESP_ZB_ZCL_ATTR_TYPE_S16,
-      ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-      &_stelpro_outdoor_temperature
-    );
     logError(err, __FILE__, __LINE__);
   #endif // USE_ZB_CLASSES
-
 
 #endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
