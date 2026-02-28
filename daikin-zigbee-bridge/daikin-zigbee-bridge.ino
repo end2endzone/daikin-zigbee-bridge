@@ -32,11 +32,6 @@
 #error "Zigbee end device mode is not selected in Tools->Zigbee mode"
 #endif
 
-// FORCE USAGE OF ZIGBEEATTRIBUTE CLASSES
-#ifndef USE_ZB_CLASSES
-#define USE_ZB_CLASSES
-#endif
-
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 #include "ZigbeeStelproH420Thermostat.h"
@@ -46,10 +41,6 @@
 #include "logging.h"
 #include "scope_debugger.h"
 #include "zb_helper.h"
-#ifdef USE_ZB_CLASSES
-#include "ZigbeeAttributeT.hpp"
-#else // USE_ZB_CLASSES
-#endif // USE_ZB_CLASSES
 #include "ZigbeeAttributeT.hpp"
 
 #ifdef ENABLE_DAIKINHTTP

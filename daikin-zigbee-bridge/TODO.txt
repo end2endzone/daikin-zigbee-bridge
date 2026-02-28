@@ -2,7 +2,6 @@
   https://docs.silabs.com/zigbee/8.2.2/zigbee-fundamentals/06-zigbee-cluster-library#example-temperature-measurement-sensor-cluster
   ???
 - Implement previous value support in ZigbeeAttribute.
-- Switch to using class ZigbeeAttribute. Drop support for USE_ZB_CLASSES.
 - Test with real Stelpro thermostat:
   - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
   - Validate StelproSystemMode to see if it always matches system_mode.

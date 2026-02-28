@@ -42,7 +42,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
 
   _device_id = ESP_ZB_HA_THERMOSTAT_DEVICE_ID;
   
-#ifdef USE_ZB_CLASSES
   // Init all attributes
   _local_temperature                          .init("_local_temperature"                     , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);                           
   _occupied_cooling_setpoint                  .init("_occupied_cooling_setpoint"             , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID);                   
@@ -107,17 +106,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_display_mode                     .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE);
   _ui_config_keypad_lockout                   .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE);
   _stelpro_outdoor_temperature                .setDefaultValue(0);
-
-#else // USE_ZB_CLASSES
-
-  // Initialize default values
-  _running_state = THERMOSTAT_RUNNING_STATE_IDLE;
-  _pi_heating_demand = 0;
-  _outdoor_temperature = ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE;
-  _occupancy = 0;
-  _stelpro_outdoor_temperature = 0;
-
-#endif // USE_ZB_CLASSES
 
   // Build cluster lists
   {
@@ -186,7 +174,6 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
   // When this function is called, the internal memory of the attribute is already updated.
   // There is no need to call setters.
   
-#ifdef USE_ZB_CLASSES
   // Find the attribute that was updated
   IZigbeeAttribute* attr = findAttribute(_zigbee_attribute_list, message->info.dst_endpoint, message->info.cluster, message->attribute.id);
   if (!attr) {
@@ -204,226 +191,6 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
 
   // Notify observers of the change
   attr->notifyChange();
-
-#else // USE_ZB_CLASSES
-  if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT) {
-    // Thermostat cluster
-    switch (message->attribute.id) {
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
-          return;
-        }
-        int16_t new_temperature = *(int16_t *)message->attribute.data.value;
-        int16_t old_temperature = 0;
-        old_temperature = _previous.local_temperature;
-        if (old_temperature != new_temperature) {
-          if (callbacks._on_local_temperature_change) {
-            callbacks._on_local_temperature_change(new_temperature);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
-          return;
-        }
-        int16_t new_setpoint = *(int16_t *)message->attribute.data.value;
-        int16_t old_setpoint = 0;
-        old_setpoint = _previous.occupied_cooling_setpoint;
-        if (old_setpoint != new_setpoint) {
-          if (callbacks._on_occupied_cool_setpoint_change) {
-            callbacks._on_occupied_cool_setpoint_change(new_setpoint);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
-          return;
-        }
-        int16_t new_setpoint = *(int16_t *)message->attribute.data.value;
-        int16_t old_setpoint = 0;
-        old_setpoint = _previous.occupied_heating_setpoint;
-        if (old_setpoint != new_setpoint) {
-          if (callbacks._on_occupied_heat_setpoint_change) {
-            callbacks._on_occupied_heat_setpoint_change(new_setpoint);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM, message->attribute.id);
-          return;
-        }
-        uint8_t new_mode = *(uint8_t *)message->attribute.data.value;
-        uint8_t old_mode = 0;
-        old_mode = _previous.system_mode;
-        if (old_mode != new_mode) {
-          if (callbacks._on_system_mode_change) {
-            callbacks._on_system_mode_change(new_mode);
-          }
-        }
-        break;
-      }
-
-      // Thermostat cluster, additional attributes
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_U16) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U16, message->attribute.id);
-          return;
-        }
-        uint16_t new_running_state = *(uint16_t *)message->attribute.data.value;
-        uint16_t old_running_state = 0;
-        old_running_state = _previous.running_state;
-        if (old_running_state != new_running_state) {
-          if (callbacks._on_running_state_change) {
-            callbacks._on_running_state_change(new_running_state);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_U8) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U8, message->attribute.id);
-          return;
-        }
-        uint8_t new_pi_heating_demand = *(uint8_t *)message->attribute.data.value;
-        uint8_t old_pi_heating_demand = 0;
-        old_pi_heating_demand = _previous.pi_heating_demand;
-        if (old_pi_heating_demand != new_pi_heating_demand) {
-          if (callbacks._on_pi_heating_demand_change) {
-            callbacks._on_pi_heating_demand_change(new_pi_heating_demand);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
-          return;
-        }
-        int16_t new_outdoor_temperature = *(int16_t *)message->attribute.data.value;
-        int16_t old_outdoor_temperature = 0;
-        old_outdoor_temperature = _previous.outdoor_temperature;
-        if (old_outdoor_temperature != new_outdoor_temperature) {
-          if (callbacks._on_outdoor_temperature_change) {
-            callbacks._on_outdoor_temperature_change(new_outdoor_temperature);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U16, message->attribute.id);
-          return;
-        }
-        uint8_t new_occupancy = *(uint8_t *)message->attribute.data.value;
-        uint8_t old_occupancy = 0;
-        old_occupancy = _previous.occupancy;
-        if (old_occupancy != new_occupancy) {
-          if (callbacks._on_occupancy_change) {
-            callbacks._on_occupancy_change(new_occupancy);
-          }
-        }
-        break;
-      }
-      case ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_S16) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_S16, message->attribute.id);
-          return;
-        }
-        int16_t new_stelpro_outdoor_temperature = *(int16_t *)message->attribute.data.value;
-        int16_t old_stelpro_outdoor_temperature = _previous.stelpro_outdoor_temperature;
-        if (old_stelpro_outdoor_temperature != new_stelpro_outdoor_temperature) {
-          if (callbacks._on_stelpro_outdoor_temperature_change) {
-            callbacks._on_stelpro_outdoor_temperature_change(new_stelpro_outdoor_temperature);
-          }
-        }
-        break;
-      }
-      default:
-        logUnhandledMessageError(message->info.dst_endpoint, message->info.cluster, message->attribute.id, message->attribute.data.type);
-        break;
-    }
-  }
-  else if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG) {
-    // Thermostat UI cluster
-    switch (message->attribute.id) {
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_U8) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_U8, message->attribute.id);
-          return;
-        }
-        uint8_t new_display_mode = *(uint8_t *)message->attribute.data.value;
-        uint8_t old_display_mode = 0;
-        old_display_mode = _previous.ui_config_display_mode;
-        if (old_display_mode != new_display_mode) {
-          if (callbacks._on_ui_config_display_mode_change) {
-            callbacks._on_ui_config_display_mode_change(new_display_mode);
-          }
-        }
-        break;
-      }
-
-      case ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID:
-      {
-        if (message->attribute.data.type != ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM) {
-          // ERROR
-          logUnexpectedDataTypeReceived(message->info.cluster, message->attribute.data.type, ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM, message->attribute.id);
-          return;
-        }
-        uint8_t new_keypad_lockout = *(uint8_t *)message->attribute.data.value;
-        uint8_t old_keypad_lockout = 0;
-        old_keypad_lockout = _previous.ui_config_keypad_lockout;
-        if (old_keypad_lockout != new_keypad_lockout) {
-          if (callbacks._on_ui_config_keypad_lockout_change) {
-            callbacks._on_ui_config_keypad_lockout_change(new_keypad_lockout);
-          }
-        }
-        break;
-      }
-
-      default:
-        logUnhandledMessageError(message->info.dst_endpoint, message->info.cluster, message->attribute.id, message->attribute.data.type);
-        break;
-    };
-  }
-  else {
-    // ERROR
-    logUnhandledMessageError(message->info.dst_endpoint, message->info.cluster, message->attribute.id, message->attribute.data.type);
-  }
-#endif // USE_ZB_CLASSES
-
 }
 
 // Zigbee attribute setters
@@ -432,220 +199,88 @@ bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
   //// Round value to the nearest multiple of STELPRO_TEMP_MEASUREMENT_TOLERANCE
   //temperature = (((temperature + (STELPRO_TEMP_MEASUREMENT_TOLERANCE/2)) / STELPRO_TEMP_MEASUREMENT_TOLERANCE) * STELPRO_TEMP_MEASUREMENT_TOLERANCE);
 
-#ifdef USE_ZB_CLASSES
   bool success = _local_temperature.set(temperature);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID, temperature);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_local_temperature_change) {
-    callbacks._on_local_temperature_change(temperature);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setOccupiedCoolingSetpoint(int16_t setpoint) {
-#ifdef USE_ZB_CLASSES
   bool success = _occupied_cooling_setpoint.set(setpoint);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID, setpoint);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_occupied_cool_setpoint_change) {
-    callbacks._on_occupied_cool_setpoint_change(setpoint);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setOccupiedHeatingSetpoint(int16_t setpoint) {
-#ifdef USE_ZB_CLASSES
   bool success = _occupied_heating_setpoint.set(setpoint);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID, setpoint);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-  
-  /*
-  if (callbacks._on_occupied_heat_setpoint_change) {
-    callbacks._on_occupied_heat_setpoint_change(setpoint);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setControlSequenceOfOperation(uint8_t csop) {
-#ifdef USE_ZB_CLASSES
   bool success = _control_sequence_of_operation.set(csop);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_CONTROL_SEQUENCE_OF_OPERATION_ID, csop);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_control_sequence_of_operation_change) {
-    callbacks._on_control_sequence_of_operation_change(csop);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
-#ifdef USE_ZB_CLASSES
   bool success = _system_mode.set(mode);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID, mode);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_system_mode_change) {
-    callbacks._on_system_mode_change(mode);
-  }
-  */
-
   return success;
 }
 
 // Thermostat cluster, additional attributes
 bool ZigbeeStelproH420Thermostat::setRunningState(uint16_t state) {
-#ifdef USE_ZB_CLASSES
   bool success = _running_state.set(state);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID, state);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_running_state_change) {
-    callbacks._on_running_state_change(state);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setPIHeatingDemand(uint8_t demand) {
-#ifdef USE_ZB_CLASSES
   bool success = _pi_heating_demand.set(demand);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, demand);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_pi_heating_demand_change) {
-    callbacks._on_pi_heating_demand_change(demand);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setOutdoorTemperature(int16_t temperature) {
-#ifdef USE_ZB_CLASSES
   bool success = _outdoor_temperature.set(temperature);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID, temperature);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_outdoor_temperature_change) {
-    callbacks._on_outdoor_temperature_change(temperature);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setOccupancy(zb_uint8_t occupancy) {
-#ifdef USE_ZB_CLASSES
   bool success = _occupancy.set(occupancy);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID, occupancy);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_occupancy_change) {
-    callbacks._on_occupancy_change(occupancy);
-  }
-  */
-
   return success;
 }
 
 // Thermostat UI cluster
 bool ZigbeeStelproH420Thermostat::setTemperatureDisplayMode(uint8_t mode) {
-#ifdef USE_ZB_CLASSES
   bool success = _ui_config_display_mode.set(mode);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID, mode);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_ui_config_display_mode_change) {
-    callbacks._on_ui_config_display_mode_change(mode);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setKeypadLockout(uint8_t lockout) {
-#ifdef USE_ZB_CLASSES
   bool success = _ui_config_keypad_lockout.set(lockout);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID, lockout);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_ui_config_keypad_lockout_change) {
-    callbacks._on_ui_config_keypad_lockout_change(lockout);
-  }
-  */
-
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setStelproOutdoorTemp(int16_t temperature) {
-#ifdef USE_ZB_CLASSES
   bool success = _stelpro_outdoor_temperature.set(temperature);
-#else // USE_ZB_CLASSES
-  bool success = setGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID, temperature);
-#endif // USE_ZB_CLASSES
   if (!success)
     return false;
-
-  /*
-  if (callbacks._on_stelpro_outdoor_temperature_change) {
-    callbacks._on_stelpro_outdoor_temperature_change(temperature);
-  }
-  */
-  
   return success;
 }
 
@@ -724,7 +359,6 @@ bool ZigbeeStelproH420Thermostat::update() {
 
 bool ZigbeeStelproH420Thermostat::report() {
   bool success = true;
-#ifdef USE_ZB_CLASSES
   for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
     IZigbeeAttribute* attr_p = _zigbee_attribute_list[i];
 
@@ -742,13 +376,10 @@ bool ZigbeeStelproH420Thermostat::report() {
       success = success && hasReported;
     }
   }
-#else // USE_ZB_CLASSES
-#endif // USE_ZB_CLASSES
   return success;
 }
 
 bool ZigbeeStelproH420Thermostat::setup() {
-#ifdef USE_ZB_CLASSES
   bool success = true;
 
   // Setup all attributes
@@ -783,14 +414,8 @@ bool ZigbeeStelproH420Thermostat::setup() {
   }
   logEntry("}");
   return success;
-
-#else // USE_ZB_CLASSES
-  return true;
-#endif // USE_ZB_CLASSES
 }
 
-
-#ifdef USE_ZB_CLASSES
 void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   logEntry("-----> _local_temperature            .get()=%d", _local_temperature            .get());
   logEntry("-----> _occupied_cooling_setpoint    .get()=%d", _occupied_cooling_setpoint    .get());
@@ -813,108 +438,6 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   logEntry("-----> _ui_config_keypad_lockout     .get()=%d", _ui_config_keypad_lockout     .get());
   logEntry("-----> _stelpro_outdoor_temperature  .get()=%d", _stelpro_outdoor_temperature  .get());
 }
-#else // USE_ZB_CLASSES
-bool ZigbeeStelproH420Thermostat::getGenericAttribute(uint16_t cluster_id, uint16_t attr_id, void* output_ptr, size_t output_size) const {
-  if (output_ptr == nullptr || output_size == 0)
-    return false;
-
-  bool ret = true;
-  size_t attr_size = 0;
-  
-  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
-  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
-  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
-
-  // logEntry("Reading attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
-
-  esp_zb_lock_acquire(portMAX_DELAY);
-  
-  // get attribute descriptor
-  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
-    _endpoint,
-    cluster_id,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    attr_id);
-  if (attr == nullptr) {
-    logEntry("Failed to read attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
-    ret = false;
-    goto unlock_and_return;
-  }
-
-  // assert attr size
-  attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
-  if (attr_size != output_size) {
-    logEntry( "Assertion failed to read attribute 0x%04x (%s) of cluster 0x%04x (%s): output value size (%d bytes) does not match registered attribute size (%d bytes). "
-              "Attribute type is registered as %s.", attr_id, attr_name, cluster_id, cluster_name, output_size, attr_size, zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr->type));
-    ret = false;
-    goto unlock_and_return;
-  }
-
-  // Read the value
-  memcpy(output_ptr, attr->data_p, output_size);
-
-unlock_and_return:
-  esp_zb_lock_release();
-  return ret;
-}
-
-bool ZigbeeStelproH420Thermostat::setGenericAttribute(uint16_t cluster_id, uint16_t attr_id, const void* value_ptr, size_t value_size) const {
-  if (value_ptr == nullptr || value_size == 0)
-    return false;
-
-  bool ret = true;
-  size_t attr_size = 0;
-  esp_zb_zcl_status_t status = ESP_ZB_ZCL_STATUS_SUCCESS;
-  
-  esp_zb_zcl_cluster_id_t cluster = (esp_zb_zcl_cluster_id_t)cluster_id;
-  const char* cluster_name = zb_constants_cluster_id_to_string(cluster);
-  const char* attr_name = zb_constants_smart_cluster_attr_to_string(cluster, attr_id);
-
-  // logEntry("Writing attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
-
-  esp_zb_lock_acquire(portMAX_DELAY);
-  
-  // get attribute descriptor
-  esp_zb_zcl_attr_t * attr = esp_zb_zcl_get_attribute(
-    _endpoint,
-    cluster_id,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    attr_id);
-  if (attr == nullptr) {
-    logEntry("Failed to get attribute 0x%04x (%s) of cluster 0x%04x (%s)", attr_id, attr_name, cluster_id, cluster_name);
-    ret = false;
-    goto unlock_and_return;
-  }
-
-  // assert attr size
-  attr_size = zb_constants_zcl_attr_type_size((esp_zb_zcl_attr_type_t)attr->type);
-  if (attr_size != value_size) {
-    logEntry( "Assertion failed to write attribute 0x%04x (%s) of cluster 0x%04x (%s): new value size (%d bytes) does not match registered attribute size (%d bytes). "
-              "Attribute type is registered as %s.", attr_id, attr_name, cluster_id, cluster_name, value_size, attr_size, zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr->type));
-    ret = false;
-    goto unlock_and_return;
-  }
-
-  // set attribute value
-  status = esp_zb_zcl_set_attribute_val(
-    _endpoint,
-    cluster_id,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    attr_id,
-    (void*)value_ptr,
-    false
-  );
-  if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-    logEntry("Failed to write attribute 0x%04x (%s) of cluster 0x%04x (%s). Status: 0x%x: %s", attr_id, attr_name, cluster_id, cluster_name, status, esp_zb_zcl_status_to_name(status));
-    ret = false;
-    goto unlock_and_return;
-  }
-
-unlock_and_return:
-  esp_zb_lock_release();
-  return ret;
-}
-#endif // USE_ZB_CLASSES
 
 bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
   bool success = true;
@@ -983,17 +506,10 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   esp_zb_attribute_list_t *esp_zb_thermostat_ui_config_cluster = esp_zb_thermostat_ui_config_cluster_create(&stelpro_cfg->thermostat_ui_config_cfg);
 
   // Thermostat cluster, additional attributes
-#ifdef USE_ZB_CLASSES
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _running_state          .getAttributeId(),  _running_state          .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _pi_heating_demand      .getAttributeId() , _pi_heating_demand      .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _outdoor_temperature    .getAttributeId() , _outdoor_temperature    .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _occupancy              .getAttributeId() , _occupancy              .getDefaultDataPointer());   logError(err, __FILE__, __LINE__);
-#else // USE_ZB_CLASSES
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID, &_running_state);    logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID, &_pi_heating_demand);       logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID, &_outdoor_temperature);   logError(err, __FILE__, __LINE__);
-  err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID, &_occupancy);                       logError(err, __FILE__, __LINE__);
-#endif // USE_ZB_CLASSES
 
   // Hardcoded HEATING MIN/MAX/ABS SETPOINTS
   #if 1
@@ -1043,7 +559,6 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   // Note that it could also be a bug in ESP ZIGBEE SDK's library which do not register attribute with custom manufacturer codes.
   // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
   // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
-#ifdef USE_ZB_CLASSES
   err = esp_zb_cluster_add_attr(
     esp_zb_thermostat_cluster,
     _stelpro_outdoor_temperature.getClusterId(),
@@ -1053,17 +568,6 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     _stelpro_outdoor_temperature.getDefaultDataPointer()
   );
   logError(err, __FILE__, __LINE__);
-#else // USE_ZB_CLASSES
-  err = esp_zb_cluster_add_attr(
-    esp_zb_thermostat_cluster,
-    ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT,
-    ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID,
-    ESP_ZB_ZCL_ATTR_TYPE_S16,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-    &_stelpro_outdoor_temperature
-  );
-  logError(err, __FILE__, __LINE__);
-#endif // USE_ZB_CLASSES
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
   // Add control sequence (HEATING ONLY)
