@@ -74,12 +74,9 @@
 //    * https://github.com/Koenkk/zigbee-specification/blob/3c96049cd632d0780b9f79ebc8aecc672d4c4505/src/zcl/definition/clusters.ts#L1906
 //    * https://github.com/Koenkk/zigbee-herdsman/blob/v0.33.6/src/zcl/definition/cluster.ts#L2022
 //  It is defined as `StelproOutdoorTemp: {ID: 0x4001, type: DataType.INT16}`.
-#define ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 #define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID 0x4001
 #define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_MIN_VALUE  -3200
 #define ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_MAX_VALUE  19900
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
 // Stelpro outdoor temperature:
 //  This is Stelpro attribute exposed as a custom attribute.
@@ -200,11 +197,9 @@ public:
   void onOccupancyChange(void (*callback)(zb_uint8_t)) {
     callbacks._on_occupancy_change = callback;
   } 
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   void onStelproOutdoorTemperatureChange(void (*callback)(int16_t)) {
     callbacks._on_stelpro_outdoor_temperature_change = callback;
   } 
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
 #ifdef USE_ZB_CLASSES
   // Zigbee atributes getters
@@ -258,13 +253,11 @@ public:
   bool getAbsMaxCoolingSetpointLimit(int16_t& output) const     { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID,               output); }
 #endif // USE_ZB_CLASSES
 
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 #ifdef USE_ZB_CLASSES
   bool getStelproOutdoorTemp(int16_t& output) const               { return _stelpro_outdoor_temperature   .get(output); }
 #else // USE_ZB_CLASSES
   bool getStelproOutdoorTemp(int16_t& output) const               { return getGenericAttribute(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID,                         output); }
 #endif // USE_ZB_CLASSES
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   // Zigbee atributes setters
   // Thermostat cluster mandatory attributes
@@ -289,10 +282,8 @@ public:
   // Thermostat UI cluster
   bool setTemperatureDisplayMode(uint8_t temperature);
   bool setKeypadLockout(uint8_t lockout);
-
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
+  // Manufacturer custom attributes
   bool setStelproOutdoorTemp(int16_t temperature);
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
   // Power reporting setters
@@ -353,9 +344,7 @@ private:
     void (*_on_pi_heating_demand_change)(uint8_t);
     void (*_on_outdoor_temperature_change)(int16_t);
     void (*_on_occupancy_change)(zb_uint8_t);
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
     void (*_on_stelpro_outdoor_temperature_change)(int16_t);
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   } zb_zcl_thermostat_callbacks_t;
   zb_zcl_thermostat_callbacks_t callbacks = {0};
   
@@ -384,9 +373,7 @@ public:
     uint8_t     ui_config_display_mode            ;
     uint8_t     ui_config_keypad_lockout          ;
     // Manufacturer attributes variables
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
     int16_t     stelpro_outdoor_temperature       ;
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   } zb_zcl_stelpro_thermostat_snapshot_t;
   zb_zcl_stelpro_thermostat_snapshot_t _previous = {0};
 
@@ -452,9 +439,7 @@ private:
   ZigbeeAttribute<uint8_t>    _ui_config_display_mode           ;
   ZigbeeAttribute<uint8_t>    _ui_config_keypad_lockout         ;
   // Manufacturer attributes variables
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   ZigbeeAttribute<int16_t>    _stelpro_outdoor_temperature      ;
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
   ZigbeeAttributeList _zigbee_attribute_list;
 
@@ -464,9 +449,7 @@ private:
   int16_t _outdoor_temperature;
   zb_uint8_t _occupancy;
   // Manufacturer attributes variables
-#ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
   int16_t _stelpro_outdoor_temperature;
-#endif // #ifdef ENABLE_STELPRO_CUSTOM_ATTR_OUTDOOR_TEMP
 
 #endif // USE_ZB_CLASSES
 
