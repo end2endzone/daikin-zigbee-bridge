@@ -10,15 +10,20 @@ class ZigbeeAttribute : public ZigbeeAttributeBase
 {
 private:
   T _default_value;
+  void (*_on_value_change_callback)(T);
 public:
-  ZigbeeAttribute() : ZigbeeAttributeBase() {
+  ZigbeeAttribute() : 
+    ZigbeeAttributeBase(),
+    _on_value_change_callback(nullptr) {
+    memset(&_default_value, 0, sizeof(_default_value));
+  }
+
+  ZigbeeAttribute(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) :
+    ZigbeeAttributeBase(endpoint, cluster_id, attr_id),
+    _on_value_change_callback(nullptr) {
   }
 
   virtual ~ZigbeeAttribute() {}
-
-  ZigbeeAttribute(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) :
-    ZigbeeAttributeBase(endpoint, cluster_id, attr_id) {
-  }
 
   T get() const {
     T value = {0};
@@ -70,6 +75,24 @@ public:
       return false;
     bool reported = report();
     return reported;
+  }
+
+  void onValueChange(void (*callback)(T)) {
+    _on_value_change_callback = callback;
+  }
+
+  virtual void notifyChange() const {
+    if (_on_value_change_callback && _data_p != nullptr) {
+      // Copy the value from the internal pointer to prevent acquiring/releasing the lock.
+      // Update notify have the potential to be executed from a zigbee callback
+      // which should not acquiring/releasing the lock.
+
+      // Since we are reading from _data_p (a pointer), make a copy to prevent unexpected changes during callbacks. 
+      T copy = *((T*)_data_p);
+
+      // Notify observers by calling their callbacks
+      _on_value_change_callback(copy);
+    }
   }
 
   virtual size_t getSize() const override {

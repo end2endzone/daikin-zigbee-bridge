@@ -18,6 +18,7 @@ protected:
   esp_zb_zcl_attr_type_t _type_id; // uint8_t
   esp_zb_zcl_attr_access_t _access_id; // uint8_t
   uint16_t _manuf_code;
+  void * _data_p;
   bool _is_manuf_specific;
 
 public:
@@ -28,7 +29,9 @@ public:
       _attr_id(0),
       _type_id(ESP_ZB_ZCL_ATTR_TYPE_INVALID),
       _access_id((esp_zb_zcl_attr_access_t)0),
-      _manuf_code(0)
+      _manuf_code(0),
+      _data_p(nullptr),
+      _is_manuf_specific(false)
       {
   }
 
@@ -39,7 +42,9 @@ public:
       _attr_id(attr_id),
       _type_id(ESP_ZB_ZCL_ATTR_TYPE_INVALID),
       _access_id((esp_zb_zcl_attr_access_t)0),
-      _manuf_code(0)
+      _manuf_code(0),
+      _data_p(nullptr),
+      _is_manuf_specific(false)
       {
   }
 
@@ -80,6 +85,10 @@ private:
     _type_id = (esp_zb_zcl_attr_type_t)attr->type;
     _access_id = (esp_zb_zcl_attr_access_t)attr->access;
     _manuf_code = attr->manuf_code;
+
+    // Keep a pointer to the actual data to be able to read/write the attribute
+    // without having to acquire/releasing the lock.
+    _data_p = attr->data_p;
 
   unlock_and_return:
     esp_zb_lock_release();

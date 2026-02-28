@@ -1,9 +1,9 @@
 - Implement Temperature Measurement Sensor Cluster
   https://docs.silabs.com/zigbee/8.2.2/zigbee-fundamentals/06-zigbee-cluster-library#example-temperature-measurement-sensor-cluster
   ???
-- Implement callback support in ZigbeeAttribute. Move callbacks to ZigbeeAttribute::onValueChange().
 - Implement previous value support in ZigbeeAttribute.
 - Switch to using class ZigbeeAttribute. Drop support for USE_ZB_CLASSES.
 - Test with real Stelpro thermostat:
   - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
   - Validate StelproSystemMode to see if it always matches system_mode.
+- Consider to always set `_system_mode=HEAT` and only update `_running_state` based on the heating demand. There seems to be a bug now where running_state is not updated with the transition from heat to idle.

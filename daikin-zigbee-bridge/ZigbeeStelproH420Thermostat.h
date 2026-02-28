@@ -163,42 +163,90 @@ public:
   // Callback setters
   // Thermostat cluster
   void onLocalTemperatureChange(void (*callback)(int16_t)) {
-    callbacks._on_local_temperature_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _local_temperature.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_local_temperature_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onOccupiedCoolSetpointChange(void (*callback)(int16_t)) {
-    callbacks._on_occupied_cool_setpoint_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _occupied_cooling_setpoint.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_occupied_cool_setpoint_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onOccupiedHeatSetpointChange(void (*callback)(int16_t)) {
-    callbacks._on_occupied_heat_setpoint_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _occupied_heating_setpoint.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_occupied_heat_setpoint_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onControlSequenceOfOperationChange(void (*callback)(uint8_t)) {
-    callbacks._on_control_sequence_of_operation_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _control_sequence_of_operation.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_control_sequence_of_operation_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onSystemModeChange(void (*callback)(uint8_t)) {
-    callbacks._on_system_mode_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _system_mode.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_system_mode_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   // Thermostat UI cluster
   void onDisplayModeChange(void (*callback)(uint8_t)) {
-    callbacks._on_ui_config_display_mode_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _ui_config_display_mode.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_ui_config_display_mode_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onKeypadLockoutChange(void (*callback)(uint8_t)) {
-    callbacks._on_ui_config_keypad_lockout_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _ui_config_keypad_lockout.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_ui_config_keypad_lockout_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   // Thermostat cluster, additional attributes
   void onRunningStateChange(void (*callback)(uint16_t)) {
-    callbacks._on_running_state_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _running_state.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_running_state_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onPIHeatingDemandChange(void (*callback)(uint8_t)) {
-    callbacks._on_pi_heating_demand_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _pi_heating_demand.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_pi_heating_demand_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onOutdoorTemperatureChange(void (*callback)(int16_t)) {
-    callbacks._on_outdoor_temperature_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _outdoor_temperature.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_outdoor_temperature_change = callback;
+    #endif // USE_ZB_CLASSES
   }
   void onOccupancyChange(void (*callback)(zb_uint8_t)) {
-    callbacks._on_occupancy_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _occupancy.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_occupancy_change = callback;
+    #endif // USE_ZB_CLASSES
   } 
   void onStelproOutdoorTemperatureChange(void (*callback)(int16_t)) {
-    callbacks._on_stelpro_outdoor_temperature_change = callback;
+    #ifdef USE_ZB_CLASSES
+      _stelpro_outdoor_temperature.onValueChange(callback);
+    #else // USE_ZB_CLASSES
+      callbacks._on_stelpro_outdoor_temperature_change = callback;
+    #endif // USE_ZB_CLASSES
   } 
 
 #ifdef USE_ZB_CLASSES
@@ -329,6 +377,8 @@ private:
   esp_zb_cluster_list_t *zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *thermostat_cfg);
 
   // Callback functions
+#ifdef USE_ZB_CLASSES
+#else // USE_ZB_CLASSES
   typedef struct zb_zcl_thermostat_callbacks_s {
     // Thermostat cluster
     void (*_on_local_temperature_change)(int16_t);
@@ -347,6 +397,7 @@ private:
     void (*_on_stelpro_outdoor_temperature_change)(int16_t);
   } zb_zcl_thermostat_callbacks_t;
   zb_zcl_thermostat_callbacks_t callbacks = {0};
+#endif // USE_ZB_CLASSES
   
 public:
   typedef struct zb_zcl_stelpro_thermostat_snapshot_s {

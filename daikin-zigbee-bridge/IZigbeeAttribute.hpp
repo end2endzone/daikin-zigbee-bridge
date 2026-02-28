@@ -31,6 +31,8 @@ public:
 
   virtual void *getDefaultDataPointer() = 0;
 
+  virtual void notifyChange() const = 0;
+  
   virtual String toString() const = 0;
 };
 
