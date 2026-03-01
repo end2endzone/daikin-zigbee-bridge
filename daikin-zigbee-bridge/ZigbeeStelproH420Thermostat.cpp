@@ -193,6 +193,11 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
     return;
   }
 
+  // Check if value has changed. Ignore the attribute set command if not changed.
+  if (!attr->hasChanged()) {
+    return;
+  }
+
   // Notify observers of the change
   attr->notifyChange();
 }
