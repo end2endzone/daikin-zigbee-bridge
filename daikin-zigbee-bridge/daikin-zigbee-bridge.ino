@@ -264,7 +264,6 @@ void simulateTemperature() {
   int16_t new_local_temp = local_temp;
   uint8_t new_pi_heating_demand = pi_heating_demand;
   uint16_t new_running_state = running_state;
-  uint8_t new_system_mode = system_mode;
 
   int16_t temp_diff = setpoint - local_temp; // positive when requiring heating
   if (abs(temp_diff) < SIMULATION_TEMPERATURE_THRESHOLD) {
@@ -272,24 +271,21 @@ void simulateTemperature() {
     // Set everything to OFF, temperature do not need to change.
     new_pi_heating_demand = 0;
     new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
-    new_system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_OFF;
   } else {
     // Temperature difference is above the threshold. Temperature must change and system must be updated.
 
     // Compute new system mode based on current situation setpoint vs local_temp.
     if (setpoint > local_temp) {
       // Thermostat must HEAT
-      new_system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT;
       new_running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
     } else {
       new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
-      new_system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_OFF;
     }
 
     int16_t target_temp = setpoint;
     
     // Compute target temperature
-    if (new_system_mode == ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_OFF) {
+    if (new_running_state == THERMOSTAT_RUNNING_STATE_IDLE) {
       // When off, temperature drifts toward room temp
       target_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE; // SIMULATION_DEFAULT_ROOM_TEMPERATURE is the new setpoint
     }
@@ -306,7 +302,7 @@ void simulateTemperature() {
     }
 
     // Compute new pi_heating_demand
-    if (new_system_mode == ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT) {
+    if ((new_running_state | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT) > 0) {
       int16_t tmp = (int16_t)map(abs(temp_diff), 0000, 0300, (int16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE, (int16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE); // map [0°C,3°C] to [0%,100%]
       if (tmp > 100) tmp = 100;
       if (tmp < 0) tmp = 0;
@@ -335,9 +331,6 @@ void simulateTemperature() {
   }
   if (new_local_temp != local_temp) {
     zbThermostat->setLocalTemperature(new_local_temp);
-  }
-  if (new_system_mode != system_mode) {
-    zbThermostat->setSystemMode(new_system_mode);
   }
   
   // If pi_heating_demand is still dirty, we must update it now

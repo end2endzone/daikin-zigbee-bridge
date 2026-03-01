@@ -134,6 +134,10 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
       // ```
       // I think the zigbee stack can not allow a situation where `occupied_heating_setpoint > occupied_cooling_setpoint`.
       stelpro_cfg.thermostat_cfg.occupied_cooling_setpoint = STELPRO_OCCUPIED_COOLING_SETPOINT;
+
+      // Change from `ESP_ZB_ZCL_THERMOSTAT_CONTROL_SYSTEM_MODE_DEFAULT_VALUE` which is `ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_AUTO`
+      // to `ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT`.
+      stelpro_cfg.thermostat_cfg.system_mode = ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT;
     }
     
     // Set cluster list in base class
