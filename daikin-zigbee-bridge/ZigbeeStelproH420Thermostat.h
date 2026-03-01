@@ -306,7 +306,6 @@ public:
     // Manufacturer attributes variables
     int16_t     stelpro_outdoor_temperature       ;
   } zb_zcl_stelpro_thermostat_snapshot_t;
-  zb_zcl_stelpro_thermostat_snapshot_t _previous = {0};
 
   bool getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot);
   void printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot);

@@ -10,6 +10,7 @@ class ZigbeeAttribute : public ZigbeeAttributeBase
 {
 private:
   T _default_value;
+  T _previous_value;
   void (*_on_value_change_callback)(T);
 public:
   ZigbeeAttribute() : 
@@ -52,6 +53,10 @@ public:
       return false; // unwrite
     bool written = setGenericAttributeRaw(&value, sizeof(T));
     return written;
+  }
+
+  T getPrevious() const {
+    return _previous_value;
   }
 
   virtual bool report() const {
@@ -114,6 +119,27 @@ public:
 
   void setDefaultValue(const T& new_value) {
     _default_value = new_value;
+  }
+
+  virtual bool update() {
+    T value = {0};
+    bool readed = get(value);
+    if (!readed)
+      return false;
+    _previous_value = value;
+    return true;
+  }
+
+  virtual bool hasChanged() const {
+    if (_data_p == nullptr)
+      return false;
+
+    // Convert data_p to T&
+    T& actual_value = *((T*)_data_p);
+
+    // Compare and return
+    bool changed = (_previous_value != actual_value);
+    return changed;
   }
 
   virtual bool isValid() const override {

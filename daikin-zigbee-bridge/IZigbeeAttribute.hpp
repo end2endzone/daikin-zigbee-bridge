@@ -28,11 +28,13 @@ public:
 
   virtual bool matches(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) const = 0;
   virtual bool report() const = 0;
+  virtual bool update() = 0;
+  virtual bool hasChanged() const = 0;
 
   virtual void *getDefaultDataPointer() = 0;
 
   virtual void notifyChange() const = 0;
-  
+
   virtual String toString() const = 0;
 };
 

@@ -356,9 +356,15 @@ void ZigbeeStelproH420Thermostat::updateEnergy() {
 }
 
 bool ZigbeeStelproH420Thermostat::update() {
-  // remember previous values
-  bool success = getSnapshot(_previous);
-  return success;
+  // Remember previous values
+  for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
+    IZigbeeAttribute* attr_p = _zigbee_attribute_list[i];
+    if (!attr_p->update()) {
+      logEntry("WARNING: Attribute [%d] is failed to update: %s", i, attr_p->toString().c_str());
+    }
+  }
+  
+  return true;
 }
 
 bool ZigbeeStelproH420Thermostat::report() {
