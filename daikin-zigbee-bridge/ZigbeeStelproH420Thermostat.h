@@ -280,6 +280,7 @@ private:
   esp_zb_cluster_list_t *zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *thermostat_cfg);
   
 public:
+  #pragma pack(push, 1)
   typedef struct zb_zcl_stelpro_thermostat_snapshot_s {
     // Thermostat cluster
     int16_t     local_temperature                 ;
@@ -306,6 +307,7 @@ public:
     // Manufacturer attributes variables
     int16_t     stelpro_outdoor_temperature       ;
   } zb_zcl_stelpro_thermostat_snapshot_t;
+  #pragma pack(pop)
 
   bool getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot);
   void printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot);

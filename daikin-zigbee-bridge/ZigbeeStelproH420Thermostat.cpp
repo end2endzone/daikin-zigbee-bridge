@@ -456,6 +456,7 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
 
 bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
   bool success = true;
+  size_t capture_size = 0;
 
   // Capture all attribute values in a single operation, using a single lock.
   // Using this class' getters isn't suitable because each one acquires and releases
@@ -467,32 +468,50 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
 
   esp_zb_lock_acquire(portMAX_DELAY);
 
+  // Define capture logic.
+  #define CAPTURE_ATTR(attribute, output)                                                         \
+    capture_size += attribute.getSize();                                                          \
+    if (!attribute.getUnsafeCopy( output )) {                                                     \
+      logEntry("WARNING: Failed to get attribute in snapshot: %s", attribute.toString().c_str()); \
+      success = false;                                                                            \
+    }
+
   // Thermostat cluster mandatory attributes
-  if (!_local_temperature                .getUnsafeCopy( snapshot.local_temperature                 )) { logEntry("Failed to get attribute in snapshot: %s", _local_temperature                .toString().c_str()); success = false; }
-  if (!_occupied_cooling_setpoint        .getUnsafeCopy( snapshot.occupied_cooling_setpoint         )) { logEntry("Failed to get attribute in snapshot: %s", _occupied_cooling_setpoint        .toString().c_str()); success = false; }
-  if (!_occupied_heating_setpoint        .getUnsafeCopy( snapshot.occupied_heating_setpoint         )) { logEntry("Failed to get attribute in snapshot: %s", _occupied_heating_setpoint        .toString().c_str()); success = false; }
-  if (!_control_sequence_of_operation    .getUnsafeCopy( snapshot.control_sequence_of_operation     )) { logEntry("Failed to get attribute in snapshot: %s", _control_sequence_of_operation    .toString().c_str()); success = false; }
-  if (!_system_mode                      .getUnsafeCopy( snapshot.system_mode                       )) { logEntry("Failed to get attribute in snapshot: %s", _system_mode                      .toString().c_str()); success = false; }
+  CAPTURE_ATTR(_local_temperature                , snapshot.local_temperature                 );
+  CAPTURE_ATTR(_occupied_cooling_setpoint        , snapshot.occupied_cooling_setpoint         );
+  CAPTURE_ATTR(_occupied_heating_setpoint        , snapshot.occupied_heating_setpoint         );
+  CAPTURE_ATTR(_control_sequence_of_operation    , snapshot.control_sequence_of_operation     );
+  CAPTURE_ATTR(_system_mode                      , snapshot.system_mode                       );
   // Thermostat cluster additional attributes
-  if (!_running_state                    .getUnsafeCopy( snapshot.running_state                     )) { logEntry("Failed to get attribute in snapshot: %s", _running_state                    .toString().c_str()); success = false; }
-  if (!_pi_heating_demand                .getUnsafeCopy( snapshot.pi_heating_demand                 )) { logEntry("Failed to get attribute in snapshot: %s", _pi_heating_demand                .toString().c_str()); success = false; }
-  if (!_outdoor_temperature              .getUnsafeCopy( snapshot.outdoor_temperature               )) { logEntry("Failed to get attribute in snapshot: %s", _outdoor_temperature              .toString().c_str()); success = false; }
-  if (!_occupancy                        .getUnsafeCopy( snapshot.occupancy                         )) { logEntry("Failed to get attribute in snapshot: %s", _occupancy                        .toString().c_str()); success = false; }
-  if (!_min_heat_setpoint_limit          .getUnsafeCopy( snapshot.min_heat_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _min_heat_setpoint_limit          .toString().c_str()); success = false; }
-  if (!_max_heat_setpoint_limit          .getUnsafeCopy( snapshot.max_heat_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _max_heat_setpoint_limit          .toString().c_str()); success = false; }
-  if (!_abs_min_heat_setpoint_limit      .getUnsafeCopy( snapshot.abs_min_heat_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_min_heat_setpoint_limit      .toString().c_str()); success = false; }
-  if (!_abs_max_heat_setpoint_limit      .getUnsafeCopy( snapshot.abs_max_heat_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_max_heat_setpoint_limit      .toString().c_str()); success = false; }
-  if (!_min_cool_setpoint_limit          .getUnsafeCopy( snapshot.min_cool_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _min_cool_setpoint_limit          .toString().c_str()); success = false; }
-  if (!_max_cool_setpoint_limit          .getUnsafeCopy( snapshot.max_cool_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _max_cool_setpoint_limit          .toString().c_str()); success = false; }
-  if (!_abs_min_cool_setpoint_limit      .getUnsafeCopy( snapshot.abs_min_cool_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_min_cool_setpoint_limit      .toString().c_str()); success = false; }
-  if (!_abs_max_cool_setpoint_limit      .getUnsafeCopy( snapshot.abs_max_cool_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_max_cool_setpoint_limit      .toString().c_str()); success = false; }
+  CAPTURE_ATTR(_running_state                    , snapshot.running_state                     );
+  CAPTURE_ATTR(_pi_heating_demand                , snapshot.pi_heating_demand                 );
+  CAPTURE_ATTR(_outdoor_temperature              , snapshot.outdoor_temperature               );
+  CAPTURE_ATTR(_occupancy                        , snapshot.occupancy                         );
+  CAPTURE_ATTR(_min_heat_setpoint_limit          , snapshot.min_heat_setpoint_limit           );
+  CAPTURE_ATTR(_max_heat_setpoint_limit          , snapshot.max_heat_setpoint_limit           );
+  CAPTURE_ATTR(_abs_min_heat_setpoint_limit      , snapshot.abs_min_heat_setpoint_limit       );
+  CAPTURE_ATTR(_abs_max_heat_setpoint_limit      , snapshot.abs_max_heat_setpoint_limit       );
+  CAPTURE_ATTR(_min_cool_setpoint_limit          , snapshot.min_cool_setpoint_limit           );
+  CAPTURE_ATTR(_max_cool_setpoint_limit          , snapshot.max_cool_setpoint_limit           );
+  CAPTURE_ATTR(_abs_min_cool_setpoint_limit      , snapshot.abs_min_cool_setpoint_limit       );
+  CAPTURE_ATTR(_abs_max_cool_setpoint_limit      , snapshot.abs_max_cool_setpoint_limit       );
   // Thermostat UI cluster mandatory attributes
-  if (!_ui_config_display_mode           .getUnsafeCopy( snapshot.ui_config_display_mode            )) { logEntry("Failed to get attribute in snapshot: %s", _ui_config_display_mode           .toString().c_str()); success = false; }
-  if (!_ui_config_keypad_lockout         .getUnsafeCopy( snapshot.ui_config_keypad_lockout          )) { logEntry("Failed to get attribute in snapshot: %s", _ui_config_keypad_lockout         .toString().c_str()); success = false; }
+  CAPTURE_ATTR(_ui_config_display_mode           , snapshot.ui_config_display_mode            );
+  CAPTURE_ATTR(_ui_config_keypad_lockout         , snapshot.ui_config_keypad_lockout          );
   // Manufacturer attributes variables
-  if (!_stelpro_outdoor_temperature      .getUnsafeCopy( snapshot.stelpro_outdoor_temperature       )) { logEntry("Failed to get attribute in snapshot: %s", _stelpro_outdoor_temperature      .toString().c_str()); success = false; }
+  CAPTURE_ATTR(_stelpro_outdoor_temperature      , snapshot.stelpro_outdoor_temperature       );
+
+  #undef CAPTURE_ATTR
 
   esp_zb_lock_release();
+
+  // Assert that all snapshot variables were captured
+  // (assert total size of all attributes matches the size of the snapshot struct)
+  size_t snapshot_size = sizeof(snapshot);
+  if (success && capture_size != snapshot_size) {
+    logEntry("WARNING: Failed to get all attributes in snapshot: snapshot_size=%d, capture_size=%d", snapshot_size, capture_size);
+    return false;
+  }
 
   return success;
 }
