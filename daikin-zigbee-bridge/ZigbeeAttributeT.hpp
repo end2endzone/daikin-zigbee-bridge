@@ -41,6 +41,20 @@ public:
     return readed;
   }
 
+  bool getUnsafeCopy(T& value) const {
+    if (_data_p == nullptr)
+      return false;
+    if (!isValid())
+      return false; // garbadge
+
+    // Convert from void pointer to attribute's type pointer
+    T* value_p = (T*)_data_p;
+
+    // Copy value to output and return
+    value = *value_p;
+    return true;
+  }
+
   bool set(const T& value) {
     if (!isValid())
       return false; // unwrite
@@ -134,11 +148,11 @@ public:
     if (_data_p == nullptr)
       return false;
 
-    // Convert data_p to T&
-    T& actual_value = *((T*)_data_p);
+    // Convert from void pointer to attribute's type pointer
+    T* value_p = (T*)_data_p;
 
     // Compare and return
-    bool changed = (_previous_value != actual_value);
+    bool changed = (_previous_value != *value_p);
     return changed;
   }
 

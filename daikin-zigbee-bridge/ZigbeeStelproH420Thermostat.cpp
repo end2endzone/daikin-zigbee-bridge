@@ -457,32 +457,44 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
 bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
   bool success = true;
 
-  // Thermostat cluster
-  success = success && getLocalTemperature(               snapshot.local_temperature                 );
-  success = success && getOccupiedCoolingSetpoint(        snapshot.occupied_cooling_setpoint         );
-  success = success && getOccupiedHeatingSetpoint(        snapshot.occupied_heating_setpoint         );
-  success = success && getControlSequenceOfOperation(     snapshot.control_sequence_of_operation     );
-  success = success && getSystemMode(                     snapshot.system_mode                       );
-  // Thermostat cluster additional attributes
-  success = success && getRunningState(                   snapshot.running_state                     );
-  success = success && getPIHeatingDemand(                snapshot.pi_heating_demand                 );
-  success = success && getOutdoorTemperature(             snapshot.outdoor_temperature               );
-  success = success && getOccupancy(                      snapshot.occupancy                         );
-  success = success && getMinHeatingSetpointLimit(        snapshot.min_heat_setpoint_limit           );
-  success = success && getMaxHeatingSetpointLimit(        snapshot.max_heat_setpoint_limit           );
-  success = success && getAbsMinHeatingSetpointLimit(     snapshot.abs_min_heat_setpoint_limit       );
-  success = success && getAbsMaxHeatingSetpointLimit(     snapshot.abs_max_heat_setpoint_limit       );
-  success = success && getMinCoolingSetpointLimit(        snapshot.min_cool_setpoint_limit           );
-  success = success && getMaxCoolingSetpointLimit(        snapshot.max_cool_setpoint_limit           );
-  success = success && getAbsMinCoolingSetpointLimit(     snapshot.abs_min_cool_setpoint_limit       );
-  success = success && getAbsMaxCoolingSetpointLimit(     snapshot.abs_max_cool_setpoint_limit       );
-  // Thermostat UI cluster
-  success = success && getTemperatureDisplayMode(         snapshot.ui_config_display_mode            );
-  success = success && getKeypadLockout(                  snapshot.ui_config_keypad_lockout          );
-  // Manufacturer attributes variables
-  success = success && getStelproOutdoorTemp(             snapshot.stelpro_outdoor_temperature       );
+  // Capture all attribute values in a single operation, using a single lock.
+  // Using this class' getters isn't suitable because each one acquires and releases
+  // the lock independently, causing the attributes to be captured  one by one rather
+  // than atomically.
+  // Repeatedly locking and unlocking during the capture window creates a risk that
+  // an attribute may change between getter calls.
+  // To avoid this, acquire the lock once, read every attribute, then release it.
 
-  return success;  
+  esp_zb_lock_acquire(portMAX_DELAY);
+
+  // Thermostat cluster mandatory attributes
+  if (!_local_temperature                .getUnsafeCopy( snapshot.local_temperature                 )) { logEntry("Failed to get attribute in snapshot: %s", _local_temperature                .toString().c_str()); success = false; }
+  if (!_occupied_cooling_setpoint        .getUnsafeCopy( snapshot.occupied_cooling_setpoint         )) { logEntry("Failed to get attribute in snapshot: %s", _occupied_cooling_setpoint        .toString().c_str()); success = false; }
+  if (!_occupied_heating_setpoint        .getUnsafeCopy( snapshot.occupied_heating_setpoint         )) { logEntry("Failed to get attribute in snapshot: %s", _occupied_heating_setpoint        .toString().c_str()); success = false; }
+  if (!_control_sequence_of_operation    .getUnsafeCopy( snapshot.control_sequence_of_operation     )) { logEntry("Failed to get attribute in snapshot: %s", _control_sequence_of_operation    .toString().c_str()); success = false; }
+  if (!_system_mode                      .getUnsafeCopy( snapshot.system_mode                       )) { logEntry("Failed to get attribute in snapshot: %s", _system_mode                      .toString().c_str()); success = false; }
+  // Thermostat cluster additional attributes
+  if (!_running_state                    .getUnsafeCopy( snapshot.running_state                     )) { logEntry("Failed to get attribute in snapshot: %s", _running_state                    .toString().c_str()); success = false; }
+  if (!_pi_heating_demand                .getUnsafeCopy( snapshot.pi_heating_demand                 )) { logEntry("Failed to get attribute in snapshot: %s", _pi_heating_demand                .toString().c_str()); success = false; }
+  if (!_outdoor_temperature              .getUnsafeCopy( snapshot.outdoor_temperature               )) { logEntry("Failed to get attribute in snapshot: %s", _outdoor_temperature              .toString().c_str()); success = false; }
+  if (!_occupancy                        .getUnsafeCopy( snapshot.occupancy                         )) { logEntry("Failed to get attribute in snapshot: %s", _occupancy                        .toString().c_str()); success = false; }
+  if (!_min_heat_setpoint_limit          .getUnsafeCopy( snapshot.min_heat_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _min_heat_setpoint_limit          .toString().c_str()); success = false; }
+  if (!_max_heat_setpoint_limit          .getUnsafeCopy( snapshot.max_heat_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _max_heat_setpoint_limit          .toString().c_str()); success = false; }
+  if (!_abs_min_heat_setpoint_limit      .getUnsafeCopy( snapshot.abs_min_heat_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_min_heat_setpoint_limit      .toString().c_str()); success = false; }
+  if (!_abs_max_heat_setpoint_limit      .getUnsafeCopy( snapshot.abs_max_heat_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_max_heat_setpoint_limit      .toString().c_str()); success = false; }
+  if (!_min_cool_setpoint_limit          .getUnsafeCopy( snapshot.min_cool_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _min_cool_setpoint_limit          .toString().c_str()); success = false; }
+  if (!_max_cool_setpoint_limit          .getUnsafeCopy( snapshot.max_cool_setpoint_limit           )) { logEntry("Failed to get attribute in snapshot: %s", _max_cool_setpoint_limit          .toString().c_str()); success = false; }
+  if (!_abs_min_cool_setpoint_limit      .getUnsafeCopy( snapshot.abs_min_cool_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_min_cool_setpoint_limit      .toString().c_str()); success = false; }
+  if (!_abs_max_cool_setpoint_limit      .getUnsafeCopy( snapshot.abs_max_cool_setpoint_limit       )) { logEntry("Failed to get attribute in snapshot: %s", _abs_max_cool_setpoint_limit      .toString().c_str()); success = false; }
+  // Thermostat UI cluster mandatory attributes
+  if (!_ui_config_display_mode           .getUnsafeCopy( snapshot.ui_config_display_mode            )) { logEntry("Failed to get attribute in snapshot: %s", _ui_config_display_mode           .toString().c_str()); success = false; }
+  if (!_ui_config_keypad_lockout         .getUnsafeCopy( snapshot.ui_config_keypad_lockout          )) { logEntry("Failed to get attribute in snapshot: %s", _ui_config_keypad_lockout         .toString().c_str()); success = false; }
+  // Manufacturer attributes variables
+  if (!_stelpro_outdoor_temperature      .getUnsafeCopy( snapshot.stelpro_outdoor_temperature       )) { logEntry("Failed to get attribute in snapshot: %s", _stelpro_outdoor_temperature      .toString().c_str()); success = false; }
+
+  esp_zb_lock_release();
+
+  return success;
 }
 
 void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
