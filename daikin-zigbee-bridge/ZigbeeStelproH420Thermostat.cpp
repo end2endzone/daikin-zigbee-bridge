@@ -144,6 +144,10 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
     _cluster_list = zigbee_stelpro_thermostat_clusters_create(&stelpro_cfg);
   }
 
+  // DEBUG:
+  // Print the list of all clusters and attributes...
+  zb_debug_print_attributes_in_cluster_list(_cluster_list);
+
   // Set zigbee default attribute initialization values.
   // The following zigbee attributes are attributes automatically created by esp_zb_thermostat_cluster_create() and other similar functions.
   // We need to initialize their default value before they are created in the zigbee stack.

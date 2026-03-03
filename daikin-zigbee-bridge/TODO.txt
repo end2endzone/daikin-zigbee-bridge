@@ -5,4 +5,3 @@
   - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
   - Validate StelproSystemMode to see if it always matches system_mode.
 - Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro'S system mode custom attribute
-- Fixed the bug `Failed to set attribute 'DISPLAY_MODE' value in cluster list!` found in the logs.

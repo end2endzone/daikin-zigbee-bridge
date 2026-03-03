@@ -191,38 +191,85 @@ static bool zb_assert_attribute_sign(const char* function, esp_zb_zcl_attr_type_
   return true;
 }
 
-static esp_zb_zcl_attr_t* zb_find_attribute_in_attr_list(esp_zb_attribute_list_t* list, uint16_t attribute_id)
+static bool zb_zcl_attribute_is_sentinel(esp_zb_zcl_attr_t* attr) {
+  // The ESP Zigbee SDK uses a sentinel node (dummy node) at the beginning of each attribute list to simplify list operations.
+  // This dummy node:
+  // * Has all fields zeroed (id=0x0000, type=0x00, access=0x00, data_p=NULL)
+  // * Is not an actual attribute
+  // * Simplifies insert/delete operations (no special case for empty lists)
+  // * The next pointer points to the first real attribute
+
+  if (attr == nullptr)
+    return false;
+
+  static const esp_zb_zcl_attr_t ZB_ZCL_SENTINEL_ATTRIBUTE = {0};
+  bool is_sentinel = (memcmp(attr, &ZB_ZCL_SENTINEL_ATTRIBUTE, sizeof(ZB_ZCL_SENTINEL_ATTRIBUTE)) == 0);
+  return is_sentinel;
+}
+
+static bool zb_zcl_cluster_is_sentinel(esp_zb_zcl_cluster_t* cluster) {
+  // The ESP Zigbee SDK uses a sentinel node (dummy node) at the beginning of each attribute list to simplify list operations.
+  // This dummy node:
+  // * Has all fields zeroed (id=0x0000, type=0x00, access=0x00, data_p=NULL)
+  // * Is not an actual attribute
+  // * Simplifies insert/delete operations (no special case for empty lists)
+  // * The next pointer points to the first real attribute
+
+  if (cluster == nullptr)
+    return false;
+
+  static const esp_zb_zcl_cluster_t ZB_ZCL_SENTINEL_CLUSTER = {0};
+  bool is_sentinel = (memcmp(cluster, &ZB_ZCL_SENTINEL_CLUSTER, sizeof(ZB_ZCL_SENTINEL_CLUSTER)) == 0);
+  return is_sentinel;
+}
+
+static esp_zb_zcl_attr_t* zb_find_attribute_in_attribute_list(esp_zb_attribute_list_t* list, uint16_t attribute_id)
 {
-  esp_zb_attribute_list_t *cur = list;
-  while (cur != nullptr) {
-    if (cur->attribute.id == attribute_id) {
-      return &cur->attribute;
+  esp_zb_attribute_list_t *element = list;
+
+  // Skip the sentinel/dummy head node, if present
+  if (element != nullptr && zb_zcl_attribute_is_sentinel(&element->attribute)) {
+    element = element->next;  // Skip node
+  }
+
+  while (element != nullptr) {
+    if (element->attribute.id == attribute_id) {
+      return &element->attribute;
     }
-    cur = cur->next;
+
+    // Next attribute element in attribute list
+    element = element->next;
   }
   return nullptr; // Not found
 }
 
 static esp_zb_zcl_attr_t* zb_find_attribute_in_cluster_list(esp_zb_cluster_list_t* list, uint16_t cluster_id, uint16_t attribute_id)
 {
-  esp_zb_cluster_list_t *cur_cluster = list;
+  esp_zb_cluster_list_t *element = list;
 
-  while (cur_cluster != nullptr) {
-    esp_zb_zcl_cluster_t *cluster = &cur_cluster->cluster;
+  // Skip sentinel/dummy head node, if present
+  if (element != nullptr && zb_zcl_cluster_is_sentinel(&element->cluster)) {
+    element = element->next;  // Skip node
+  }
+
+  while (element != nullptr) {
+    esp_zb_zcl_cluster_t *cluster = &element->cluster;
 
     // Is that the cluster we are looking for ?
     if (cluster != nullptr && cluster->cluster_id == cluster_id) {
+
       // Only handle clusters that use the linked-list attribute model
       esp_zb_attribute_list_t *attr_list = cluster->attr_list;
-      if (attr_list != nullptr) {
-        esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attr_list(attr_list, attribute_id);
+      if (cluster->attr_count == 0 && attr_list != nullptr) {
+        esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attribute_list(attr_list, attribute_id);
         if (attr != nullptr) {
           return attr;  // Found
         }
       }
     }
 
-    cur_cluster = cur_cluster->next;
+    // Next cluster element in cluster list
+    element = element->next;
   }
 
   return nullptr; // Not found in any cluster
@@ -231,7 +278,7 @@ static esp_zb_zcl_attr_t* zb_find_attribute_in_cluster_list(esp_zb_cluster_list_
 template<typename T>
 static bool zb_set_attribute_value_in_attr_list(esp_zb_attribute_list_t *list, uint16_t attribute_id, const T &new_value)
 {
-  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attr_list(list, attribute_id);
+  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attribute_list(list, attribute_id);
   if (attr == nullptr || attr->data_p == nullptr) {
     return false;
   }
