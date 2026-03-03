@@ -4,6 +4,11 @@
 #include "zb_uint8_t.h"
 #include "type_helper.h"
 #include "logging.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include "format_helper.h"
 #include "zb_constants_helper.h"
 
 typedef enum {
@@ -65,7 +70,7 @@ static size_t zb_constants_zcl_attr_type_size(esp_zb_zcl_attr_type_t value) {
     case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ENUM:        return 2;
     case ESP_ZB_ZCL_ATTR_TYPE_SEMI:              return 2;
     case ESP_ZB_ZCL_ATTR_TYPE_SINGLE:            return 4;
-    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE:            return 5;
+    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE:            return 8;
     case ESP_ZB_ZCL_ATTR_TYPE_OCTET_STRING:      return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING:       return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_LONG_OCTET_STRING: return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
@@ -76,16 +81,190 @@ static size_t zb_constants_zcl_attr_type_size(esp_zb_zcl_attr_type_t value) {
     case ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE:         return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_SET:               return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_BAG:               return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
-    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY:       return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
-    case ESP_ZB_ZCL_ATTR_TYPE_DATE:              return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
-    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME:          return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY:       return 4;
+    case ESP_ZB_ZCL_ATTR_TYPE_DATE:              return 4;
+    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME:          return 4;
     case ESP_ZB_ZCL_ATTR_TYPE_CLUSTER_ID:        return 2;
     case ESP_ZB_ZCL_ATTR_TYPE_ATTRIBUTE_ID:      return 2;
-    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID:        return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
-    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR:         return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID:        return 4;
+    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR:         return 8;
     case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY:       return 16;
     case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
     default:                                     return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+  }
+}
+
+static bool zb_zcl_attribute_data_pointer_to_string(char *buffer, size_t buffer_size, esp_zb_zcl_attr_type_t type_id, void *data_p) {
+  static const char * DEFAULT_TO_STRING_VALUE = "???";
+
+  if (!buffer || buffer_size == 0) {
+    return false;
+  }
+
+  if (!data_p) {
+    if (snprintf(buffer, buffer_size, "NULL") < 0)
+      return false;
+    return true;
+  }
+
+  switch (type_id) {
+    case ESP_ZB_ZCL_ATTR_TYPE_NULL: {
+      if (snprintf(buffer, buffer_size, "NULL") < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT:
+    case ESP_ZB_ZCL_ATTR_TYPE_U8:
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM: {
+      uint8_t v = *(uint8_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT:
+    case ESP_ZB_ZCL_ATTR_TYPE_U16:
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ENUM: {
+      uint16_t v = *(uint16_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_32BIT:
+    case ESP_ZB_ZCL_ATTR_TYPE_U32: {
+      uint32_t v = *(uint32_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_S8: {
+      int8_t v = *(int8_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%d", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_S16: {
+      int16_t v = *(int16_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%d", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_S32: {
+      int32_t v = *(int32_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%ld", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_BOOL: {
+      bool v = *(bool *)data_p;
+      const char * text = (v ? "true" : "false");
+      if (snprintf(buffer, buffer_size, "%s", text) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    // Bitmaps
+    case ESP_ZB_ZCL_ATTR_TYPE_8BITMAP     :
+    case ESP_ZB_ZCL_ATTR_TYPE_16BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_24BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_32BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_40BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_48BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_56BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_64BITMAP    :    
+    {
+      // Get the size of the actual data
+      size_t data_size = zb_constants_zcl_attr_type_size(type_id);
+      if (data_size == ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE || data_size == ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN) {
+        // Unable to get how long the data_p is.
+        // Fallback with the unknwon value.
+        snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
+        return false;
+      }
+
+      // Output as hexedecimal
+      bool success = toBin(data_p, data_size, buffer, buffer_size);
+      return success;
+    }
+    break;
+
+
+    // Print the following values as hexadecimal values
+    case ESP_ZB_ZCL_ATTR_TYPE_24BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_40BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_48BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_56BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_64BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_U40         :
+    case ESP_ZB_ZCL_ATTR_TYPE_U48         :
+    case ESP_ZB_ZCL_ATTR_TYPE_U56         :
+    case ESP_ZB_ZCL_ATTR_TYPE_U64         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S40         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S48         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S56         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S64         :
+    case ESP_ZB_ZCL_ATTR_TYPE_SEMI        :
+    case ESP_ZB_ZCL_ATTR_TYPE_SINGLE      :
+    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE      :
+    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY :
+    case ESP_ZB_ZCL_ATTR_TYPE_DATE        :
+    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME    :
+    case ESP_ZB_ZCL_ATTR_TYPE_CLUSTER_ID  :
+    case ESP_ZB_ZCL_ATTR_TYPE_ATTRIBUTE_ID:
+    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID  :
+    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR   :
+    case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY :
+    {
+      // Get the size of the actual data
+      size_t data_size = zb_constants_zcl_attr_type_size(type_id);
+      if (data_size == ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE) {
+        // Unable to get how long the data_p is.
+        // Fail with the unknwon value.
+        snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
+        return false;
+      }
+
+      // Output as hexedecimal
+      bool success = toHex(data_p, data_size, buffer, buffer_size);
+      return success;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING:
+    case ESP_ZB_ZCL_ATTR_TYPE_OCTET_STRING:
+      {
+        uint8_t lenght = ((uint8_t *)data_p)[0]; // the first byte is always the length of the string
+        const uint8_t *str = &((uint8_t *)data_p)[1]; // this is the actual string pointer (non-null terminated!)
+
+        // Truncate the input string to match the size of the output buffer.
+        if (lenght >= buffer_size)
+          lenght = buffer_size - 1;
+
+        // Copy the input string using memcpy because the string is non-null terminated.
+        memcpy(buffer, str, lenght);
+        buffer[lenght] = '\0'; // and the output string
+
+        return true;
+    }
+    break;
+
+    default:
+      snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
+      return false;
   }
 }
 

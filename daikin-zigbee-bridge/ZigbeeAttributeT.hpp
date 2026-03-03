@@ -123,7 +123,7 @@ public:
     if (buffer_size >= 1)
       buffer[0] = '\0';
     if (get(value)) {
-      toHexSafe(&value, sizeof(T), buffer, buffer_size);
+      toHex(&value, sizeof(T), buffer, buffer_size);
     }
   }
 

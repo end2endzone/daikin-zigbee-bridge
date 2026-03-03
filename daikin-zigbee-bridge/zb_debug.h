@@ -3,6 +3,13 @@
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 
+    
+// Define the required buffer size to be able to convert any value to string.
+// Format ESP_ZB_ZCL_ATTR_TYPE_64BITMAP is printed in binary and requires 'b' + 64 characters + '\0' = 66 bytes.
+// Format ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY is 16 bytes printed as hexadecimal and requires '0x' + 32 digits + '\0' = 35 bytes
+// Format ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING is 1 byte per character, 255 characters long string should be long enough for most use case 
+static constexpr size_t DATA_VALUE_STRING_BUFFER_SIZE = 256;
+
 static String debugIntegerToString(int value) {
   String output;
   output += "0x";
@@ -123,8 +130,12 @@ static void zb_debug_print_attributes_in_attribute_list(esp_zb_attribute_list_t*
     const char * attr_type_name = zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr.type);
     const char * attr_access_name = zb_constants_zcl_attr_access_to_string((esp_zb_zcl_attr_access_t)attr.access);
 
-    logEntry("    attribute[%02d] id=0x%04x (%s), type=0x%02x (%s), access=0x%02x (%s), manuf_code=0x%04x, data_p=0x%08x",
-      index, attr.id, attr_name, attr.type, attr_type_name, attr.access, attr_access_name, attr.manuf_code, attr.data_p);
+    // Compute the value of the data as a string
+    char data_str[DATA_VALUE_STRING_BUFFER_SIZE];
+    bool success = zb_zcl_attribute_data_pointer_to_string(data_str, DATA_VALUE_STRING_BUFFER_SIZE, (esp_zb_zcl_attr_type_t)attr.type, attr.data_p);
+
+    logEntry("    attribute[%02d] id=0x%04x (%s), type=0x%02x (%s), access=0x%02x (%s), manuf_code=0x%04x, data_p=0x%08x, data=%s",
+      index, attr.id, attr_name, attr.type, attr_type_name, attr.access, attr_access_name, attr.manuf_code, attr.data_p, data_str);
 
     // Next attribute element in attribute list
     index++;
@@ -148,7 +159,8 @@ static void zb_debug_print_attributes_in_cluster_list(esp_zb_cluster_list_t* lis
     esp_zb_zcl_cluster_t & cluster = element->cluster;
 
     const char * cluster_name = zb_constants_cluster_id_to_string((esp_zb_zcl_cluster_id_t)cluster.cluster_id);
-    logEntry("  cluster[%02d] id=0x%04x (%s) attr_count=%d {", index, cluster.cluster_id, cluster_name, cluster.attr_count);
+    logEntry("  cluster[%02d] id=0x%04x (%s), attr_count=%d, attr_desc_list=attr_list=0x%08x, role_mask=0x%02x, manuf_code=0x%04x, cluster_init=0x%08x {",
+      index, cluster.cluster_id, cluster_name, cluster.attr_count, cluster.attr_list, cluster.role_mask, cluster.manuf_code, cluster.cluster_init);
 
     // Only handle clusters that use the linked-list attribute model
     esp_zb_attribute_list_t *attr_list = cluster.attr_list;
@@ -163,5 +175,5 @@ static void zb_debug_print_attributes_in_cluster_list(esp_zb_cluster_list_t* lis
     element = element->next;
   }
 
-  logEntry("} // clusters");
+  logEntry("}");
 }
