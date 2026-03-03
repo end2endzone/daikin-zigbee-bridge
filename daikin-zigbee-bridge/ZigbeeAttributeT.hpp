@@ -8,97 +8,171 @@
 template <typename T>
 class ZigbeeAttribute : public ZigbeeAttributeBase
 {
+private:
+  T _default_value;
+  T _previous_value;
+  void (*_on_value_change_callback)(T);
 public:
-  ZigbeeAttribute() : ZigbeeAttributeBase() {
+  ZigbeeAttribute() : 
+    ZigbeeAttributeBase(),
+    _on_value_change_callback(nullptr) {
+    memset(&_default_value, 0, sizeof(_default_value));
+  }
+
+  ZigbeeAttribute(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) :
+    ZigbeeAttributeBase(endpoint, cluster_id, attr_id),
+    _on_value_change_callback(nullptr) {
   }
 
   virtual ~ZigbeeAttribute() {}
-  
-  ZigbeeAttribute(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) :
-    ZigbeeAttributeBase(endpoint, cluster_id, attr_id) {
-  }
-
-  virtual bool setup(uint8_t endpoint, uint16_t cluster_id, uint16_t attr_id) override {
-    bool base = ZigbeeAttributeBase::setup(endpoint, cluster_id, attr_id);
-    logEntry("Setup() initialization is %d for %s", _initialized, toString().c_str());
-    return base;
-  }
-
-  virtual bool setup() override
-  {
-    bool base = ZigbeeAttributeBase::setup();
-    logEntry("Setup() initialization is %d for %s", _initialized, toString().c_str());
-    return base;
-  }
 
   T get() const {
-    T value;
-    if (!isInitialized())
+    T value = {0};
+    if (!isValid())
       return value; // garbadge
     bool readed = getGenericAttribute(&value, sizeof(T));
     return value;
   }
 
   bool get(T& value) const {
-    if (!isInitialized())
+    if (!isValid())
       return false; // unread
     bool readed = getGenericAttribute(&value, sizeof(T));
     return readed;
   }
 
+  bool getUnsafeCopy(T& value) const {
+    if (_data_p == nullptr)
+      return false;
+    if (!isValid())
+      return false; // garbadge
+
+    // Convert from void pointer to attribute's type pointer
+    T* value_p = (T*)_data_p;
+
+    // Copy value to output and return
+    value = *value_p;
+    return true;
+  }
+
   bool set(const T& value) {
-    if (!isInitialized())
+    if (!isValid())
       return false; // unwrite
     bool written = setGenericAttribute(&value, sizeof(T));
     return written;
   }
 
-  virtual size_t size() const override {
+  bool setRaw(const T& value) {
+    if (!isValid())
+      return false; // unwrite
+    bool written = setGenericAttributeRaw(&value, sizeof(T));
+    return written;
+  }
+
+  T getPrevious() const {
+    return _previous_value;
+  }
+
+  virtual bool report() const {
+    T value = {0};
+    bool readed = get(value);
+    if (!readed)
+      return false;
+    bool reported = reportAttribute(&value, sizeof(T));
+    return reported;
+  }
+
+  bool setAndReport(const T& value) {
+    if (!set(value))
+      return false;
+    bool reported = report();
+    return reported;
+  }
+
+  bool setRawAndReport(const T& value) {
+    if (!setRaw(value))
+      return false;
+    bool reported = report();
+    return reported;
+  }
+
+  void onValueChange(void (*callback)(T)) {
+    _on_value_change_callback = callback;
+  }
+
+  virtual void notifyChange() const {
+    if (_on_value_change_callback && _data_p != nullptr) {
+      // Copy the value from the internal pointer to prevent acquiring/releasing the lock.
+      // Update notify have the potential to be executed from a zigbee callback
+      // which should not acquiring/releasing the lock.
+
+      // Since we are reading from _data_p (a pointer), make a copy to prevent unexpected changes during callbacks. 
+      T copy = *((T*)_data_p);
+
+      // Notify observers by calling their callbacks
+      _on_value_change_callback(copy);
+    }
+  }
+
+  virtual size_t getSize() const override {
     return sizeof(T);
   }
 
-  virtual void *newValue() const {
-    return new T;
+  virtual void zbDataToHex(char* buffer, size_t buffer_size) const {
+    T value = {0};
+    if (buffer_size >= 1)
+      buffer[0] = '\0';
+    if (get(value)) {
+      toHex(&value, sizeof(T), buffer, buffer_size);
+    }
   }
 
-protected:
+  virtual void *getDefaultDataPointer() {
+    return &_default_value;
+  }
+
+  void setDefaultValue(const T& new_value) {
+    _default_value = new_value;
+  }
+
+  virtual bool update() {
+    T value = {0};
+    bool readed = get(value);
+    if (!readed)
+      return false;
+    _previous_value = value;
+    return true;
+  }
+
+  virtual bool hasChanged() const {
+    if (_data_p == nullptr)
+      return false;
+
+    // Convert from void pointer to attribute's type pointer
+    T* value_p = (T*)_data_p;
+
+    // Compare and return
+    bool changed = (_previous_value != *value_p);
+    return changed;
+  }
+
   virtual bool isValid() const override {
     bool baseValid = ZigbeeAttributeBase::isValid();
     if (!baseValid)
       return false;
 
-    // Check size
-    size_t zb_type_size = getSafeZigbeeAttrSize();
-    size_t template_size = sizeof(T);
-    if (zb_type_size != template_size) {
-      const char * zb_type_desc = getSafeZigbeeAttrTypeDescritor();
-      const char * class_name = typeString<T>();
-      logEntry("*** Size assertion failed for attribute %s ! Zigbee type '%s' size (%d bit) does not match class type '%s' size (%d bit).",
-        toString().c_str(),
-        zb_type_desc,
-        zb_type_size*8,
-        class_name,
-        template_size*8
-        );
-      return false;
-    }
+    String context;
+    context += getName();
+    context += "::";
+    context += __FUNCTION__;
 
-    // Check signed
-    TypeSign zb_type_sign = getSafeZigbeeAttrTypeSign();
-    TypeSign template_sign = typeSign<T>();
-    
-    if (zb_type_sign != template_sign) {
-      const char * zb_type_desc = getSafeZigbeeAttrTypeDescritor();
-      const char * class_name = typeString<T>();
-      logEntry("*** Sign assertion failed for attribute %s ! Zigbee type '%s' sign (%s) does not match class type '%s' sign (%s).",
-        toString().c_str(),
-        zb_type_desc,
-        ::toString(zb_type_sign),
-        class_name,
-        ::toString(template_sign)
-        );
+    // Assert correct size
+    if (!zb_assert_attribute_size<T>(context.c_str(), _type_id))
       return false;
-    }
+
+    // Assert correct sign
+    if (!zb_assert_attribute_sign<T>(context.c_str(), _type_id))
+      return false;
     
     return true;
   }

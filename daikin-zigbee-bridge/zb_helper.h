@@ -3,6 +3,13 @@
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 #include "type_helper.h"
+#include "logging.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include "format_helper.h"
+#include "zb_constants_helper.h"
 
 typedef enum {
   ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK = 0x00,
@@ -63,7 +70,7 @@ static size_t zb_constants_zcl_attr_type_size(esp_zb_zcl_attr_type_t value) {
     case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ENUM:        return 2;
     case ESP_ZB_ZCL_ATTR_TYPE_SEMI:              return 2;
     case ESP_ZB_ZCL_ATTR_TYPE_SINGLE:            return 4;
-    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE:            return 5;
+    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE:            return 8;
     case ESP_ZB_ZCL_ATTR_TYPE_OCTET_STRING:      return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING:       return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_LONG_OCTET_STRING: return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
@@ -74,16 +81,190 @@ static size_t zb_constants_zcl_attr_type_size(esp_zb_zcl_attr_type_t value) {
     case ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE:         return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_SET:               return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
     case ESP_ZB_ZCL_ATTR_TYPE_BAG:               return ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE;
-    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY:       return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
-    case ESP_ZB_ZCL_ATTR_TYPE_DATE:              return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
-    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME:          return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY:       return 4;
+    case ESP_ZB_ZCL_ATTR_TYPE_DATE:              return 4;
+    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME:          return 4;
     case ESP_ZB_ZCL_ATTR_TYPE_CLUSTER_ID:        return 2;
     case ESP_ZB_ZCL_ATTR_TYPE_ATTRIBUTE_ID:      return 2;
-    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID:        return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
-    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR:         return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID:        return 4;
+    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR:         return 8;
     case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY:       return 16;
     case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
     default:                                     return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+  }
+}
+
+static bool zb_zcl_attribute_data_pointer_to_string(char *buffer, size_t buffer_size, esp_zb_zcl_attr_type_t type_id, void *data_p) {
+  static const char * DEFAULT_TO_STRING_VALUE = "???";
+
+  if (!buffer || buffer_size == 0) {
+    return false;
+  }
+
+  if (!data_p) {
+    if (snprintf(buffer, buffer_size, "NULL") < 0)
+      return false;
+    return true;
+  }
+
+  switch (type_id) {
+    case ESP_ZB_ZCL_ATTR_TYPE_NULL: {
+      if (snprintf(buffer, buffer_size, "NULL") < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT:
+    case ESP_ZB_ZCL_ATTR_TYPE_U8:
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM: {
+      uint8_t v = *(uint8_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT:
+    case ESP_ZB_ZCL_ATTR_TYPE_U16:
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ENUM: {
+      uint16_t v = *(uint16_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_32BIT:
+    case ESP_ZB_ZCL_ATTR_TYPE_U32: {
+      uint32_t v = *(uint32_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_S8: {
+      int8_t v = *(int8_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%d", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_S16: {
+      int16_t v = *(int16_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%d", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_S32: {
+      int32_t v = *(int32_t *)data_p;
+      if (snprintf(buffer, buffer_size, "%ld", v) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_BOOL: {
+      bool v = *(bool *)data_p;
+      const char * text = (v ? "true" : "false");
+      if (snprintf(buffer, buffer_size, "%s", text) < 0)
+        return false;
+      return true;
+    }
+    break;
+
+    // Bitmaps
+    case ESP_ZB_ZCL_ATTR_TYPE_8BITMAP     :
+    case ESP_ZB_ZCL_ATTR_TYPE_16BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_24BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_32BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_40BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_48BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_56BITMAP    :
+    case ESP_ZB_ZCL_ATTR_TYPE_64BITMAP    :    
+    {
+      // Get the size of the actual data
+      size_t data_size = zb_constants_zcl_attr_type_size(type_id);
+      if (data_size == ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE || data_size == ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN) {
+        // Unable to get how long the data_p is.
+        // Fallback with the unknwon value.
+        snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
+        return false;
+      }
+
+      // Output as hexedecimal
+      bool success = toBin(data_p, data_size, buffer, buffer_size);
+      return success;
+    }
+    break;
+
+
+    // Print the following values as hexadecimal values
+    case ESP_ZB_ZCL_ATTR_TYPE_24BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_40BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_48BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_56BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_64BIT       :
+    case ESP_ZB_ZCL_ATTR_TYPE_U40         :
+    case ESP_ZB_ZCL_ATTR_TYPE_U48         :
+    case ESP_ZB_ZCL_ATTR_TYPE_U56         :
+    case ESP_ZB_ZCL_ATTR_TYPE_U64         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S40         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S48         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S56         :
+    case ESP_ZB_ZCL_ATTR_TYPE_S64         :
+    case ESP_ZB_ZCL_ATTR_TYPE_SEMI        :
+    case ESP_ZB_ZCL_ATTR_TYPE_SINGLE      :
+    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE      :
+    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY :
+    case ESP_ZB_ZCL_ATTR_TYPE_DATE        :
+    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME    :
+    case ESP_ZB_ZCL_ATTR_TYPE_CLUSTER_ID  :
+    case ESP_ZB_ZCL_ATTR_TYPE_ATTRIBUTE_ID:
+    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID  :
+    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR   :
+    case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY :
+    {
+      // Get the size of the actual data
+      size_t data_size = zb_constants_zcl_attr_type_size(type_id);
+      if (data_size == ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE) {
+        // Unable to get how long the data_p is.
+        // Fail with the unknwon value.
+        snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
+        return false;
+      }
+
+      // Output as hexedecimal
+      bool success = toHex(data_p, data_size, buffer, buffer_size);
+      return success;
+    }
+    break;
+
+    case ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING:
+    case ESP_ZB_ZCL_ATTR_TYPE_OCTET_STRING:
+      {
+        uint8_t lenght = ((uint8_t *)data_p)[0]; // the first byte is always the length of the string
+        const uint8_t *str = &((uint8_t *)data_p)[1]; // this is the actual string pointer (non-null terminated!)
+
+        // Truncate the input string to match the size of the output buffer.
+        if (lenght >= buffer_size)
+          lenght = buffer_size - 1;
+
+        // Copy the input string using memcpy because the string is non-null terminated.
+        memcpy(buffer, str, lenght);
+        buffer[lenght] = '\0'; // and the output string
+
+        return true;
+    }
+    break;
+
+    default:
+      snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
+      return false;
   }
 }
 
@@ -149,4 +330,166 @@ static TypeSign zb_constants_zcl_attr_type_signed(esp_zb_zcl_attr_type_t value) 
     case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return TYPE_SIGN_UNKNOWN;
     default:                                     return TYPE_SIGN_UNKNOWN;
   }
+}
+
+template<typename T>
+static bool zb_assert_attribute_size(const char* function, esp_zb_zcl_attr_type_t type_id) {
+  size_t attr_size = zb_constants_zcl_attr_type_size(type_id);
+  size_t value_size = sizeof(T);
+  if (value_size != attr_size) {
+    const char * attr_type_name = zb_constants_zcl_attr_type_to_string(type_id);
+    const char * value_type_name = typeString<T>();
+    logEntry("ERROR: *** Size assertion failed in %s() ! Attribute type '%s' is %d bit does not match value type '%s' which is %d bit.",
+      function,
+      attr_type_name,
+      attr_size*8,
+      value_type_name,
+      value_size*8
+      );
+    return false;
+  }
+  return true;
+}
+
+template<typename T>
+static bool zb_assert_attribute_sign(const char* function, esp_zb_zcl_attr_type_t type_id) {
+  TypeSign attr_sign = zb_constants_zcl_attr_type_signed(type_id);
+  TypeSign value_sign = typeSign<T>();
+  if (value_sign != attr_sign) {
+    const char * attr_type_name = zb_constants_zcl_attr_type_to_string(type_id);
+    const char * value_type_name = typeString<T>();
+    logEntry("ERROR: *** Sign assertion failed in %s() ! Attribute type '%s' is '%s' does not match value type '%s' which is '%s'.",
+      function,
+      attr_type_name,
+      ::toString(attr_sign),
+      value_type_name,
+      ::toString(value_sign)
+      );
+    return false;
+  }
+  return true;
+}
+
+static bool zb_zcl_attribute_is_sentinel(esp_zb_zcl_attr_t* attr) {
+  // The ESP Zigbee SDK uses a sentinel node (dummy node) at the beginning of each attribute list to simplify list operations.
+  // This dummy node:
+  // * Has all fields zeroed (id=0x0000, type=0x00, access=0x00, data_p=NULL)
+  // * Is not an actual attribute
+  // * Simplifies insert/delete operations (no special case for empty lists)
+  // * The next pointer points to the first real attribute
+
+  if (attr == nullptr)
+    return false;
+
+  static const esp_zb_zcl_attr_t ZB_ZCL_SENTINEL_ATTRIBUTE = {0};
+  bool is_sentinel = (memcmp(attr, &ZB_ZCL_SENTINEL_ATTRIBUTE, sizeof(ZB_ZCL_SENTINEL_ATTRIBUTE)) == 0);
+  return is_sentinel;
+}
+
+static bool zb_zcl_cluster_is_sentinel(esp_zb_zcl_cluster_t* cluster) {
+  // The ESP Zigbee SDK uses a sentinel node (dummy node) at the beginning of each attribute list to simplify list operations.
+  // This dummy node:
+  // * Has all fields zeroed (id=0x0000, type=0x00, access=0x00, data_p=NULL)
+  // * Is not an actual attribute
+  // * Simplifies insert/delete operations (no special case for empty lists)
+  // * The next pointer points to the first real attribute
+
+  if (cluster == nullptr)
+    return false;
+
+  static const esp_zb_zcl_cluster_t ZB_ZCL_SENTINEL_CLUSTER = {0};
+  bool is_sentinel = (memcmp(cluster, &ZB_ZCL_SENTINEL_CLUSTER, sizeof(ZB_ZCL_SENTINEL_CLUSTER)) == 0);
+  return is_sentinel;
+}
+
+static esp_zb_zcl_attr_t* zb_find_attribute_in_attribute_list(esp_zb_attribute_list_t* list, uint16_t attribute_id)
+{
+  esp_zb_attribute_list_t *element = list;
+
+  // Skip the sentinel/dummy head node, if present
+  if (element != nullptr && zb_zcl_attribute_is_sentinel(&element->attribute)) {
+    element = element->next;  // Skip node
+  }
+
+  while (element != nullptr) {
+    if (element->attribute.id == attribute_id) {
+      return &element->attribute;
+    }
+
+    // Next attribute element in attribute list
+    element = element->next;
+  }
+  return nullptr; // Not found
+}
+
+static esp_zb_zcl_attr_t* zb_find_attribute_in_cluster_list(esp_zb_cluster_list_t* list, uint16_t cluster_id, uint16_t attribute_id)
+{
+  esp_zb_cluster_list_t *element = list;
+
+  // Skip sentinel/dummy head node, if present
+  if (element != nullptr && zb_zcl_cluster_is_sentinel(&element->cluster)) {
+    element = element->next;  // Skip node
+  }
+
+  while (element != nullptr) {
+    esp_zb_zcl_cluster_t *cluster = &element->cluster;
+
+    // Is that the cluster we are looking for ?
+    if (cluster != nullptr && cluster->cluster_id == cluster_id) {
+
+      // Only handle clusters that use the linked-list attribute model
+      esp_zb_attribute_list_t *attr_list = cluster->attr_list;
+      if (cluster->attr_count == 0 && attr_list != nullptr) {
+        esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attribute_list(attr_list, attribute_id);
+        if (attr != nullptr) {
+          return attr;  // Found
+        }
+      }
+    }
+
+    // Next cluster element in cluster list
+    element = element->next;
+  }
+
+  return nullptr; // Not found in any cluster
+}
+
+template<typename T>
+static bool zb_set_attribute_value_in_attr_list(esp_zb_attribute_list_t *list, uint16_t attribute_id, const T &new_value)
+{
+  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_attribute_list(list, attribute_id);
+  if (attr == nullptr || attr->data_p == nullptr) {
+    return false;
+  }
+
+  // Assert correct size
+  if (!zb_assert_attribute_size<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  // Assert correct sign
+  if (!zb_assert_attribute_sign<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  memcpy(attr->data_p, &new_value, sizeof(T));
+  return true;
+}
+
+template<typename T>
+static bool zb_set_attribute_value_in_cluster_list(esp_zb_cluster_list_t *list, uint16_t cluster_id, uint16_t attribute_id, const T &new_value)
+{
+  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_cluster_list(list, cluster_id, attribute_id);
+  if (attr == nullptr || attr->data_p == nullptr) {
+    return false;
+  }
+
+  // Assert correct size
+  if (!zb_assert_attribute_size<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  // Assert correct sign
+  if (!zb_assert_attribute_sign<T>(__FUNCTION__, (esp_zb_zcl_attr_type_t)attr->type))
+    return false;
+
+  memcpy(attr->data_p, &new_value, sizeof(T));
+  return true;
 }

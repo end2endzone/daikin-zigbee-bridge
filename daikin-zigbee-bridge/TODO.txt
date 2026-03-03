@@ -1,7 +1,8 @@
 - Implement Temperature Measurement Sensor Cluster
   https://docs.silabs.com/zigbee/8.2.2/zigbee-fundamentals/06-zigbee-cluster-library#example-temperature-measurement-sensor-cluster
-- Use ESP_ZB_DEFAULT_THERMOSTAT_CONFIG() from ha\esp_zigbee_ha_standard.h as default config. Overrides some fields with our values to make it Stelpro proof.
-- Create a StelproAttrState structure that contains all getter/setter attributes. Create a getAll() attributes.
-- Create `StelproAttrState _previous;` to compare with previous values.
-- Find out why actual_local_temperature=-1 at initialization. Add code that rounds local_temperature to closest 0.5 degree C.
-- Create a ZigbeeAttribute interface and a ZigbeeAttributeBase. And create multiple template classes that define the specifics for an attribute.
+  ???
+- Test with real Stelpro thermostat:
+  - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
+  - Validate StelproSystemMode to see if it always matches system_mode.
+- Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro's system mode custom attribute
+- Implement energy and power custom attributes.
