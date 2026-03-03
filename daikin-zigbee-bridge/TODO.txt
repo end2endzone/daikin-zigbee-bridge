@@ -4,4 +4,5 @@
 - Test with real Stelpro thermostat:
   - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
   - Validate StelproSystemMode to see if it always matches system_mode.
-- Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro'S system mode custom attribute
+- Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro's system mode custom attribute
+- Implement energy and power custom attributes.
