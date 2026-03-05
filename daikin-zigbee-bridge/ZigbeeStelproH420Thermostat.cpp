@@ -63,6 +63,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_display_mode                     .init("_ui_config_display_mode"                , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
   _ui_config_keypad_lockout                   .init("_ui_config_keypad_lockout"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
   _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID);
+  _stelpro_system_mode                        .init("_stelpro_system_mode"                   , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_SYSTEM_MODE_ID);                                 
 
   // Fill the attribute list to allowing processing all fields
   _zigbee_attribute_list.push_back(&_local_temperature             );
@@ -85,6 +86,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _zigbee_attribute_list.push_back(&_ui_config_display_mode        );
   _zigbee_attribute_list.push_back(&_ui_config_keypad_lockout      );
   _zigbee_attribute_list.push_back(&_stelpro_outdoor_temperature   );
+  _zigbee_attribute_list.push_back(&_stelpro_system_mode           );
 
   // Assert all attributes are initialized
   {
@@ -106,6 +108,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_display_mode                     .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE);
   _ui_config_keypad_lockout                   .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE);
   _stelpro_outdoor_temperature                .setDefaultValue(0);
+  _stelpro_system_mode                        .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT);
 
   // Build cluster lists
   {
@@ -158,6 +161,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE ))   logEntry("Failed to set attribute 'DISPLAY_MODE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE ))             logEntry("Failed to set attribute 'KEYPAD_LOCKOUT' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<int16_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID                    , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_OUTDOOR_TEMPERATURE' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_ZCL_ATTR_THERMOSTAT_STELPRO_SYSTEM_MODE_ID                     , ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT ))                                   logEntry("Failed to set attribute 'STELPRO_SYSTEM_MODE' value in cluster list!");
   
   // Set endpoint configuration
   _ep_config = {
@@ -197,6 +201,17 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
     return;
   }
 
+  // Special case for system modes attributes
+  if (attr == &_stelpro_system_mode) {
+    // _stelpro_system_mode was updated from the coordinator
+    // Update _system_mode from _stelpro_system_mode
+    updateSystemModes(&_stelpro_system_mode, &_system_mode);
+  } else if (attr == &_system_mode) {
+    // _system_mode was updated from the coordinator
+    // Update _stelpro_system_mode from _system_mode
+    updateSystemModes(&_system_mode, &_stelpro_system_mode);
+  }
+
   // Check if value has changed. Ignore the attribute set command if not changed.
   if (!attr->hasChanged()) {
     return;
@@ -204,6 +219,28 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
 
   // Notify observers of the change
   attr->notifyChange();
+}
+
+bool ZigbeeStelproH420Thermostat::updateSystemModes(ZigbeeAttribute<uint8_t> * source, ZigbeeAttribute<uint8_t> * target) {
+  uint8_t mode = 0;
+
+  // Get source value from the attribute's internal memory pointer.
+  // Use getUnsafe() to not aquire/release a lock on the data to allow calling this function within a callback.
+  bool success = source->getUnsafe(mode);
+  if (!success) {
+    logEntry( "ERROR: Failed to updateSystemModes(). Unable to getUnsafe() from '%s'.", source->getName());
+    return false;
+  }
+
+  success = target->setUnsafe(mode);
+  if (!success) {
+    logEntry( "ERROR: Failed to updateSystemModes(). Failed to call setUnsafe() for '%s'.", target->getName());
+    return false;
+  }
+
+  // Note: '_system_mode' and '_stelpro_system_mode' can not be reported.
+
+  return true;
 }
 
 // Zigbee attribute setters
@@ -294,6 +331,16 @@ bool ZigbeeStelproH420Thermostat::setStelproOutdoorTemp(int16_t temperature) {
   bool success = _stelpro_outdoor_temperature.set(temperature);
   if (!success)
     return false;
+  return success;
+}
+
+bool ZigbeeStelproH420Thermostat::setStelproSystemMode(uint8_t mode) {
+  // Do not update _stelpro_system_mode attribute.
+  // Update _system_mode attribute and then synchronize _stelpro_system_mode to _system_mode.
+  bool success = _system_mode.set(mode);
+  if (!success)
+    return false;
+  updateSystemModes(&_system_mode, &_stelpro_system_mode);
   return success;
 }
 
@@ -456,6 +503,7 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   logEntry("-----> _ui_config_display_mode       .get()=%d", _ui_config_display_mode       .get());
   logEntry("-----> _ui_config_keypad_lockout     .get()=%d", _ui_config_keypad_lockout     .get());
   logEntry("-----> _stelpro_outdoor_temperature  .get()=%d", _stelpro_outdoor_temperature  .get());
+  logEntry("-----> _stelpro_system_mode          .get()=%d", _stelpro_system_mode          .get());
 }
 
 bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
@@ -475,7 +523,7 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   // Define capture logic.
   #define CAPTURE_ATTR(attribute, output)                                                         \
     capture_size += attribute.getSize();                                                          \
-    if (!attribute.getUnsafeCopy( output )) {                                                     \
+    if (!attribute.getUnsafe( output )) {                                                     \
       logEntry("WARNING: Failed to get attribute in snapshot: %s", attribute.toString().c_str()); \
       success = false;                                                                            \
     }
@@ -504,6 +552,7 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   CAPTURE_ATTR(_ui_config_keypad_lockout         , snapshot.ui_config_keypad_lockout          );
   // Manufacturer attributes variables
   CAPTURE_ATTR(_stelpro_outdoor_temperature      , snapshot.stelpro_outdoor_temperature       );
+  CAPTURE_ATTR(_stelpro_system_mode              , snapshot.stelpro_system_mode               );
 
   #undef CAPTURE_ATTR
 
@@ -541,6 +590,7 @@ void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_
   logEntry("    _ui_config_display_mode       = %d",              snapshot.ui_config_display_mode       );
   logEntry("    _ui_config_keypad_lockout     = %d,  %s",         snapshot.ui_config_keypad_lockout     ,     zb_zcl_thermostat_ui_config_keypad_lockout_to_string((zb_zcl_thermostat_ui_config_keypad_lockout_t)snapshot.ui_config_keypad_lockout));
   logEntry("    _stelpro_outdoor_temperature  = %d,  %.1f°C",     snapshot.stelpro_outdoor_temperature  ,     snapshot.stelpro_outdoor_temperature   /100.0    );
+  logEntry("    _stelpro_system_mode          = %d,  %s",         snapshot.stelpro_system_mode          ,     zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)snapshot.stelpro_system_mode));
 }
 
 esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *stelpro_cfg) {
@@ -596,28 +646,92 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   #endif
 
   // Manufacturer attributes variables
+  #if 1
+  {
+    // StelproOutdoorTemp:
+    // Note:
+    // When adding the attribute with function esp_zb_cluster_add_manufacturer_attr(), zigbee2mqtt is unable to read or write the attribute.
+    // The following error is reported:
+    // ```
+    // [2/26/2026, 5:26:10 PM] z2m: Publish 'set' 'write' to '0x123abcdefa123456' failed: 'Error: ZCL command 0x123abcdefa123456/25 hvacThermostat.write(
+    // {"StelproOutdoorTemp":-10}, {"timeout":10000,"disableResponse":false,"disableRecovery":false,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false})
+    // failed (Status 'UNSUPPORTED_ATTRIBUTE')'
+    // ```
+    // Note that it could also be a bug in ESP ZIGBEE SDK's library which do not register attribute with custom manufacturer codes.
+    // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
+    // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
+    err = esp_zb_cluster_add_attr(
+      esp_zb_thermostat_cluster,
+      _stelpro_outdoor_temperature.getClusterId(),
+      _stelpro_outdoor_temperature.getAttributeId(),
+      ESP_ZB_ZCL_ATTR_TYPE_S16,
+      ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+      _stelpro_outdoor_temperature.getDefaultDataPointer()
+    );
+    logError(err, __FILE__, __LINE__);
+  }
+  #endif
 
-  // StelproOutdoorTemp:
-  // Note:
-  // When adding the attribute with function esp_zb_cluster_add_manufacturer_attr(), zigbee2mqtt is unable to read or write the attribute.
-  // The following error is reported:
-  // ```
-  // [2/26/2026, 5:26:10 PM] z2m: Publish 'set' 'write' to '0x123abcdefa123456' failed: 'Error: ZCL command 0x123abcdefa123456/25 hvacThermostat.write(
-  // {"StelproOutdoorTemp":-10}, {"timeout":10000,"disableResponse":false,"disableRecovery":false,"disableDefaultResponse":true,"direction":0,"reservedBits":0,"writeUndiv":false})
-  // failed (Status 'UNSUPPORTED_ATTRIBUTE')'
-  // ```
-  // Note that it could also be a bug in ESP ZIGBEE SDK's library which do not register attribute with custom manufacturer codes.
-  // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
-  // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
-  err = esp_zb_cluster_add_attr(
-    esp_zb_thermostat_cluster,
-    _stelpro_outdoor_temperature.getClusterId(),
-    _stelpro_outdoor_temperature.getAttributeId(),
-    ESP_ZB_ZCL_ATTR_TYPE_S16,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
-    _stelpro_outdoor_temperature.getDefaultDataPointer()
-  );
-  logError(err, __FILE__, __LINE__);
+  #if 1
+  {
+    // StelproSystemMode:
+    // Observations:
+    // * Both SystemMode (0x001C) and StelproSystemMode (0x4001) attributes are declared as 8bit enum inside cluster 0x0201. They carry the same data type.
+    // * Multiple other sources maps StelproSystemMode (0x4001) to SystemMode (0x001C) for their implementation.
+    // * This is convincing arguments that both attributes carry identical semantic.
+    //
+    // To make sure they are always synchronized, both attributes should be configured so they effectively share the same data pointer.
+    // This would garanty that any read or writes of either attribute always affect the live hardware state,
+    // regardless of which attribute was most recently written by the coordinator. Both attribute reflects identical state in firmware.
+    //
+    // Calling function esp_zb_cluster_add_attr() with value_p with the same address as system_mode->data_p is not possible.
+    // The SDK's implementation is assumed to make a copy of the given value_p memory address to a new allocation space.
+    // This is why creating a new attribute with the same memory address result in the following:
+    //   Found existing `system_mode` attribute: id=0x001c (System Mode), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cee4, data=4
+    //   Create new `stelpro_system_mode` attribute: id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081d300, data=4
+    // In other words, notice system_mode->data_p=0x4081cee4 and calling esp_zb_cluster_add_attr(value_p=0x4081cee4) actually create an attribute with data_p=0x4081d300.
+    //
+    // A potential option is to redirect data_p to share system_mode's backing storage after its creation.
+    // But this creates an unstable application. The SDK do not expect to have 2 attributes pointing to the same data pointer.
+    // Doing so result in a crash at runtime:
+    // ```
+    // Found `system_mode` attribute: id=0x001c (System Mode), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cee4, data=4
+    // Created `stelpro_system_mode` attribute: id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081d300, data=4
+    // Updated `stelpro_system_mode` attribute: id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cee4, data=4
+    // [...]
+    // Starting Zigbee stack...
+    // CORRUPT HEAP: Bad head at 0x4081cedc. Expected 0xabba1234 got 0x40818fc4
+    // assert failed: multi_heap_free multi_heap_poisoning.c:279 (head != NULL)
+    // ```
+    //
+    // Conclusion: synchronisation must be done manually.
+
+    // Find existing SystemMode attribute
+    esp_zb_zcl_attr_t * system_mode_attr = zb_find_attribute_in_attribute_list(esp_zb_thermostat_cluster, _system_mode.getAttributeId());
+    if (system_mode_attr == nullptr) {
+      logEntry("ERROR: Failed to find attribute: '%s'", _system_mode.getName());
+    } else {
+      // Create new StelproSystemMode attribute using system_mode's data pointer.
+      // The attribute won't use the same data pointer as system_mode attribute but it will effectively copy the default starting value.
+      err = esp_zb_cluster_add_attr(
+        esp_zb_thermostat_cluster,
+        _stelpro_system_mode.getClusterId(),
+        _stelpro_system_mode.getAttributeId(),
+        system_mode_attr->type,
+        system_mode_attr->access,
+        system_mode_attr->data_p
+      );
+      logError(err, __FILE__, __LINE__);
+
+      if (err == ESP_OK) {
+        esp_zb_zcl_attr_t * stelpro_system_mode_attr = zb_find_attribute_in_attribute_list(esp_zb_thermostat_cluster, _stelpro_system_mode.getAttributeId());
+        if (stelpro_system_mode_attr == nullptr) {
+          logEntry("ERROR: Failed to find attribute: '%s'", _stelpro_system_mode.getName());
+        }
+      }
+    }
+  }
+  #endif
 
 #ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
   // Add control sequence (HEATING ONLY)

@@ -421,6 +421,10 @@ void onStelproOutdoorTemperatureChange(int16_t temperature) {
   logEntry("Stelpro Outdoor Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
 }
 
+void onStelproSystemModeChange(uint8_t mode) {
+  logEntry("Stelpro system mode changed from coordinator to: 0x%02x (%s)", mode, zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)mode));
+}
+
 // -------------------------------------------------------------------------
 //                            LED Status Update
 // -------------------------------------------------------------------------
@@ -511,6 +515,7 @@ void setup() {
   zbThermostat->onOutdoorTemperatureChange(onOutdoorTemperatureChange);
   zbThermostat->onOccupancyChange(onOccupancyChange);
   zbThermostat->onStelproOutdoorTemperatureChange(onStelproOutdoorTemperatureChange);
+  zbThermostat->onStelproSystemModeChange(onStelproSystemModeChange);
 
   // Set manufacturer and model
   zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);

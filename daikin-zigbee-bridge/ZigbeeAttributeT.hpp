@@ -41,7 +41,7 @@ public:
     return readed;
   }
 
-  bool getUnsafeCopy(T& value) const {
+  bool getUnsafe(T& value) const {
     if (_data_p == nullptr)
       return false;
     if (!isValid())
@@ -50,7 +50,7 @@ public:
     // Convert from void pointer to attribute's type pointer
     T* value_p = (T*)_data_p;
 
-    // Copy value to output and return
+    // Copy internal value to output value and return
     value = *value_p;
     return true;
   }
@@ -67,6 +67,20 @@ public:
       return false; // unwrite
     bool written = setGenericAttributeRaw(&value, sizeof(T));
     return written;
+  }
+
+  bool setUnsafe(const T& value) {
+    if (_data_p == nullptr)
+      return false;
+    if (!isValid())
+      return false;
+
+    // Convert from void pointer to attribute's type pointer
+    T* value_p = (T*)_data_p;
+
+    // Set internal value from input value and return
+    *value_p = value;
+    return true;
   }
 
   T getPrevious() const {

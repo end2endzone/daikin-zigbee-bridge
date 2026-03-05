@@ -4,12 +4,6 @@
 #include "zb_uint8_t.h"
 
     
-// Define the required buffer size to be able to convert any value to string.
-// Format ESP_ZB_ZCL_ATTR_TYPE_64BITMAP is printed in binary and requires 'b' + 64 characters + '\0' = 66 bytes.
-// Format ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY is 16 bytes printed as hexadecimal and requires '0x' + 32 digits + '\0' = 35 bytes
-// Format ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING is 1 byte per character, 255 characters long string should be long enough for most use case 
-static constexpr size_t DATA_VALUE_STRING_BUFFER_SIZE = 256;
-
 static String debugIntegerToString(int value) {
   String output;
   output += "0x";
@@ -126,16 +120,9 @@ static void zb_debug_print_attributes_in_attribute_list(esp_zb_attribute_list_t*
   while (element != nullptr) {
     esp_zb_zcl_attr_t & attr = element->attribute;
 
-    const char * attr_name = zb_constants_smart_cluster_attr_to_string((esp_zb_zcl_cluster_id_t)cluster_id, attr.id);
-    const char * attr_type_name = zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr.type);
-    const char * attr_access_name = zb_constants_zcl_attr_access_to_string((esp_zb_zcl_attr_access_t)attr.access);
-
-    // Compute the value of the data as a string
-    char data_str[DATA_VALUE_STRING_BUFFER_SIZE];
-    bool success = zb_zcl_attribute_data_pointer_to_string(data_str, DATA_VALUE_STRING_BUFFER_SIZE, (esp_zb_zcl_attr_type_t)attr.type, attr.data_p);
-
-    logEntry("    attribute[%02d] id=0x%04x (%s), type=0x%02x (%s), access=0x%02x (%s), manuf_code=0x%04x, data_p=0x%08x, data=%s",
-      index, attr.id, attr_name, attr.type, attr_type_name, attr.access, attr_access_name, attr.manuf_code, attr.data_p, data_str);
+    char str[256 + DATA_VALUE_STRING_BUFFER_SIZE] = {0};
+    bool success = zb_zcl_attribute_to_string(str, sizeof(str), cluster_id, &attr);
+    logEntry("    attribute[%02d] %s", index, str);
 
     // Next attribute element in attribute list
     index++;

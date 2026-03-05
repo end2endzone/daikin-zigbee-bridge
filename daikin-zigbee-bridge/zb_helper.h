@@ -21,6 +21,12 @@ static const char* UNKNOWN_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_VALUE = "Unknown 
 static const size_t ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN = (size_t)-1;
 static const size_t ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE = (size_t)-2;
 
+// Define the required buffer size to be able to convert any value to string.
+// Format ESP_ZB_ZCL_ATTR_TYPE_64BITMAP is printed in binary and requires 'b' + 64 characters + '\0' = 66 bytes.
+// Format ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY is 16 bytes printed as hexadecimal and requires '0x' + 32 digits + '\0' = 35 bytes
+// Format ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING is 1 byte per character, 255 characters long string should be long enough for most use case 
+static const size_t DATA_VALUE_STRING_BUFFER_SIZE = 256;
+
 static const char* zb_zcl_thermostat_ui_config_keypad_lockout_to_string(zb_zcl_thermostat_ui_config_keypad_lockout_t value) {
   switch (value) {
     case ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK:    return "Unlock";
@@ -266,6 +272,26 @@ static bool zb_zcl_attribute_data_pointer_to_string(char *buffer, size_t buffer_
       snprintf(buffer, buffer_size, DEFAULT_TO_STRING_VALUE);
       return false;
   }
+}
+
+static bool zb_zcl_attribute_to_string(char* buffer, size_t buffer_size, uint16_t cluster_id, esp_zb_zcl_attr_t * attr) {
+  if (attr == nullptr)
+    return false;
+
+  const char * attr_name = zb_constants_smart_cluster_attr_to_string((esp_zb_zcl_cluster_id_t)cluster_id, attr->id);
+  const char * attr_type_name = zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)attr->type);
+  const char * attr_access_name = zb_constants_zcl_attr_access_to_string((esp_zb_zcl_attr_access_t)attr->access);
+
+  // Compute the value of the data as a string
+  char data_str[DATA_VALUE_STRING_BUFFER_SIZE];
+  bool success = zb_zcl_attribute_data_pointer_to_string(data_str, DATA_VALUE_STRING_BUFFER_SIZE, (esp_zb_zcl_attr_type_t)attr->type, attr->data_p);
+
+  int result = snprintf(buffer, buffer_size, "id=0x%04x (%s), type=0x%02x (%s), access=0x%02x (%s), manuf_code=0x%04x, data_p=0x%08x, data=%s",
+      attr->id, attr_name, attr->type, attr_type_name, attr->access, attr_access_name, attr->manuf_code, attr->data_p, data_str);
+  
+  if (result < 0)
+    return false;
+  return true;
 }
 
 static TypeSign zb_constants_zcl_attr_type_signed(esp_zb_zcl_attr_type_t value) {
