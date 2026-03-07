@@ -6,7 +6,6 @@
   - Validate StelproSystemMode to see if it always matches system_mode.
 - Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro's system mode custom attribute
 - Implement `energy` and `power` and `pi_heating_demand` custom attributes.
-- Renamed macros `ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID` and `ZB_ZCL_ATTR_THERMOSTAT_STELPRO_SYSTEM_MODE_ID` to more meaningful names. The current names are confusing with the ZCL specification.
 - Consider using a custom attribute for setting "peak demande event icon".
   - zigbee2mqtt show the following payload now for the class:
   ```

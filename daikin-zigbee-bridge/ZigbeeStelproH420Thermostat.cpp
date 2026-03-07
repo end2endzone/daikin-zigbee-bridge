@@ -62,8 +62,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _abs_max_cool_setpoint_limit                .init("_abs_max_cool_setpoint_limit"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID);                 
   _ui_config_display_mode                     .init("_ui_config_display_mode"                , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
   _ui_config_keypad_lockout                   .init("_ui_config_keypad_lockout"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
-  _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID);
-  _stelpro_system_mode                        .init("_stelpro_system_mode"                   , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_ZCL_ATTR_THERMOSTAT_STELPRO_SYSTEM_MODE_ID);                                 
+  _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID);
+  _stelpro_system_mode                        .init("_stelpro_system_mode"                   , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_SYSTEM_MODE_ID);                                 
 
   // Fill the attribute list to allowing processing all fields
   _zigbee_attribute_list.push_back(&_local_temperature             );
@@ -160,8 +160,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_value_in_cluster_list<zb_uint8_t> (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID                           , ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE ))                            logEntry("Failed to set attribute 'OCCUPANCY' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE ))   logEntry("Failed to set attribute 'DISPLAY_MODE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE ))             logEntry("Failed to set attribute 'KEYPAD_LOCKOUT' value in cluster list!");
-  if (!zb_set_attribute_value_in_cluster_list<int16_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_ZCL_ATTR_THERMOSTAT_STELPRO_OUTDOOR_TEMP_ID                    , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_OUTDOOR_TEMPERATURE' value in cluster list!");
-  if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_ZCL_ATTR_THERMOSTAT_STELPRO_SYSTEM_MODE_ID                     , ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT ))                                   logEntry("Failed to set attribute 'STELPRO_SYSTEM_MODE' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<int16_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID                                   , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_OUTDOOR_TEMPERATURE' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_SYSTEM_MODE_ID                                    , ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT ))                                   logEntry("Failed to set attribute 'STELPRO_SYSTEM_MODE' value in cluster list!");
   
   // Set endpoint configuration
   _ep_config = {
