@@ -64,6 +64,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_keypad_lockout                   .init("_ui_config_keypad_lockout"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
   _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID);
   _stelpro_system_mode                        .init("_stelpro_system_mode"                   , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_SYSTEM_MODE_ID);                                 
+  _stelpro_power                              .init("_stelpro_power"                         , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_POWER_ID);                                 
+  _stelpro_energy                             .init("_stelpro_energy"                        , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_ENERGY_ID);                                 
 
   // Fill the attribute list to allowing processing all fields
   _zigbee_attribute_list.push_back(&_local_temperature             );
@@ -87,6 +89,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _zigbee_attribute_list.push_back(&_ui_config_keypad_lockout      );
   _zigbee_attribute_list.push_back(&_stelpro_outdoor_temperature   );
   _zigbee_attribute_list.push_back(&_stelpro_system_mode           );
+  _zigbee_attribute_list.push_back(&_stelpro_power                 );
+  _zigbee_attribute_list.push_back(&_stelpro_energy                );
 
   // Assert all attributes are initialized
   {
@@ -109,6 +113,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _ui_config_keypad_lockout                   .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE);
   _stelpro_outdoor_temperature                .setDefaultValue(0);
   _stelpro_system_mode                        .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT);
+  _stelpro_power                              .setDefaultValue(0);
+  _stelpro_energy                             .setDefaultValue(0);
 
   // Build cluster lists
   {
@@ -162,7 +168,9 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE ))             logEntry("Failed to set attribute 'KEYPAD_LOCKOUT' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<int16_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID                                   , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_OUTDOOR_TEMPERATURE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_SYSTEM_MODE_ID                                    , ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT ))                                   logEntry("Failed to set attribute 'STELPRO_SYSTEM_MODE' value in cluster list!");
-  
+  if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_POWER_ID                                          , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_POWER' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<uint32_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_ENERGY_ID                                         , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_ENERGY' value in cluster list!");
+
   // Set endpoint configuration
   _ep_config = {
     .endpoint = _endpoint,
@@ -171,14 +179,6 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
     .app_device_version = 0
   };
 
-#ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
-  // Initialize metering values
-  _instantaneous_demand = {.low = 0, .high = 0};
-  _current_summation_delivered = {.low = 0, .high = 0};
-  _multiplier = {.low = 1, .high = 0};
-  _divisor = {.low = 1000, .high = 0};
-  _unit_of_measure = 0x00;  // kWh/kW
-#endif // ENABLE_STELPRO_POWER_MEASUREMENTS
 }
 
 void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) {
@@ -344,71 +344,21 @@ bool ZigbeeStelproH420Thermostat::setStelproSystemMode(uint8_t mode) {
   return success;
 }
 
-#ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
-bool ZigbeeStelproH420Thermostat::setInstantaneousDemand(int32_t demand_watts) {
-  // Convert to demand with divisor applied (watts)
-  _instantaneous_demand.low = demand_watts & 0xFFFF;
-  _instantaneous_demand.high = (demand_watts >> 16) & 0xFF;
-
-  esp_zb_lock_acquire(portMAX_DELAY);
-  esp_zb_zcl_status_t status = esp_zb_zcl_set_attribute_val(
-    _endpoint,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    ESP_ZB_ZCL_ATTR_METERING_INSTANTANEOUS_DEMAND_ID,
-    &_instantaneous_demand,
-    false
-  );
-  esp_zb_lock_release();
-
-  if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-    logEntry("Failed to set instantaneous demand: 0x%x", status);
+bool ZigbeeStelproH420Thermostat::setStelproPower(uint16_t value) {
+  bool success = _stelpro_power.set(value);
+  if (!success)
     return false;
-  }
-  return true;
+  return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setCurrentSummationDelivered(uint64_t energy_wh) {
-  // Store energy in Wh
-  _current_summation_delivered.low = energy_wh & 0xFFFFFFFF;
-  _current_summation_delivered.high = (energy_wh >> 32) & 0xFFFF;
-
-  esp_zb_lock_acquire(portMAX_DELAY);
-  esp_zb_zcl_status_t status = esp_zb_zcl_set_attribute_val(
-    _endpoint,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    ESP_ZB_ZCL_ATTR_METERING_CURRENT_SUMMATION_DELIVERED_ID,
-    &_current_summation_delivered,
-    false
-  );
-  esp_zb_lock_release();
-
-  if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-    logEntry("Failed to set current summation delivered: 0x%x", status);
+bool ZigbeeStelproH420Thermostat::setStelproEnergy(uint32_t value) {
+  bool success = _stelpro_energy.set(value);
+  if (!success)
     return false;
-  }
-  return true;
+  return success;
 }
-#endif // ENABLE_STELPRO_POWER_MEASUREMENTS
 
 void ZigbeeStelproH420Thermostat::updateEnergy() {
-#ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
-  // Update energy calculator
-  _energy_calc.loop();
-  
-  // Get calculated values from energy calculator
-  uint8_t pi_heating_demand = _energy_calc.getPIHeatingDemand();
-  uint16_t running_state = _energy_calc.getRunningState();
-  int32_t power_watts = _energy_calc.getInstantaneousDemandWatts();
-  uint64_t energy_wh = _energy_calc.getCurrentSummationDelivered();
-  
-  // Update Zigbee attributes with calculated values
-  setPIHeatingDemand(pi_heating_demand);
-  setRunningState(running_state);
-  setInstantaneousDemand(power_watts);
-  setCurrentSummationDelivered(energy_wh);
-#endif // ENABLE_STELPRO_POWER_MEASUREMENTS
 }
 
 bool ZigbeeStelproH420Thermostat::update() {
@@ -504,6 +454,8 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   logEntry("-----> _ui_config_keypad_lockout     .get()=%d", _ui_config_keypad_lockout     .get());
   logEntry("-----> _stelpro_outdoor_temperature  .get()=%d", _stelpro_outdoor_temperature  .get());
   logEntry("-----> _stelpro_system_mode          .get()=%d", _stelpro_system_mode          .get());
+  logEntry("-----> _stelpro_power                .get()=%d", _stelpro_power                .get());
+  logEntry("-----> _stelpro_energy               .get()=%d", _stelpro_energy               .get());
 }
 
 bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
@@ -553,6 +505,8 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   // Manufacturer attributes variables
   CAPTURE_ATTR(_stelpro_outdoor_temperature      , snapshot.stelpro_outdoor_temperature       );
   CAPTURE_ATTR(_stelpro_system_mode              , snapshot.stelpro_system_mode               );
+  CAPTURE_ATTR(_stelpro_power                    , snapshot.stelpro_power                     );
+  CAPTURE_ATTR(_stelpro_energy                   , snapshot.stelpro_energy                    );
 
   #undef CAPTURE_ATTR
 
@@ -591,6 +545,8 @@ void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_
   logEntry("    _ui_config_keypad_lockout     = %d,  %s",         snapshot.ui_config_keypad_lockout     ,     zb_zcl_thermostat_ui_config_keypad_lockout_to_string((zb_zcl_thermostat_ui_config_keypad_lockout_t)snapshot.ui_config_keypad_lockout));
   logEntry("    _stelpro_outdoor_temperature  = %d,  %.1f°C",     snapshot.stelpro_outdoor_temperature  ,     snapshot.stelpro_outdoor_temperature   /100.0    );
   logEntry("    _stelpro_system_mode          = %d,  %s",         snapshot.stelpro_system_mode          ,     zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)snapshot.stelpro_system_mode));
+  logEntry("    _stelpro_power                = %d W",            snapshot.stelpro_power                );
+  logEntry("    _stelpro_energy               = %d Wh",           snapshot.stelpro_energy               );
 }
 
 esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *stelpro_cfg) {
@@ -733,59 +689,31 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   }
   #endif
 
-#ifdef ENABLE_STELPRO_POWER_MEASUREMENTS
-  // Add control sequence (HEATING ONLY)
-  //uint8_t control_sequence = 0x02;  // Heating only
-  esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_CONTROL_SEQUENCE_OF_OPERATION_ID, &control_sequence);
-  
-  // Create Simple Metering cluster for power/energy reporting
-  esp_zb_attribute_list_t *esp_zb_metering_cluster = esp_zb_zcl_attr_list_create(ESP_ZB_ZCL_CLUSTER_ID_METERING);
-  
-  esp_zb_cluster_add_attr(
-    esp_zb_metering_cluster,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_ATTR_METERING_CURRENT_SUMMATION_DELIVERED_ID,
-    ESP_ZB_ZCL_ATTR_TYPE_U48,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY | ESP_ZB_ZCL_ATTR_ACCESS_REPORTING,
-    &_current_summation_delivered
-  );
-  
-  esp_zb_cluster_add_attr(
-    esp_zb_metering_cluster,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_ATTR_METERING_INSTANTANEOUS_DEMAND_ID,
-    ESP_ZB_ZCL_ATTR_TYPE_S24,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY | ESP_ZB_ZCL_ATTR_ACCESS_REPORTING,
-    &_instantaneous_demand
-  );
-  
-  esp_zb_cluster_add_attr(
-    esp_zb_metering_cluster,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_ATTR_METERING_UNIT_OF_MEASURE_ID,
-    ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-    &_unit_of_measure
-  );
-  
-  esp_zb_cluster_add_attr(
-    esp_zb_metering_cluster,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_ATTR_METERING_MULTIPLIER_ID,
-    ESP_ZB_ZCL_ATTR_TYPE_U24,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-    &_multiplier
-  );
-  
-  esp_zb_cluster_add_attr(
-    esp_zb_metering_cluster,
-    ESP_ZB_ZCL_CLUSTER_ID_METERING,
-    ESP_ZB_ZCL_ATTR_METERING_DIVISOR_ID,
-    ESP_ZB_ZCL_ATTR_TYPE_U24,
-    ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
-    &_divisor
-  );
-#endif // ENABLE_STELPRO_POWER_MEASUREMENTS
+  #if 1
+  {
+    // StelproPower :
+    err = esp_zb_cluster_add_attr(
+      esp_zb_thermostat_cluster,
+      _stelpro_power.getClusterId(),
+      _stelpro_power.getAttributeId(),
+      ESP_ZB_ZCL_ATTR_TYPE_U16,
+      ESP_ZB_ZCL_ATTR_ACCESS_REPORTING | ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
+      _stelpro_power.getDefaultDataPointer()
+    );
+    logError(err, __FILE__, __LINE__);
+
+    //  & StelproEnergy :
+    err = esp_zb_cluster_add_attr(
+      esp_zb_thermostat_cluster,
+      _stelpro_energy.getClusterId(),
+      _stelpro_energy.getAttributeId(),
+      ESP_ZB_ZCL_ATTR_TYPE_U32,
+      ESP_ZB_ZCL_ATTR_ACCESS_REPORTING | ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
+      _stelpro_energy.getDefaultDataPointer()
+    );
+    logError(err, __FILE__, __LINE__);
+  }
+  #endif
 
   // Create cluster list
   esp_zb_cluster_list_t *esp_zb_cluster_list = esp_zb_zcl_cluster_list_create();

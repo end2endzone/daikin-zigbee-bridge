@@ -253,6 +253,8 @@ void simulateTemperature() {
   uint8_t pi_heating_demand = 0;
   uint16_t running_state = 0;
   uint8_t system_mode = 0;
+  uint16_t power = 0;
+  uint32_t energy = 0;
 
   // Get actuals
   zbThermostat->getLocalTemperature(local_temp);
@@ -260,10 +262,21 @@ void simulateTemperature() {
   zbThermostat->getPIHeatingDemand(pi_heating_demand);
   zbThermostat->getRunningState(running_state);
   zbThermostat->getSystemMode(system_mode);
+  zbThermostat->getStelproPower(power);
+  zbThermostat->getStelproEnergy(energy);
 
   int16_t new_local_temp = local_temp;
   uint8_t new_pi_heating_demand = pi_heating_demand;
   uint16_t new_running_state = running_state;
+  uint16_t new_power = power;
+  uint32_t new_energy = energy;
+
+  // Compute energy use since las update and at it to the previous energy value
+  static const double MILLISECONDS_TO_SECONDS = 0.001;
+  static const double SECONDS_TO_HOURS = 1/3600.0;
+  double elapsed_hours_since_last_update = tempSimulationUpdateTimer.getTimeOutTime()  * MILLISECONDS_TO_SECONDS * SECONDS_TO_HOURS;
+  uint32_t energy_use_deltaT = (uint32_t)(power * elapsed_hours_since_last_update);
+  new_energy = energy + energy_use_deltaT;
 
   int16_t temp_diff = setpoint - local_temp; // positive when requiring heating
   if (abs(temp_diff) < SIMULATION_TEMPERATURE_THRESHOLD) {
@@ -271,6 +284,7 @@ void simulateTemperature() {
     // Set everything to OFF, temperature do not need to change.
     new_pi_heating_demand = 0;
     new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
+    new_power = 0;
   } else {
     // Temperature difference is above the threshold. Temperature must change and system must be updated.
 
@@ -280,6 +294,7 @@ void simulateTemperature() {
       new_running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
     } else {
       new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
+      new_power = 0;
     }
 
     int16_t target_temp = setpoint;
@@ -307,7 +322,15 @@ void simulateTemperature() {
       if (tmp > 100) tmp = 100;
       if (tmp < 0) tmp = 0;
       new_pi_heating_demand = (uint8_t)tmp;
+
+      // compute new power
+      new_power = (uint16_t)map(new_pi_heating_demand, (uint16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE, (uint16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE, 0, STELPRO_MAX_POWER_WATTS); // map [0%,100%] to [0W,4000W]
     }
+  }
+
+  // Update Energy
+  if (pi_heating_demand > 0) {
+    zbThermostat->setStelproEnergy(new_energy);
   }
 
   // Note:
@@ -323,6 +346,9 @@ void simulateTemperature() {
     // We must update `pi_heating_demand` before HEATING flag in `runnig_state` is cleared.
     zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
     pi_heating_demand_is_dirty = false;
+
+    // Update current power usage
+    zbThermostat->setStelproPower(new_power);
   }
 
   // Update thermostat attribute, if changed
@@ -340,17 +366,18 @@ void simulateTemperature() {
     // We must update `pi_heating_demand` after HEATING flag in `runnig_state` is set.
     zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
     pi_heating_demand_is_dirty = false;
-  }
 
-  // Calculate power for display (internal calculator will compute accurately)
-  int32_t power_watts = (STELPRO_MAX_POWER_WATTS * pi_heating_demand) / 100;
+    // Update current power usage
+    zbThermostat->setStelproPower(new_power);
+  }
   
-  logEntry("Simulation Update --> Temp: %.1f°C, Setpoint: %.1f°C, Demand: %d%%, State: %s, Power: %dW",
+  logEntry("Simulation Update --> Temp: %.1f°C, Setpoint: %.1f°C, Demand: %d%%, State: %s, Power: %dW, Energy: %dWh",
                 new_local_temp / 100.0,
                 setpoint / 100.0,
                 new_pi_heating_demand,
                 zb_constants_zcl_thermostat_running_state_attr_to_string(new_running_state).c_str(),
-                power_watts);
+                new_power,
+                new_energy);
 
   //
   printAllAttributes();
