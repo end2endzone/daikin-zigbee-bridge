@@ -1,7 +1,6 @@
 /**
- * @brief Zigbee Stelpro H420/HT402 Thermostat endpoint
- * 
- * Emulates a Stelpro HT402 (Hilo) line-voltage thermostat for Zigbee2MQTT.
+ * @brief This file declares the ZigbeeStelproH420Thermostat class.
+ * The class emulates a Zigbee Stelpro H420/HT402 Thermostat endpoint (Hilo thermostat).
  * This is a heating-only baseboard heater thermostat (4000W @ 240V).
  */
 
@@ -143,51 +142,6 @@ typedef struct {
 
 /**
  * @brief Zigbee class that implements a Stelpro H420 thermostat.
- * At initialization, the class defines the following clusters and attributes:
- *   clusters {
- *     cluster[00] id=0x0000 (Basic), attr_count=0, attr_desc_list=attr_list=0x4081cc50, role_mask=0x01, manuf_code=0x0000, cluster_init=0x42010ade {
- *       attribute[00] id=0xfffd (Unknown Basic Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4087cde0, data=4
- *       attribute[01] id=0x0000 (ZCL Version), type=0x20 (Unsigned 8-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081c3d8, data=8
- *       attribute[02] id=0x0007 (Power Source), type=0x30 (8-bit Enumeration), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081ccd0, data=1
- *     }
- *     cluster[01] id=0x0003 (Identify), attr_count=0, attr_desc_list=attr_list=0x4081cce4, role_mask=0x01, manuf_code=0x0000, cluster_init=0x420121f2 {
- *       attribute[00] id=0xfffd (Unknown Identify Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081cdb8, data=4
- *       attribute[01] id=0x0000 (Identify Time), type=0x21 (Unsigned 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081cdec, data=0
- *     }
- *     cluster[02] id=0x0004 (Groups), attr_count=0, attr_desc_list=attr_list=0x4081cf58, role_mask=0x01, manuf_code=0x0000, cluster_init=0x42030f1a {
- *       attribute[00] id=0xfffd (Unknown Smart Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081cf98, data=4
- *       attribute[01] id=0x0000 (Unknown Smart Cluster Attribute), type=0x18 (8-bit Bitmap), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081cfcc, data=b00000000
- *     }
- *     cluster[03] id=0x0201 (Thermostat), attr_count=0, attr_desc_list=attr_list=0x4081ce00, role_mask=0x01, manuf_code=0x0000, cluster_init=0x42012756 {
- *       attribute[00] id=0xfffd (Unknown Thermostat Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081ce40, data=4
- *       attribute[01] id=0x0000 (Local Temperature), type=0x29 (Signed 16-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081ce74, data=-1
- *       attribute[02] id=0x0011 (Occupied Cooling Setpoint), type=0x29 (Signed 16-bit Value), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cea8, data=3500
- *       attribute[03] id=0x0012 (Occupied Heating Setpoint), type=0x29 (Signed 16-bit Value), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cedc, data=2000
- *       attribute[04] id=0x001b (Control Sequence Of Operation), type=0x30 (8-bit Enumeration), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081cf10, data=4
- *       attribute[05] id=0x001c (System Mode), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cf44, data=4
- *       attribute[06] id=0x0029 (Thermostat Running State), type=0x19 (16-bit Bitmap), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d0bc, data=b0000000000000000
- *       attribute[07] id=0x0008 (PI Heating Demand), type=0x20 (Unsigned 8-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081d0f0, data=0
- *       attribute[08] id=0x0001 (Outdoor Temperature), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d124, data=0
- *       attribute[09] id=0x0002 (Occupancy), type=0x18 (8-bit Bitmap), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d158, data=b00000001
- *       attribute[10] id=0x0003 (Abs Min Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d18c, data=500
- *       attribute[11] id=0x0004 (Abs Max Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d1c0, data=3000
- *       attribute[12] id=0x0015 (Min Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d1f4, data=500
- *       attribute[13] id=0x0016 (Max Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d228, data=3000
- *       attribute[14] id=0x0005 (Abs Min Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d25c, data=500
- *       attribute[15] id=0x0006 (Abs Max Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d290, data=3500
- *       attribute[16] id=0x0017 (Min Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d2c4, data=500
- *       attribute[17] id=0x0018 (Max Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d2f8, data=3500
- *       attribute[18] id=0x4001 (Unknown Thermostat Cluster Attribute), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d32c, data=0
- *       attribute[19] id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081d360, data=4
- *       attribute[20] id=0x4008 (Unknown Thermostat Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081d394, data=0
- *       attribute[21] id=0x4009 (Unknown Thermostat Cluster Attribute), type=0x23 (Unsigned 32-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081d3c8, data=0
- *     }
- *     cluster[04] id=0x0204 (Thermostat UI Configuration), attr_count=0, attr_desc_list=attr_list=0x4081cfe0, role_mask=0x01, manuf_code=0x0000, cluster_init=0x420396ee {
- *       attribute[00] id=0xfffd (Unknown Thermostat UI Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d020, data=4
- *       attribute[01] id=0x0000 (Temperature Display Mode), type=0x30 (8-bit Enumeration), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d054, data=0
- *       attribute[02] id=0x0001 (Keypad Lockout), type=0x30 (8-bit Enumeration), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d088, data=0
- *     }
- *   }
  */
 class ZigbeeStelproH420Thermostat : public ZigbeeEP {
 public:
@@ -358,44 +312,6 @@ public:
   void printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot);
 
 private:
-  /*
-  zigbee attribute definitions: {
-    {name: '_local_temperature', endpoint: 0x19, attr: Local Temperature (0x0000), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Reporting, Read Only (0x0005), size: 2}
-    {name: '_occupied_cooling_setpoint', endpoint: 0x19, attr: Occupied Cooling Setpoint (0x0011), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Scene, Read/Write (0x0013), size: 2}
-    {name: '_occupied_heating_setpoint', endpoint: 0x19, attr: Occupied Heating Setpoint (0x0012), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Scene, Read/Write (0x0013), size: 2}
-    {name: '_control_sequence_of_operation', endpoint: 0x19, attr: Control Sequence Of Operation (0x001b), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
-    {name: '_system_mode', endpoint: 0x19, attr: System Mode (0x001c), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Scene, Read/Write (0x0013), size: 1}
-    {name: '_running_state', endpoint: 0x19, attr: Thermostat Running State (0x0029), cluster: Thermostat (0x0201), type: 16-bit Bitmap, access: Read Only (0x0001), size: 2}
-    {name: '_pi_heating_demand', endpoint: 0x19, attr: PI Heating Demand (0x0008), cluster: Thermostat (0x0201), type: Unsigned 8-bit Value, access: Reporting, Read Only (0x0005), size: 1}
-    {name: '_outdoor_temperature', endpoint: 0x19, attr: Outdoor Temperature (0x0001), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-    {name: '_occupancy', endpoint: 0x19, attr: Occupancy (0x0002), cluster: Thermostat (0x0201), type: 8-bit Bitmap, access: Read Only (0x0001), size: 1}
-    {name: '_min_heat_setpoint_limit', endpoint: 0x19, attr: Min Heat Setpoint Limit (0x0015), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-    {name: '_max_heat_setpoint_limit', endpoint: 0x19, attr: Max Heat Setpoint Limit (0x0016), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-    {name: '_abs_min_heat_setpoint_limit', endpoint: 0x19, attr: Abs Min Heat Setpoint Limit (0x0003), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-    {name: '_abs_max_heat_setpoint_limit', endpoint: 0x19, attr: Abs Max Heat Setpoint Limit (0x0004), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-    {name: '_min_cool_setpoint_limit', endpoint: 0x19, attr: Min Cool Setpoint Limit (0x0017), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-    {name: '_max_cool_setpoint_limit', endpoint: 0x19, attr: Max Cool Setpoint Limit (0x0018), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-    {name: '_abs_min_cool_setpoint_limit', endpoint: 0x19, attr: Abs Min Cool Setpoint Limit (0x0005), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-    {name: '_abs_max_cool_setpoint_limit', endpoint: 0x19, attr: Abs Max Cool Setpoint Limit (0x0006), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-    {name: '_ui_config_display_mode', endpoint: 0x19, attr: Temperature Display Mode (0x0000), cluster: Thermostat UI Configuration (0x0204), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
-    {name: '_ui_config_keypad_lockout', endpoint: 0x19, attr: Keypad Lockout (0x0001), cluster: Thermostat UI Configuration (0x0204), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
-    {name: '_stelpro_outdoor_temperature', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x4001), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-    {name: '_stelpro_system_mode', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x401c), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Scene, Read/Write (0x0013), size: 1}
-    {name: '_stelpro_power', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x4008), cluster: Thermostat (0x0201), type: Unsigned 16-bit Value, access: Reporting, Read Only (0x0005), size: 2}
-    {name: '_stelpro_energy', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x4009), cluster: Thermostat (0x0201), type: Unsigned 32-bit Value, access: Reporting, Read Only (0x0005), size: 4}
-  }
-
-  Notes on specific attributes:
-    pi_heating_demand:
-      * Percentage of heating demand, see ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE & ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE.
-      * Zigbee2mqtt assume values are in [0,255] range. Other zigbee projects (including esp-zigbee-sdk library) assume values in [0,100] range.
-        * TODO: validate with a real Stelpro thermostat.
-      * Can only be set when HEATING bit of running_state is set. Must be set to 0 before turning off the HEATING bit. Must be set to non-zero after turning on the HEATING bit.
-    _ui_config_keypad_lockout:
-      * Can be set by the device itself but the new value won't be reflected in zigbee2mqtt. zigbee2mqtt might simple not watching the attribute for changes.
-        * TODO: validate with a real Stelpro thermostat.
-  */
-
   // Thermostat cluster mandatory attributes
   ZigbeeAttribute<int16_t>    _local_temperature                ;
   ZigbeeAttribute<int16_t>    _occupied_cooling_setpoint        ;

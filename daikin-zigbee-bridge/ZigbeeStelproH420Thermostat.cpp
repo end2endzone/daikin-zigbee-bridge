@@ -631,36 +631,9 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   #if 1
   {
     // StelproSystemMode:
-    // Observations:
-    // * Both SystemMode (0x001C) and StelproSystemMode (0x4001) attributes are declared as 8bit enum inside cluster 0x0201. They carry the same data type.
-    // * Multiple other sources maps StelproSystemMode (0x4001) to SystemMode (0x001C) for their implementation.
-    // * This is convincing arguments that both attributes carry identical semantic.
-    //
-    // To make sure they are always synchronized, both attributes should be configured so they effectively share the same data pointer.
-    // This would garanty that any read or writes of either attribute always affect the live hardware state,
-    // regardless of which attribute was most recently written by the coordinator. Both attribute reflects identical state in firmware.
-    //
-    // Calling function esp_zb_cluster_add_attr() with value_p with the same address as system_mode->data_p is not possible.
-    // The SDK's implementation is assumed to make a copy of the given value_p memory address to a new allocation space.
-    // This is why creating a new attribute with the same memory address result in the following:
-    //   Found existing `system_mode` attribute: id=0x001c (System Mode), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cee4, data=4
-    //   Create new `stelpro_system_mode` attribute: id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081d300, data=4
-    // In other words, notice system_mode->data_p=0x4081cee4 and calling esp_zb_cluster_add_attr(value_p=0x4081cee4) actually create an attribute with data_p=0x4081d300.
-    //
-    // A potential option is to redirect data_p to share system_mode's backing storage after its creation.
-    // But this creates an unstable application. The SDK do not expect to have 2 attributes pointing to the same data pointer.
-    // Doing so result in a crash at runtime:
-    // ```
-    // Found `system_mode` attribute: id=0x001c (System Mode), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cee4, data=4
-    // Created `stelpro_system_mode` attribute: id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081d300, data=4
-    // Updated `stelpro_system_mode` attribute: id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cee4, data=4
-    // [...]
-    // Starting Zigbee stack...
-    // CORRUPT HEAP: Bad head at 0x4081cedc. Expected 0xabba1234 got 0x40818fc4
-    // assert failed: multi_heap_free multi_heap_poisoning.c:279 (head != NULL)
-    // ```
-    //
-    // Conclusion: synchronisation must be done manually.
+    // Create a clone of the existing thermostat's SystemMode attribute.
+    // Maintain synchronisation of both attributes explicitly in `zbAttributeSet()` and `setStelproSystemMode()` via the helper method `updateSystemModes()`.
+    // Whenever either attribute is written, the other is immediately updated to the same value.
 
     // Find existing SystemMode attribute
     esp_zb_zcl_attr_t * system_mode_attr = zb_find_attribute_in_attribute_list(esp_zb_thermostat_cluster, _system_mode.getAttributeId());
