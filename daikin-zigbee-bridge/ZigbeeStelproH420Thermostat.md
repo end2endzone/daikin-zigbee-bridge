@@ -39,103 +39,59 @@ The ZCL specification defines `0x8000` (32768) special value meaning _Invalid_ o
 
 ---
 
-## Cluster Summary
+## Clusters Summary :
 
 The following Zigbee clusters are registered on endpoint 25.
 
-| # | Cluster Name | Cluster ID | Role |
-|---|---|---|---|
-| 0 | Basic | `0x0000` | Server |
-| 1 | Identify | `0x0003` | Server |
-| 2 | Groups | `0x0004` | Server |
-| 3 | Thermostat | `0x0201` | Server |
-| 4 | Thermostat UI Configuration | `0x0204` | Server |
+| # | Cluster Name | Cluster ID | Role | attr_count | attr_desc_list/attr_list | role_mask | manuf_code | cluster_init
+|---|---|---|---|---|---|---|---|---|
+| 0 | Basic | `0x00` | Server | 0 | `0x4081cc50` | Server | `0x0000` | `0x42010846` |
+| 1 | Identify | `0x03` | Server | 0 | `0x4081cce4` | Server | `0x0000` | `0x42011f5a` |
+| 2 | Groups | `0x04` | Server | 0 | `0x4081cf58` | Server | `0x0000` | `0x42030c82` |
+| 3 | Thermostat | `0x201` | Server | 0 | `0x4081ce00` | Server | `0x0000` | `0x420124be` |
+| 4 | Thermostat UI Configuration | `0x204` | Server | 0 | `0x4081cfe0` | Server | `0x0000` | `0x42039456` |
 
----
+----
 
-## Default attribute values
+## Attributes Summary :
 
-The following defines all attributes supported by the `ZigbeeStelproH420Thermostat` class. It lists their default value when the zigbee stack is initialized:
-```
-clusters {
-  cluster[00] id=0x0000 (Basic), attr_count=0, attr_desc_list=attr_list=0x4081cc50, role_mask=0x01, manuf_code=0x0000, cluster_init=0x42010ade {
-    attribute[00] id=0xfffd (Unknown Basic Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4087cde0, data=4
-    attribute[01] id=0x0000 (ZCL Version), type=0x20 (Unsigned 8-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081c3d8, data=8
-    attribute[02] id=0x0007 (Power Source), type=0x30 (8-bit Enumeration), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081ccd0, data=1
-  }
-  cluster[01] id=0x0003 (Identify), attr_count=0, attr_desc_list=attr_list=0x4081cce4, role_mask=0x01, manuf_code=0x0000, cluster_init=0x420121f2 {
-    attribute[00] id=0xfffd (Unknown Identify Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081cdb8, data=4
-    attribute[01] id=0x0000 (Identify Time), type=0x21 (Unsigned 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081cdec, data=0
-  }
-  cluster[02] id=0x0004 (Groups), attr_count=0, attr_desc_list=attr_list=0x4081cf58, role_mask=0x01, manuf_code=0x0000, cluster_init=0x42030f1a {
-    attribute[00] id=0xfffd (Unknown Smart Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081cf98, data=4
-    attribute[01] id=0x0000 (Unknown Smart Cluster Attribute), type=0x18 (8-bit Bitmap), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081cfcc, data=b00000000
-  }
-  cluster[03] id=0x0201 (Thermostat), attr_count=0, attr_desc_list=attr_list=0x4081ce00, role_mask=0x01, manuf_code=0x0000, cluster_init=0x42012756 {
-    attribute[00] id=0xfffd (Unknown Thermostat Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081ce40, data=4
-    attribute[01] id=0x0000 (Local Temperature), type=0x29 (Signed 16-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081ce74, data=-1
-    attribute[02] id=0x0011 (Occupied Cooling Setpoint), type=0x29 (Signed 16-bit Value), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cea8, data=3500
-    attribute[03] id=0x0012 (Occupied Heating Setpoint), type=0x29 (Signed 16-bit Value), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cedc, data=2000
-    attribute[04] id=0x001b (Control Sequence Of Operation), type=0x30 (8-bit Enumeration), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081cf10, data=4
-    attribute[05] id=0x001c (System Mode), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081cf44, data=4
-    attribute[06] id=0x0029 (Thermostat Running State), type=0x19 (16-bit Bitmap), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d0bc, data=b0000000000000000
-    attribute[07] id=0x0008 (PI Heating Demand), type=0x20 (Unsigned 8-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081d0f0, data=0
-    attribute[08] id=0x0001 (Outdoor Temperature), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d124, data=0
-    attribute[09] id=0x0002 (Occupancy), type=0x18 (8-bit Bitmap), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d158, data=b00000001
-    attribute[10] id=0x0003 (Abs Min Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d18c, data=500
-    attribute[11] id=0x0004 (Abs Max Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d1c0, data=3000
-    attribute[12] id=0x0015 (Min Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d1f4, data=500
-    attribute[13] id=0x0016 (Max Heat Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d228, data=3000
-    attribute[14] id=0x0005 (Abs Min Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d25c, data=500
-    attribute[15] id=0x0006 (Abs Max Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d290, data=3500
-    attribute[16] id=0x0017 (Min Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d2c4, data=500
-    attribute[17] id=0x0018 (Max Cool Setpoint Limit), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d2f8, data=3500
-    attribute[18] id=0x4001 (Unknown Thermostat Cluster Attribute), type=0x29 (Signed 16-bit Value), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d32c, data=0
-    attribute[19] id=0x401c (Unknown Thermostat Cluster Attribute), type=0x30 (8-bit Enumeration), access=0x13 (Scene, Read/Write), manuf_code=0xffff, data_p=0x4081d360, data=4
-    attribute[20] id=0x4008 (Unknown Thermostat Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081d394, data=0
-    attribute[21] id=0x4009 (Unknown Thermostat Cluster Attribute), type=0x23 (Unsigned 32-bit Value), access=0x05 (Reporting, Read Only), manuf_code=0xffff, data_p=0x4081d3c8, data=0
-  }
-  cluster[04] id=0x0204 (Thermostat UI Configuration), attr_count=0, attr_desc_list=attr_list=0x4081cfe0, role_mask=0x01, manuf_code=0x0000, cluster_init=0x420396ee {
-    attribute[00] id=0xfffd (Unknown Thermostat UI Cluster Attribute), type=0x21 (Unsigned 16-bit Value), access=0x01 (Read Only), manuf_code=0xffff, data_p=0x4081d020, data=4
-    attribute[01] id=0x0000 (Temperature Display Mode), type=0x30 (8-bit Enumeration), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d054, data=0
-    attribute[02] id=0x0001 (Keypad Lockout), type=0x30 (8-bit Enumeration), access=0x03 (Read/Write), manuf_code=0xffff, data_p=0x4081d088, data=0
-  }
-}
-```
+The following Zigbee attributes are registered on endpoint 25.
 
----
-
-## Attribute variables
-
-The `ZigbeeStelproH420Thermostat` class uses the template class `ZigbeeAttribute` to encapsulate and zigbee attributes.
-
-The list of _ZigbeeAttribute_ supported by the `ZigbeeStelproH420Thermostat` class is the following:
-
-```
-{name: '_local_temperature', endpoint: 0x19, attr: Local Temperature (0x0000), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Reporting, Read Only (0x0005), size: 2}
-{name: '_occupied_cooling_setpoint', endpoint: 0x19, attr: Occupied Cooling Setpoint (0x0011), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Scene, Read/Write (0x0013), size: 2}
-{name: '_occupied_heating_setpoint', endpoint: 0x19, attr: Occupied Heating Setpoint (0x0012), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Scene, Read/Write (0x0013), size: 2}
-{name: '_control_sequence_of_operation', endpoint: 0x19, attr: Control Sequence Of Operation (0x001b), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
-{name: '_system_mode', endpoint: 0x19, attr: System Mode (0x001c), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Scene, Read/Write (0x0013), size: 1}
-{name: '_running_state', endpoint: 0x19, attr: Thermostat Running State (0x0029), cluster: Thermostat (0x0201), type: 16-bit Bitmap, access: Read Only (0x0001), size: 2}
-{name: '_pi_heating_demand', endpoint: 0x19, attr: PI Heating Demand (0x0008), cluster: Thermostat (0x0201), type: Unsigned 8-bit Value, access: Reporting, Read Only (0x0005), size: 1}
-{name: '_outdoor_temperature', endpoint: 0x19, attr: Outdoor Temperature (0x0001), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-{name: '_occupancy', endpoint: 0x19, attr: Occupancy (0x0002), cluster: Thermostat (0x0201), type: 8-bit Bitmap, access: Read Only (0x0001), size: 1}
-{name: '_min_heat_setpoint_limit', endpoint: 0x19, attr: Min Heat Setpoint Limit (0x0015), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-{name: '_max_heat_setpoint_limit', endpoint: 0x19, attr: Max Heat Setpoint Limit (0x0016), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-{name: '_abs_min_heat_setpoint_limit', endpoint: 0x19, attr: Abs Min Heat Setpoint Limit (0x0003), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-{name: '_abs_max_heat_setpoint_limit', endpoint: 0x19, attr: Abs Max Heat Setpoint Limit (0x0004), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-{name: '_min_cool_setpoint_limit', endpoint: 0x19, attr: Min Cool Setpoint Limit (0x0017), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-{name: '_max_cool_setpoint_limit', endpoint: 0x19, attr: Max Cool Setpoint Limit (0x0018), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-{name: '_abs_min_cool_setpoint_limit', endpoint: 0x19, attr: Abs Min Cool Setpoint Limit (0x0005), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-{name: '_abs_max_cool_setpoint_limit', endpoint: 0x19, attr: Abs Max Cool Setpoint Limit (0x0006), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read Only (0x0001), size: 2}
-{name: '_ui_config_display_mode', endpoint: 0x19, attr: Temperature Display Mode (0x0000), cluster: Thermostat UI Configuration (0x0204), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
-{name: '_ui_config_keypad_lockout', endpoint: 0x19, attr: Keypad Lockout (0x0001), cluster: Thermostat UI Configuration (0x0204), type: 8-bit Enumeration, access: Read/Write (0x0003), size: 1}
-{name: '_stelpro_outdoor_temperature', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x4001), cluster: Thermostat (0x0201), type: Signed 16-bit Value, access: Read/Write (0x0003), size: 2}
-{name: '_stelpro_system_mode', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x401c), cluster: Thermostat (0x0201), type: 8-bit Enumeration, access: Scene, Read/Write (0x0013), size: 1}
-{name: '_stelpro_power', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x4008), cluster: Thermostat (0x0201), type: Unsigned 16-bit Value, access: Reporting, Read Only (0x0005), size: 2}
-{name: '_stelpro_energy', endpoint: 0x19, attr: Unknown Thermostat Cluster Attribute (0x4009), cluster: Thermostat (0x0201), type: Unsigned 32-bit Value, access: Reporting, Read Only (0x0005), size: 4}
-```
+Attributes summary:
+| Cluster Info | # | Attr Name | Attr ID | Type Name | Type ID | Type Size | Access Name | Access ID | manuf_code | data_p | data |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Cluster #0 Basic (`0x00`) | 0 | Unknown Basic Cluster Attribute | `0xfffd` | Unsigned 16-bit Value | `0x0021`| 2 | Read Only | `0x0001` | `0xffff` | `0x4087cde0` | `4` |
+| Cluster #0 Basic (`0x00`) | 1 | ZCL Version | `0x0000` | Unsigned 8-bit Value | `0x0020`| 1 | Read Only | `0x0001` | `0xffff` | `0x4081c3d8` | `8` |
+| Cluster #0 Basic (`0x00`) | 2 | Power Source | `0x0007` | 8-bit Enumeration | `0x0030`| 1 | Read Only | `0x0001` | `0xffff` | `0x4081ccd0` | `1` |
+| Cluster #1 Identify (`0x03`) | 0 | Unknown Identify Cluster Attribute | `0xfffd` | Unsigned 16-bit Value | `0x0021`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081cdb8` | `4` |
+| Cluster #1 Identify (`0x03`) | 1 | Identify Time | `0x0000` | Unsigned 16-bit Value | `0x0021`| 2 | Read/Write | `0x0003` | `0xffff` | `0x4081cdec` | `0` |
+| Cluster #2 Groups (`0x04`) | 0 | Unknown Smart Cluster Attribute | `0xfffd` | Unsigned 16-bit Value | `0x0021`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081cf98` | `4` |
+| Cluster #2 Groups (`0x04`) | 1 | Unknown Smart Cluster Attribute | `0x0000` | 8-bit Bitmap | `0x0018`| 1 | Read Only | `0x0001` | `0xffff` | `0x4081cfcc` | `b00000000` |
+| Cluster #3 Thermostat (`0x201`) | 0 | Unknown Thermostat Cluster Attribute | `0xfffd` | Unsigned 16-bit Value | `0x0021`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081ce40` | `4` |
+| Cluster #3 Thermostat (`0x201`) | 1 | Local Temperature | `0x0000` | Signed 16-bit Value | `0x0029`| 2 | Reporting, Read Only | `0x0005` | `0xffff` | `0x4081ce74` | `-1` |
+| Cluster #3 Thermostat (`0x201`) | 2 | Occupied Cooling Setpoint | `0x0011` | Signed 16-bit Value | `0x0029`| 2 | Scene, Read/Write | `0x0013` | `0xffff` | `0x4081cea8` | `3500` |
+| Cluster #3 Thermostat (`0x201`) | 3 | Occupied Heating Setpoint | `0x0012` | Signed 16-bit Value | `0x0029`| 2 | Scene, Read/Write | `0x0013` | `0xffff` | `0x4081cedc` | `2000` |
+| Cluster #3 Thermostat (`0x201`) | 4 | Control Sequence Of Operation | `0x001b` | 8-bit Enumeration | `0x0030`| 1 | Read/Write | `0x0003` | `0xffff` | `0x4081cf10` | `4` |
+| Cluster #3 Thermostat (`0x201`) | 5 | System Mode | `0x001c` | 8-bit Enumeration | `0x0030`| 1 | Scene, Read/Write | `0x0013` | `0xffff` | `0x4081cf44` | `4` |
+| Cluster #3 Thermostat (`0x201`) | 6 | Thermostat Running State | `0x0029` | 16-bit Bitmap | `0x0019`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d0bc` | `b0000000000000000` |
+| Cluster #3 Thermostat (`0x201`) | 7 | PI Heating Demand | `0x0008` | Unsigned 8-bit Value | `0x0020`| 1 | Reporting, Read Only | `0x0005` | `0xffff` | `0x4081d0f0` | `0` |
+| Cluster #3 Thermostat (`0x201`) | 8 | Outdoor Temperature | `0x0001` | Signed 16-bit Value | `0x0029`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d124` | `0` |
+| Cluster #3 Thermostat (`0x201`) | 9 | Occupancy | `0x0002` | 8-bit Bitmap | `0x0018`| 1 | Read Only | `0x0001` | `0xffff` | `0x4081d158` | `b00000001` |
+| Cluster #3 Thermostat (`0x201`) | 10 | Abs Min Heat Setpoint Limit | `0x0003` | Signed 16-bit Value | `0x0029`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d18c` | `500` |
+| Cluster #3 Thermostat (`0x201`) | 11 | Abs Max Heat Setpoint Limit | `0x0004` | Signed 16-bit Value | `0x0029`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d1c0` | `3000` |
+| Cluster #3 Thermostat (`0x201`) | 12 | Min Heat Setpoint Limit | `0x0015` | Signed 16-bit Value | `0x0029`| 2 | Read/Write | `0x0003` | `0xffff` | `0x4081d1f4` | `500` |
+| Cluster #3 Thermostat (`0x201`) | 13 | Max Heat Setpoint Limit | `0x0016` | Signed 16-bit Value | `0x0029`| 2 | Read/Write | `0x0003` | `0xffff` | `0x4081d228` | `3000` |
+| Cluster #3 Thermostat (`0x201`) | 14 | Abs Min Cool Setpoint Limit | `0x0005` | Signed 16-bit Value | `0x0029`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d25c` | `500` |
+| Cluster #3 Thermostat (`0x201`) | 15 | Abs Max Cool Setpoint Limit | `0x0006` | Signed 16-bit Value | `0x0029`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d290` | `3500` |
+| Cluster #3 Thermostat (`0x201`) | 16 | Min Cool Setpoint Limit | `0x0017` | Signed 16-bit Value | `0x0029`| 2 | Read/Write | `0x0003` | `0xffff` | `0x4081d2c4` | `500` |
+| Cluster #3 Thermostat (`0x201`) | 17 | Max Cool Setpoint Limit | `0x0018` | Signed 16-bit Value | `0x0029`| 2 | Read/Write | `0x0003` | `0xffff` | `0x4081d2f8` | `3500` |
+| Cluster #3 Thermostat (`0x201`) | 18 | Unknown Thermostat Cluster Attribute | `0x4001` | Signed 16-bit Value | `0x0029`| 2 | Read/Write | `0x0003` | `0xffff` | `0x4081d32c` | `0` |
+| Cluster #3 Thermostat (`0x201`) | 19 | Unknown Thermostat Cluster Attribute | `0x401c` | 8-bit Enumeration | `0x0030`| 1 | Scene, Read/Write | `0x0013` | `0xffff` | `0x4081d360` | `4` |
+| Cluster #3 Thermostat (`0x201`) | 20 | Unknown Thermostat Cluster Attribute | `0x4008` | Unsigned 16-bit Value | `0x0021`| 2 | Reporting, Read Only | `0x0005` | `0xffff` | `0x4081d394` | `0` |
+| Cluster #3 Thermostat (`0x201`) | 21 | Unknown Thermostat Cluster Attribute | `0x4009` | Unsigned 32-bit Value | `0x0023`| 4 | Reporting, Read Only | `0x0005` | `0xffff` | `0x4081d3c8` | `0` |
+| Cluster #4 Thermostat UI Configuration (`0x204`) | 0 | Unknown Thermostat UI Cluster Attribute | `0xfffd` | Unsigned 16-bit Value | `0x0021`| 2 | Read Only | `0x0001` | `0xffff` | `0x4081d020` | `4` |
+| Cluster #4 Thermostat UI Configuration (`0x204`) | 1 | Temperature Display Mode | `0x0000` | 8-bit Enumeration | `0x0030`| 1 | Read/Write | `0x0003` | `0xffff` | `0x4081d054` | `0` |
+| Cluster #4 Thermostat UI Configuration (`0x204`) | 2 | Keypad Lockout | `0x0001` | 8-bit Enumeration | `0x0030`| 1 | Read/Write | `0x0003` | `0xffff` | `0x4081d088` | `0` |
 
 ---
 
