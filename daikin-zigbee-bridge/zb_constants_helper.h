@@ -30,6 +30,7 @@ static const char* UNKNOWN_METERING_CLUSTER_ATTR = "Unknown Metering Cluster Att
 static const char* UNKNOWN_CALLBACK_ID = "Unknown Callback";
 static const char* UNKNOWN_SIGNAL_ID = "Unknown Signal";
 static const char* UNKNOWN_SMART_CLUSTER_ATTR = "Unknown Smart Cluster Attribute";
+static const char* UNKNOWN_CLUSTER_ROLE = "Unknown Cluster Role";
 
 static const char* zb_constants_ha_standard_device_id_to_string(esp_zb_ha_standard_devices_t value) {
   switch (value) {
@@ -722,6 +723,15 @@ static const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_
     case ESP_ZB_ZCL_CLUSTER_ID_ELECTRICAL_MEASUREMENT:      return UNKNOWN_SMART_CLUSTER_ATTR;
     case ESP_ZB_ZCL_CLUSTER_ID_METERING:                    return zb_constants_zcl_metering_cluster_attr_to_string((esp_zb_zcl_metering_attr_t)value);
     default:                                                return UNKNOWN_CLUSTER_ID;
+  }
+}
+
+static const char* zb_constants_zcl_cluster_role_to_string(esp_zb_zcl_cluster_role_t value) {
+  switch (value) {
+    case ESP_ZB_ZCL_CLUSTER_SERVER_ROLE                                       :  return "Server";
+    case ESP_ZB_ZCL_CLUSTER_CLIENT_ROLE                                       :  return "Client";
+    case ESP_ZB_ZCL_CLUSTER_CLIENT_ROLE | ESP_ZB_ZCL_CLUSTER_SERVER_ROLE      :  return "Client / Server";
+    default: return UNKNOWN_CLUSTER_ROLE;
   }
 }
 

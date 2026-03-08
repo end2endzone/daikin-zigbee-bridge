@@ -2,7 +2,7 @@
 
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
-
+#include "zb_markdown_helper.h"
     
 static String debugIntegerToString(int value) {
   String output;

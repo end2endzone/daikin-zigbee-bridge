@@ -27,6 +27,8 @@ static const size_t ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE = (size_t)-2;
 // Format ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING is 1 byte per character, 255 characters long string should be long enough for most use case 
 static const size_t DATA_VALUE_STRING_BUFFER_SIZE = 256;
 
+static const char* ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN = "Unknown Attribute Type";
+
 static const char* zb_zcl_thermostat_ui_config_keypad_lockout_to_string(zb_zcl_thermostat_ui_config_keypad_lockout_t value) {
   switch (value) {
     case ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK:    return "Unlock";
@@ -97,6 +99,70 @@ static size_t zb_constants_zcl_attr_type_size(esp_zb_zcl_attr_type_t value) {
     case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY:       return 16;
     case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
     default:                                     return ZB_ZCL_ATTR_TYPE_SIZE_UNKNOWN;
+  }
+}
+
+static const char* zb_constants_zcl_attr_type_c_type_name(esp_zb_zcl_attr_type_t value) {
+  switch (value) {
+    case ESP_ZB_ZCL_ATTR_TYPE_NULL:              return "void*";
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT:              return "uint8_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT:             return "uint16_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_24BIT:             return "uint32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_32BIT:             return "uint32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_40BIT:             return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_48BIT:             return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_56BIT:             return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_64BIT:             return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_BOOL:              return "bool";
+    case ESP_ZB_ZCL_ATTR_TYPE_8BITMAP:           return "uint8_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_16BITMAP:          return "uint16_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_24BITMAP:          return "uint32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_32BITMAP:          return "uint32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_40BITMAP:          return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_48BITMAP:          return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_56BITMAP:          return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_64BITMAP:          return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U8:                return "uint8_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U16:               return "uint16_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U24:               return "uint32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U32:               return "uint32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U40:               return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U48:               return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U56:               return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_U64:               return "uint64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S8:                return "int8_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S16:               return "int16_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S24:               return "int32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S32:               return "int32_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S40:               return "int64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S48:               return "int64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S56:               return "int64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_S64:               return "int64_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_8BIT_ENUM:         return "int8_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ENUM:        return "int16_t";
+    case ESP_ZB_ZCL_ATTR_TYPE_SEMI:              return "float";
+    case ESP_ZB_ZCL_ATTR_TYPE_SINGLE:            return "float";
+    case ESP_ZB_ZCL_ATTR_TYPE_DOUBLE:            return "double";
+    case ESP_ZB_ZCL_ATTR_TYPE_OCTET_STRING:      return "uint8_t*";
+    case ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING:       return "char*";
+    case ESP_ZB_ZCL_ATTR_TYPE_LONG_OCTET_STRING: return "uint8_t*";
+    case ESP_ZB_ZCL_ATTR_TYPE_LONG_CHAR_STRING:  return "char*";
+    case ESP_ZB_ZCL_ATTR_TYPE_ARRAY:             return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_16BIT_ARRAY:       return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_32BIT_ARRAY:       return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE:         return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_SET:               return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_BAG:               return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_TIME_OF_DAY:       return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_DATE:              return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_UTC_TIME:          return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_CLUSTER_ID:        return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_ATTRIBUTE_ID:      return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_BACNET_OID:        return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_IEEE_ADDR:         return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_128_BIT_KEY:       return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    case ESP_ZB_ZCL_ATTR_TYPE_INVALID:           return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
+    default:                                     return ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN;
   }
 }
 
