@@ -5,6 +5,7 @@
   - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
   - Validate StelproSystemMode to see if it always matches system_mode.
 - Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro's system mode custom attribute
+- Rename format_helper::format() to strformat() to reduce confusion.
 - Consider using a custom attribute for setting "peak demande event icon".
   - zigbee2mqtt show the following payload now for the class:
   ```
@@ -22,3 +23,13 @@
 - Change logEntry() calls with a LOG_ERROR() which prints the file name and the line number. This new feature help with tracing errors to source code location.
 - Implement Peak-Demand-Icon : Set peak demand event icon for the specified number of hours, from 0 to 18.
 - Find out why _stelpro_outdoor_temperature only accept [0, 119] instead of [0,199].
+- Create function zb_get_attribute_unit_scale(uint16_t cluster_id, uint16_t attr_id) --> return "0.01°C"
+- Create function zb_get_attribute_unit(uint16_t cluster_id, uint16_t attr_id) --> return "°C"
+- Create function pointer typedef for formatter: 
+  ```
+  typedef String (*FormatterFunc)(uint16_t cluster_id,
+                              uint16_t attr_id,
+                              uint8_t attr_type,
+                              void* data_p);
+  ```
+- Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
