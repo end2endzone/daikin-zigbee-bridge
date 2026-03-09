@@ -18,37 +18,13 @@ static String markdown_escape_cell(const char* raw) {
   return s;
 }
 
-String zb_cluster_to_markdown_table_entry(int index, esp_zb_zcl_cluster_t * cluster) {
-  String output;
-  if (cluster == nullptr) {
-    return output;
-  }
-
-  const char* cluster_name = zb_constants_cluster_id_to_string((esp_zb_zcl_cluster_id_t)cluster->cluster_id);
-  const char* role_name = zb_constants_zcl_cluster_role_to_string((esp_zb_zcl_cluster_role_t)cluster->role_mask);
-  
-  output = format("| %d | %s | `0x%04x` | %s | %d | `0x%08x` | %s | `0x%04x` | `0x%08x` |",
-    index,
-    cluster_name,
-    cluster->cluster_id,
-    role_name,
-    cluster->attr_count,
-    (uintptr_t)cluster->attr_list,
-    role_name,
-    cluster->manuf_code,
-    (uintptr_t)cluster->cluster_init);
-
-  return output;
-}
-
 /**
  * @brief Print all cluster elements of a cluster list in a table.
  * One cluster per row.
  *
  * @param list  Pointer to the first node of the cluster linked list.
  */
-static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list)
-{
+static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list) {
   logEntry("| # | Cluster Name | Cluster ID | Role | attr_count | attr_desc_list/attr_list | role_mask | manuf_code | cluster_init |");
   logEntry("|---|---|---|---|---|---|---|---|---|");
 
@@ -64,23 +40,40 @@ static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list)
     esp_zb_zcl_cluster_t& cluster = element->cluster;
 
     // cluster to markdown string
-    String cluster_table_entry = zb_cluster_to_markdown_table_entry(index, &cluster);
-    logEntry("%s", cluster_table_entry.c_str());
+    const char* cluster_name = zb_constants_cluster_id_to_string((esp_zb_zcl_cluster_id_t)cluster.cluster_id);
+    const char* role_name = zb_constants_zcl_cluster_role_to_string((esp_zb_zcl_cluster_role_t)cluster.role_mask);
+    
+    String markdown_row = format("| %d | %s | `0x%04x` | %s | %d | `0x%08x` | %s | `0x%04x` | `0x%08x` |",
+      index,
+      cluster_name,
+      cluster.cluster_id,
+      role_name,
+      cluster.attr_count,
+      (uintptr_t)cluster.attr_list,
+      role_name,
+      cluster.manuf_code,
+      (uintptr_t)cluster.cluster_init);
+    
+    logEntry("%s", markdown_row.c_str());
 
     index++;
     element = element->next;
   }
+
+  logEntry("\n");
 }
 
 /**
- * @brief Print all attribute elements of a cluster as a table entry.
+ * @brief Print all attribute elements in a cluster list.
  * One attribute per row.
  *
- * @param cluster_id    The id of the cluster that owns the attribute list.
- * @param cluster_info  A text description of the cluster that owns the attribute list.
- * @param list          Pointer to the first node of the attribute linked list.
+ * @param cluster_id  The cluster ID of the cluster owning the attribute list.
+ * @param list        Pointer to the first node of the attribute linked list.
  */
-static void zb_print_markdown_cluster_attributes_table_entry(uint16_t cluster_id, const char * cluster_info, esp_zb_attribute_list_t* list) {
+static void zb_print_markdown_attributes_summary(uint16_t cluster_id, esp_zb_attribute_list_t* list) {
+  logEntry("| # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |");
+  logEntry("|---|---|---|---|---|---|---|---|---|---|---|---|");
+
   esp_zb_attribute_list_t *element = list;
 
   // Skip the sentinel/dummy head node
@@ -120,9 +113,8 @@ static void zb_print_markdown_cluster_attributes_table_entry(uint16_t cluster_id
         notes_readable = attr_more->notes;
     }
 
-    //                       info| idx|name (id)      |type (id)     |size|access (id)    | manuf    | data_p   | data |Unit|Min |Max |Notes|
-    String output = format("| %s | %d | %s (`0x%04x`) | %s (`0x%04x`)| %u | %s (`0x%04x`) | `0x%04x` | `0x%08x` | `%s` | %s | %s | %s | %s |",
-      cluster_info,
+    //                      | idx|name (id)      |type (id)     |size|access (id)    | manuf    | data_p   | data |Unit|Min |Max |Notes|
+    String output = format("| %d | %s (`0x%04x`) | %s (`0x%04x`)| %u | %s (`0x%04x`) | `0x%04x` | `0x%08x` | `%s` | %s | %s | %s | %s |",
       index,
       attr_name,
       attr.id,
@@ -144,19 +136,17 @@ static void zb_print_markdown_cluster_attributes_table_entry(uint16_t cluster_id
     index++;
     element = element->next;
   }
+
+  logEntry("\n");
 }
 
 /**
- * @brief Print all attribute elements of a cluster list in a table.
+ * @brief Print all attribute elements of all clusters in a cluster list.
  * One attribute per row.
  *
  * @param list  Pointer to the first node of the cluster linked list.
  */
-static void zb_print_markdown_attributes_summary(esp_zb_cluster_list_t* list)
-{
-  logEntry("| Cluster Info | # | Attr  | Type | Size | Access | manuf_code | data_p | data | Unit | Min | Max | Notes |");
-  logEntry("|---|---|---|---|---|---|---|---|---|---|---|---|---|");
-
+static void zb_print_markdown_attributes_summary(esp_zb_cluster_list_t* list) {
   esp_zb_cluster_list_t *element = list;
 
   // Skip sentinel/dummy cluster head node, if present
@@ -170,18 +160,15 @@ static void zb_print_markdown_attributes_summary(esp_zb_cluster_list_t* list)
 
     const char* cluster_name = zb_constants_cluster_id_to_string((esp_zb_zcl_cluster_id_t)cluster.cluster_id);
 
-    // Build cluster info cell string
-    static const size_t CLUSTER_INFO_SIZE = 128;
-    char cluster_info[CLUSTER_INFO_SIZE] = {0};
-    int result = snprintf(cluster_info, CLUSTER_INFO_SIZE, "#%d %s (`0x%04x`)", index, cluster_name, cluster.cluster_id);
-    if (result < 0)
-      cluster_info[0] = '\0';
+    // Cluster 1 - Identify (0x0003)
+    logEntry("### Cluster %d - %s (`0x%04x`)", index, cluster_name, cluster.cluster_id);
+    logEntry("\nAttributes:\n");
 
     // For each attributes of this cluster.
     // Only handle clusters that use the linked-list attribute model
     esp_zb_attribute_list_t *attr_list = cluster.attr_list;
     if (cluster.attr_count == 0 && attr_list != nullptr) {
-      zb_print_markdown_cluster_attributes_table_entry(cluster.cluster_id, cluster_info, attr_list);
+      zb_print_markdown_attributes_summary(cluster.cluster_id, attr_list);
     }
 
     index++;

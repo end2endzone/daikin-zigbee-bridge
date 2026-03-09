@@ -609,7 +609,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         static constexpr zb_attr_more_info_t more = {
           .unit = "°C",
           .scaled_unit = "0.01°C",
-          .notes = "Duration in seconds the device stays in identify mode.",
+          .notes = "Value `0x8000` means _Not Available_.",
         };
         return &more;
       }
@@ -638,7 +638,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       break;
       case ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID: {
         static constexpr zb_attr_more_info_t more = {
-          .notes = "Changing this attribute also synchronises StelproSystemMode (0x401C).",
+          .notes = "Changing this attribute also synchronises StelproSystemMode (0x401C). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately.",
         };
         return &more;
       }
@@ -647,6 +647,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         static constexpr zb_attr_more_info_t more = {
           .unit = "°C",
           .scaled_unit = "0.01°C",
+          .notes = "ZCL standard outdoor temperature, intended for a physical sensor on the device.",
         };
         return &more;
       }
@@ -656,7 +657,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
           .unit = "%",
           .min = "0",
           .max = "100",
-          .notes = "Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but this implementation uses `[0, 100]`.",
+          .notes = "Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but this implementation uses `[0, 100]`.",
         };
         return &more;
       }
@@ -683,6 +684,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
           .scaled_unit = "0.01°C",
           .min = "-3200",
           .max = "19900",
+          .notes = "Outdoor temperature displayed on the thermostat face.",
         };
         return &more;
       }
@@ -690,7 +692,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       case ZB_STELPRO_ATTR_SYSTEM_MODE_ID:
       {
         static constexpr zb_attr_more_info_t more = {
-          .notes = "Outdoor temperature displayed on the thermostat face. Must be kept synchronzied with SystemMode (0x001C).",
+          .notes = "Mirror of the standard `SystemMode` attribute (`0x001C`). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately.",
         };
         return &more;
       }
@@ -701,6 +703,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
           .unit = "W",
           .min = "0",
           .max = "4000",
+          .notes = "Instantaneous electrical power draw of the baseboard heater. Updated at runtime from the heating demand calculation. Zigbee2MQTT exposes this value directly in Watts.",
         };
         return &more;
       }
@@ -709,6 +712,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       {
         static constexpr zb_attr_more_info_t more = {
           .unit = "Wh",
+          .notes = "Cumulative energy consumption since last reset. The on-wire value is in **Watt-hours (Wh)**. Zigbee2MQTT divides by `1000` before publishing, so Home Assistant receives the value in **kWh**.",
         };
         return &more;
       }
