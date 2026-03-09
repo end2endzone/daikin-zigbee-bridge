@@ -10,6 +10,7 @@
 #include <string.h>
 #include "format_helper.h"
 #include "zb_constants_helper.h"
+#include "stelpro_constants.h"
 
 typedef enum {
   ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK = 0x00,
@@ -28,6 +29,14 @@ static const size_t ZB_ZCL_ATTR_TYPE_SIZE_VARIABLE = (size_t)-2;
 static const size_t DATA_VALUE_STRING_BUFFER_SIZE = 256;
 
 static const char* ZB_ZCL_ATTR_TYPE_C_TYPE_UNKNOWN = "Unknown Attribute Type";
+
+typedef struct zb_attr_more_info_s {
+  const char * unit;            // unit such as `°C`
+  const char * scaled_unit;     // scaled unit such as `0.01°C`
+  const char * min;             // minimum value of attribute
+  const char * max;             // maximum value of attribute
+  const char * notes;           // any textual notes
+} zb_attr_more_info_t;
 
 static const char* zb_zcl_thermostat_ui_config_keypad_lockout_to_string(zb_zcl_thermostat_ui_config_keypad_lockout_t value) {
   switch (value) {
@@ -584,4 +593,129 @@ static bool zb_set_attribute_value_in_cluster_list(esp_zb_cluster_list_t *list, 
 
   memcpy(attr->data_p, &new_value, sizeof(T));
   return true;
+}
+
+static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_id, uint16_t attribute_id) {
+  if (cluster_id == ESP_ZB_ZCL_CLUSTER_ID_IDENTIFY) {
+    if (attribute_id == ESP_ZB_ZCL_ATTR_IDENTIFY_IDENTIFY_TIME_ID) {
+      static constexpr zb_attr_more_info_t more = {
+        .notes = "Duration in seconds the device stays in identify mode.",
+      };
+      return &more;
+    }
+  } else if (cluster_id == ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT) {
+    switch (attribute_id) {
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID: {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "°C",
+          .scaled_unit = "0.01°C",
+          .notes = "Duration in seconds the device stays in identify mode.",
+        };
+        return &more;
+      }
+      break;
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_ID: {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "°C",
+          .scaled_unit = "0.01°C",
+          .min = "500",
+          .max = "3500",
+          .notes = "Set artificially high so it never constrains the heating setpoint.",
+        };
+        return &more;
+      }
+      break;
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID: {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "°C",
+          .scaled_unit = "0.01°C",
+          .min = "500",
+          .max = "3000",
+          .notes = "Writing a value outside the valid range will result in a INVALID_VALUE ZCL status. Must remain below Occupied Cooling Setpoint to avoid ZCL enforcement errors.",
+        };
+        return &more;
+      }
+      break;
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID: {
+        static constexpr zb_attr_more_info_t more = {
+          .notes = "Changing this attribute also synchronises StelproSystemMode (0x401C).",
+        };
+        return &more;
+      }
+      break;
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID: {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "°C",
+          .scaled_unit = "0.01°C",
+        };
+        return &more;
+      }
+      break;
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID: {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "%",
+          .min = "0",
+          .max = "100",
+          .notes = "Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but this implementation uses `[0, 100]`.",
+        };
+        return &more;
+      }
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_HEAT_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_COOL_SETPOINT_LIMIT_ID:
+      case ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID:
+      {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "°C",
+          .scaled_unit = "0.01°C",
+        };
+        return &more;
+      }
+      break;
+      case ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID:
+      {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "°C",
+          .scaled_unit = "0.01°C",
+          .min = "-3200",
+          .max = "19900",
+        };
+        return &more;
+      }
+      break;
+      case ZB_STELPRO_ATTR_SYSTEM_MODE_ID:
+      {
+        static constexpr zb_attr_more_info_t more = {
+          .notes = "Outdoor temperature displayed on the thermostat face. Must be kept synchronzied with SystemMode (0x001C).",
+        };
+        return &more;
+      }
+      break;
+      case ZB_STELPRO_ATTR_POWER_ID:
+      {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "W",
+          .min = "0",
+          .max = "4000",
+        };
+        return &more;
+      }
+      break;
+      case ZB_STELPRO_ATTR_ENERGY_ID:
+      {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "Wh",
+        };
+        return &more;
+      }
+      break;
+    }
+  }
+  
+  // Nothing special for this attribute
+  return nullptr;
 }

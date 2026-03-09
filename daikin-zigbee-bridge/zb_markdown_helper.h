@@ -101,13 +101,27 @@ static void zb_print_markdown_cluster_attributes_table_entry(uint16_t cluster_id
     char data_str[DATA_VALUE_STRING_BUFFER_SIZE];
     bool success = zb_zcl_attribute_data_pointer_to_string(data_str, DATA_VALUE_STRING_BUFFER_SIZE, (esp_zb_zcl_attr_type_t)attr.type, attr.data_p);
 
-    /*
-    // Table columns:
-    // logEntry("| Cluster Info | # | Attr Name | Attr ID | Type Name | Type ID | Type Size | Access Name | Access ID | manuf_code | data_p | data |");
+    // Get more attribute info
+    const char * unit_readable =  "-";
+    const char * min_readable =   "-";
+    const char * max_readable =   "-";
+    const char * notes_readable = "";
+    const zb_attr_more_info_t * attr_more = zb_get_attribute_more_info(cluster_id, attr.id);
+    if (attr_more != nullptr) {
+      if (attr_more->unit != nullptr)
+      unit_readable = attr_more->unit;
+      if (attr_more->scaled_unit != nullptr)
+        unit_readable = attr_more->scaled_unit;
+      if (attr_more->min != nullptr)
+        min_readable = attr_more->min;
+      if (attr_more->max != nullptr)
+        max_readable = attr_more->max;
+      if (attr_more->notes)
+        notes_readable = attr_more->notes;
+    }
 
-    //                       info| idx|name|  id      |type| typeid  |size|access|accessid | manuf    | data_p   | data |
-    */
-    String output = format("| %s | %d | %s | `0x%04x` | %s | `0x%04x`| %u | %s | `0x%04x` | `0x%04x` | `0x%08x` | `%s` |",
+    //                       info| idx|name (id)      |type (id)     |size|access (id)    | manuf    | data_p   | data |Unit|Min |Max |Notes|
+    String output = format("| %s | %d | %s (`0x%04x`) | %s (`0x%04x`)| %u | %s (`0x%04x`) | `0x%04x` | `0x%08x` | `%s` | %s | %s | %s | %s |",
       cluster_info,
       index,
       attr_name,
@@ -119,7 +133,11 @@ static void zb_print_markdown_cluster_attributes_table_entry(uint16_t cluster_id
       attr.access,
       attr.manuf_code,
       (uintptr_t)attr.data_p,
-      data_str);
+      data_str,
+      unit_readable,
+      min_readable,
+      max_readable,
+      notes_readable);
     logEntry("%s", output.c_str());
 
     // Next attribute element in attribute list
@@ -136,8 +154,8 @@ static void zb_print_markdown_cluster_attributes_table_entry(uint16_t cluster_id
  */
 static void zb_print_markdown_attributes_summary(esp_zb_cluster_list_t* list)
 {
-  logEntry("| Cluster Info | # | Attr Name | Attr ID | Type Name | Type ID | Type Size | Access Name | Access ID | manuf_code | data_p | data |");
-  logEntry("|---|---|---|---|---|---|---|---|---|---|---|---|");
+  logEntry("| Cluster Info | # | Attr  | Type | Size | Access | manuf_code | data_p | data | Unit | Min | Max | Notes |");
+  logEntry("|---|---|---|---|---|---|---|---|---|---|---|---|---|");
 
   esp_zb_cluster_list_t *element = list;
 

@@ -8,6 +8,8 @@
 #include "zcl/esp_zigbee_zcl_power_config.h"
 #include "zdo/esp_zigbee_zdo_common.h"
 
+#include "stelpro_constants.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -675,6 +677,18 @@ static const char* zb_constants_app_signal_type_to_string(esp_zb_app_signal_type
 }
 
 static const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_id_t cluster, int value) {
+  if (value == 0xFFFD) return "Cluster Revision";
+
+  // Stelpro specific attributes
+  if (cluster == ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT) {
+    switch (value) {
+      case ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID:                 return "StelproOutdoorTemperature";
+      case ZB_STELPRO_ATTR_POWER_ID:                        return "StelproPower";
+      case ZB_STELPRO_ATTR_ENERGY_ID:                       return "StelproEnergy";
+      case ZB_STELPRO_ATTR_SYSTEM_MODE_ID:                  return "StelproSystemMode";
+    };
+  }
+
   switch (cluster) {
     case ESP_ZB_ZCL_CLUSTER_ID_BASIC:                       return zb_constants_zcl_basic_cluster_attr_to_string((esp_zb_zcl_basic_attr_t)value);
     case ESP_ZB_ZCL_CLUSTER_ID_POWER_CONFIG:                return zb_constants_zcl_power_config_cluster_attr_to_string((esp_zb_zcl_power_config_attr_t)value);
