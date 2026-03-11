@@ -232,16 +232,16 @@ void longClickDetected(Button2& btn) {
 
 void printAllAttributes() {
   
-  logEntry("attributes: {");
+  log_i("attributes: {");
 
   // Get and show all thermostat attributes
   ZigbeeStelproH420Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {0};
   bool readed = zbThermostat->getSnapshot(actuals);
   if (!readed)
-    logEntry("ERROR: Failed to read snapshot!");
+    log_i("ERROR: Failed to read snapshot!");
   zbThermostat->printSnapshot(actuals);
 
-  logEntry("};");
+  log_i("};");
 }
 
 void simulateTemperature() {
@@ -376,7 +376,7 @@ void simulateTemperature() {
     zbThermostat->setStelproPower(new_power);
   }
   
-  logEntry("Simulation Update --> Temp: %.1f°C, Setpoint: %.1f°C, Demand: %d%%, State: %s, Power: %dW, Energy: %dWh",
+  log_i("Simulation Update --> Temp: %.1f°C, Setpoint: %.1f°C, Demand: %d%%, State: %s, Power: %dW, Energy: %dWh",
                 new_local_temp / 100.0,
                 setpoint / 100.0,
                 new_pi_heating_demand,
@@ -389,7 +389,7 @@ void simulateTemperature() {
 
   // force reportable attributes to report their values to the controller
   if (!zbThermostat->report()) {
-    logEntry("ERROR: Failed to report zbThermostat!");
+    log_e("Failed to report zbThermostat!");
   }
 }
 
@@ -398,7 +398,7 @@ void simulateTemperature() {
 // -------------------------------------------------------------------------
 
 void onIdentify(uint16_t time) {
-  logEntry("Identify time changed to: %d seconds", time);
+  log_i("Identify time changed to: %d seconds", time);
   if (time > 0) {
     // Enable identifyTimer timer. This will trigger the LED blinking feedback
     identifyTimer.setTimeOutTime(time * 1000);
@@ -408,62 +408,62 @@ void onIdentify(uint16_t time) {
 
 // Thermostat cluster
 void onLocalTemperatureChange(int16_t temperature) {
-  logEntry("Local Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
+  log_i("Local Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
 }
 
 void onOccupiedCoolSetpointChange(int16_t setpoint) {
-  logEntry("Occupied Cool Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
+  log_i("Occupied Cool Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
 }
 
 void onOccupiedHeatSetpointChange(int16_t setpoint) {
-  logEntry("Occupied Heat Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
+  log_i("Occupied Heat Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
 }
 
 void onControlSequenceOfOperationChange(uint8_t csop) {
-  logEntry("Control Sequence Of Operation changed from coordinator to: %d", csop);
+  log_i("Control Sequence Of Operation changed from coordinator to: %d", csop);
 }
 
 void onSystemModeChange(uint8_t mode) {
-  logEntry("System mode changed from coordinator to: 0x%02x (%s)", mode, zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)mode));
+  log_i("System mode changed from coordinator to: 0x%02x (%s)", mode, zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)mode));
 }
 
 // Thermostat UI cluster
 void onDisplayModeChange(uint8_t mode) {
-  logEntry("Display Mode changed from coordinator to: %d", mode);
+  log_i("Display Mode changed from coordinator to: %d", mode);
 }
 
 void onKeypadLockoutChange(uint8_t lockout) {
-  logEntry("Keypad Lockout changed from coordinator to: %d, %s", lockout, zb_zcl_thermostat_ui_config_keypad_lockout_to_string((zb_zcl_thermostat_ui_config_keypad_lockout_t)lockout));
+  log_i("Keypad Lockout changed from coordinator to: %d, %s", lockout, zb_zcl_thermostat_ui_config_keypad_lockout_to_string((zb_zcl_thermostat_ui_config_keypad_lockout_t)lockout));
 }
 
 // Thermostat cluster, additional attributes
 void onRunningStateChange(uint16_t state) {
   String states_str = zb_constants_zcl_thermostat_running_state_attr_to_string(state);
-  logEntry("Running State changed from coordinator to: 0x%04x (%s)", state, states_str.c_str());
+  log_i("Running State changed from coordinator to: 0x%04x (%s)", state, states_str.c_str());
 }
 
 void onPIHeatingDemandChange(uint8_t demand) {
-  logEntry("PI Heating Demand changed from coordinator to: %d", demand);
+  log_i("PI Heating Demand changed from coordinator to: %d", demand);
 }
 
 void onOutdoorTemperatureChange(int16_t temperature) {
-  logEntry("Outdoor Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
+  log_i("Outdoor Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
 }
 
 void onOccupancyChange(zb_uint8_t occupancy) {
-  logEntry("Occupancy changed from coordinator to: %d", occupancy);
+  log_i("Occupancy changed from coordinator to: %d", occupancy);
 }
 
 void onStelproOutdoorTemperatureChange(int16_t temperature) {
-  logEntry("Stelpro Outdoor Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
+  log_i("Stelpro Outdoor Temperature changed from coordinator to: %.1f°C", temperature / 100.0);
 }
 
 void onStelproSystemModeChange(uint8_t mode) {
-  logEntry("Stelpro system mode changed from coordinator to: 0x%02x (%s)", mode, zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)mode));
+  log_i("Stelpro system mode changed from coordinator to: 0x%02x (%s)", mode, zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)mode));
 }
 
 void onStelproPeakDemandIconChange(uint16_t seconds) {
-  logEntry("Stelpro PeakDemandIcon value changed from coordinator to: %d seconds (%d hours)", seconds, (seconds/3600));
+  log_i("Stelpro PeakDemandIcon value changed from coordinator to: %d seconds (%d hours)", seconds, (seconds/3600));
 }
 
 // -------------------------------------------------------------------------
@@ -494,7 +494,7 @@ void updateLEDStatus() {
 
   // Did we changed LED MODE ?
   if (previousLedMode != newLedMode) {
-    logEntry(msg);
+    log_i("%s", msg);
   }
   previousLedMode = newLedMode;
 }
@@ -517,14 +517,14 @@ void setup() {
   daikinSetup();
 #endif // ENABLE_DAIKINHTTP
   
-  Serial.println("========================================");
-  Serial.println("  Stelpro HT402 Thermostat Emulator");
-  Serial.println("========================================");
-  Serial.println("Model: HT402 (Hilo)");
-  Serial.println("Manufacturer: Stelpro");
-  Serial.println("Endpoint: " + String(STELPRO_ENDPOINT));
-  Serial.println("Type: Line-voltage heating thermostat");
-  Serial.println("========================================");
+  log_i("========================================");
+  log_i("  Stelpro HT402 Thermostat Emulator");
+  log_i("========================================");
+  log_i("Model: HT402 (Hilo)");
+  log_i("Manufacturer: Stelpro");
+  log_i("Endpoint: %d", STELPRO_ENDPOINT);
+  log_i("Type: Line-voltage heating thermostat");
+  log_i("========================================");
   
   // Initialize button
   button.begin(BUTTON_PIN);
@@ -568,30 +568,30 @@ void setup() {
 
   // DEBUG
   //zbThermostat->debugClusterList();
-  //Serial.println("DEBUG: Infinite loop from this point!");
+  //log_i("DEBUG: Infinite loop from this point!");
   //while(true) {}
   
   // Add endpoint to Zigbee Core
-  Serial.println("Adding Zigbee Thermostat endpoint to Zigbee Core");
+  log_i("Adding Zigbee Thermostat endpoint to Zigbee Core");
   Zigbee.addEndpoint(zbThermostat);
   
-  //Serial.println("Waiting 5000 ms...");
+  //log_i("Waiting 5000 ms...");
   //delay(5000);
 
-  Serial.println("Starting Zigbee stack...");
+  log_i("Starting Zigbee stack...");
   if (!Zigbee.begin()) {
-    Serial.println("Zigbee failed to start!");
-    Serial.println("Rebooting...");
+    log_i("Zigbee failed to start!");
+    log_i("Rebooting...");
     ESP.restart();
   }
-  Serial.println("Zigbee stack ready.");
+  log_i("Zigbee stack ready.");
 
-  //Serial.println("Waiting 5000 ms...");
+  //log_i("Waiting 5000 ms...");
   //delay(5000);
 
   // Init zbThermostat's zigbee attributes
   if (!zbThermostat->setup()) {
-    Serial.println("WARNING: zbThermostat->setup() has failed!");
+    log_i("WARNING: zbThermostat->setup() has failed!");
   }
   
   // Initialize simulation stuff
@@ -602,7 +602,7 @@ void setup() {
   identifyTimer.setTimeOutTime(0);
   identifyTimer.reset();
 
-  Serial.println("Connecting to network...");
+  log_i("Connecting to network...");
   size_t dotCount = 0;
   while (!Zigbee.connected()) {
     Serial.print(".");
@@ -620,7 +620,7 @@ void setup() {
   if (dotCount % 60 > 0) // if there is dots printed without a terminating new line
     Serial.println();
 
-  Serial.println("Connected to network!");
+  log_i("Connected to network!");
 
   // Connected - switch to blue pulse
   updateLEDStatus();
@@ -651,7 +651,7 @@ void loop() {
   blinker.loop();
   button.loop();
   if (!zbThermostat->update()) { // remember previous values
-    logEntry("WARNING: zbThermostat has failed to update()");
+    log_w("zbThermostat->update() has failed");
   }
   zbThermostat->updateEnergy();  // Update energy simulation calculations and Zigbee attributes
   simulateTemperature();

@@ -25,8 +25,8 @@ static String markdown_escape_cell(const char* raw) {
  * @param list  Pointer to the first node of the cluster linked list.
  */
 static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list) {
-  logEntry("| # | Cluster Name | Cluster ID | Role | attr_count | attr_desc_list/attr_list | role_mask | manuf_code | cluster_init |");
-  logEntry("|---|---|---|---|---|---|---|---|---|");
+  log_i("| # | Cluster Name | Cluster ID | Role | attr_count | attr_desc_list/attr_list | role_mask | manuf_code | cluster_init |");
+  log_i("|---|---|---|---|---|---|---|---|---|");
 
   esp_zb_cluster_list_t *element = list;
 
@@ -43,7 +43,7 @@ static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list) 
     const char* cluster_name = zb_constants_cluster_id_to_string((esp_zb_zcl_cluster_id_t)cluster.cluster_id);
     const char* role_name = zb_constants_zcl_cluster_role_to_string((esp_zb_zcl_cluster_role_t)cluster.role_mask);
     
-    String markdown_row = format("| %d | %s | `0x%04x` | %s | %d | `0x%08x` | %s | `0x%04x` | `0x%08x` |",
+    String markdown_row = strformat("| %d | %s | `0x%04x` | %s | %d | `0x%08x` | %s | `0x%04x` | `0x%08x` |",
       index,
       cluster_name,
       cluster.cluster_id,
@@ -54,13 +54,13 @@ static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list) 
       cluster.manuf_code,
       (uintptr_t)cluster.cluster_init);
     
-    logEntry("%s", markdown_row.c_str());
+    log_i("%s", markdown_row.c_str());
 
     index++;
     element = element->next;
   }
 
-  logEntry("\n");
+  log_i("\n");
 }
 
 /**
@@ -71,8 +71,8 @@ static void zb_print_markdown_cluster_list_summary(esp_zb_cluster_list_t* list) 
  * @param list        Pointer to the first node of the attribute linked list.
  */
 static void zb_print_markdown_attributes_summary(uint16_t cluster_id, esp_zb_attribute_list_t* list) {
-  logEntry("| # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |");
-  logEntry("|---|---|---|---|---|---|---|---|---|---|---|---|");
+  log_i("| # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |");
+  log_i("|---|---|---|---|---|---|---|---|---|---|---|---|");
 
   esp_zb_attribute_list_t *element = list;
 
@@ -114,7 +114,7 @@ static void zb_print_markdown_attributes_summary(uint16_t cluster_id, esp_zb_att
     }
 
     //                      | idx|name (id)      |type (id)     |size|access (id)    | manuf    | data_p   | data |Unit|Min |Max |Notes|
-    String output = format("| %d | %s (`0x%04x`) | %s (`0x%04x`)| %u | %s (`0x%04x`) | `0x%04x` | `0x%08x` | `%s` | %s | %s | %s | %s |",
+    String output = strformat("| %d | %s (`0x%04x`) | %s (`0x%04x`)| %u | %s (`0x%04x`) | `0x%04x` | `0x%08x` | `%s` | %s | %s | %s | %s |",
       index,
       attr_name,
       attr.id,
@@ -130,14 +130,14 @@ static void zb_print_markdown_attributes_summary(uint16_t cluster_id, esp_zb_att
       min_readable,
       max_readable,
       notes_readable);
-    logEntry("%s", output.c_str());
+    log_i("%s", output.c_str());
 
     // Next attribute element in attribute list
     index++;
     element = element->next;
   }
 
-  logEntry("\n");
+  log_i("\n");
 }
 
 /**
@@ -161,8 +161,8 @@ static void zb_print_markdown_attributes_summary(esp_zb_cluster_list_t* list) {
     const char* cluster_name = zb_constants_cluster_id_to_string((esp_zb_zcl_cluster_id_t)cluster.cluster_id);
 
     // Cluster 1 - Identify (0x0003)
-    logEntry("### Cluster %d - %s (`0x%04x`)", index, cluster_name, cluster.cluster_id);
-    logEntry("\nAttributes:\n");
+    log_i("### Cluster %d - %s (`0x%04x`)", index, cluster_name, cluster.cluster_id);
+    log_i("\nAttributes:\n");
 
     // For each attributes of this cluster.
     // Only handle clusters that use the linked-list attribute model

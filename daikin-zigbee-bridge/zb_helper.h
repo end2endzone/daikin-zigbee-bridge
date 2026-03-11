@@ -440,7 +440,7 @@ static bool zb_assert_attribute_size(const char* function, esp_zb_zcl_attr_type_
   if (value_size != attr_size) {
     const char * attr_type_name = zb_constants_zcl_attr_type_to_string(type_id);
     const char * value_type_name = typeString<T>();
-    logEntry("ERROR: *** Size assertion failed in %s() ! Attribute type '%s' is %d bit does not match value type '%s' which is %d bit.",
+    log_e("*** Size assertion failed in %s() ! Attribute type '%s' is %d bit does not match value type '%s' which is %d bit.",
       function,
       attr_type_name,
       attr_size*8,
@@ -459,7 +459,7 @@ static bool zb_assert_attribute_sign(const char* function, esp_zb_zcl_attr_type_
   if (value_sign != attr_sign) {
     const char * attr_type_name = zb_constants_zcl_attr_type_to_string(type_id);
     const char * value_type_name = typeString<T>();
-    logEntry("ERROR: *** Sign assertion failed in %s() ! Attribute type '%s' is '%s' does not match value type '%s' which is '%s'.",
+    log_e("*** Sign assertion failed in %s() ! Attribute type '%s' is '%s' does not match value type '%s' which is '%s'.",
       function,
       attr_type_name,
       ::toString(attr_sign),

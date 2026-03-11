@@ -4,10 +4,6 @@
 - Test with real Stelpro thermostat:
   - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
   - Validate StelproSystemMode to see if it always matches system_mode.
-- Use `#define ENABLE_STELPRO_CUSTOM_ATTR_SYSTEM_MODE` to implement stelpro's system mode custom attribute
-- Rename format_helper::format() to strformat() to reduce confusion.
-- Change logEntry() calls with a LOG_ERROR() which prints the file name and the line number. This new feature help with tracing errors to source code location.
-- Find out why _stelpro_outdoor_temperature only accept [0, 119] instead of [0,199].
 - Create function pointer typedef for formatter: 
   ```
   typedef String (*FormatterFunc)(uint16_t cluster_id,

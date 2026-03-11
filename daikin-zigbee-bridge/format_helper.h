@@ -5,7 +5,7 @@
 #include "zb_uint8_t.h"
 #include "esp_zigbee_type.h"
 
-static String format(const char* fmt, ...) {
+static String strformat(const char* fmt, ...) {
   va_list args;
 
   // Calculate the required length

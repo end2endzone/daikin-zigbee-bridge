@@ -12,11 +12,11 @@ class ScopeDebugger {
         file_name(file_name),
         function_name(function_name),
         line(line) {
-      logEntry(">>> %s::%s() <ENTER>, line %d", file_name, function_name, line);
+      log_d(">>> %s::%s() <ENTER>, line %d", file_name, function_name, line);
     }
 
     ~ScopeDebugger() {
-      logEntry(">>> %s::%s() <LEAVE> (matching line %d)", file_name, function_name, line);
+      log_d(">>> %s::%s() <LEAVE> (matching line %d)", file_name, function_name, line);
     }
 };
-#define LOG_SCOPE ScopeDebugger scope_debugger(CURRENT_LOG_FILE, __FUNCTION__, __LINE__);
+#define LOG_SCOPE ScopeDebugger scope_debugger(CURRENT_SOURCE_FILE_NAME, __FUNCTION__, __LINE__);

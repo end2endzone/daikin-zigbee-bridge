@@ -77,7 +77,7 @@ private:
         _manuf_code);      
     }
     if (attr == nullptr) {
-      logEntry("WARNING: Attribute lookup fail: %s", toString().c_str());
+      log_e("*** Attribute lookup fail: %s", toString().c_str());
       goto unlock_and_return;
     }
 
@@ -171,7 +171,7 @@ public:
     size_t attr_type_size = zbTypeSize();
     const char * access_name = zbAccessName();
 
-    return format("{name: '%s', endpoint: 0x%02x, attr: %s (0x%04x), cluster: %s (0x%04x), type: %s, access: %s (0x%04x), size: %d}",
+    return strformat("{name: '%s', endpoint: 0x%02x, attr: %s (0x%04x), cluster: %s (0x%04x), type: %s, access: %s (0x%04x), size: %d}",
       _name, _endpoint, attr_name, _attr_id, cluster_name, _cluster_id, attr_type_name, access_name, _access_id, attr_type_size);
   }
 
@@ -208,7 +208,7 @@ protected:
         _manuf_code);      
     }
     if (attr == nullptr) {
-      logEntry("WARNING: Failed to read attribute %s", toString().c_str());
+      log_e("*** Failed to read attribute %s", toString().c_str());
       goto unlock_and_return;
     }
   
@@ -253,7 +253,7 @@ protected:
       );
     }
     if (status != ESP_ZB_ZCL_STATUS_SUCCESS) {
-      logEntry("WARNING: Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
+      log_e("*** Failed to write attribute %s. Status: 0x%x: (%s)", toString().c_str(), status, esp_zb_zcl_status_to_name(status));
     }
 
     esp_zb_lock_release();
@@ -286,7 +286,7 @@ protected:
         _manuf_code);      
     }
     if (attr == nullptr) {
-      logEntry("WARNING: Failed to write attribute raw value %s", toString().c_str());
+      log_e("*** Failed to write attribute raw value %s", toString().c_str());
       goto unlock_and_return;
     }
   
@@ -321,7 +321,7 @@ protected:
     if (err != ESP_OK) {
       const char * err_name = esp_err_to_name(err);
       const char * access_name = zbAccessName();
-      logEntry("WARNING: Failed to report attribute %s. Error: 0x%x: (%s). Attribute access: %s (0x%02x)", toString().c_str(), err, err_name, access_name, _access_id);
+      log_w("Failed to report attribute %s. Error: 0x%x: (%s). Attribute access: %s (0x%02x)", toString().c_str(), err, err_name, access_name, _access_id);
       return false;
     }
     return true;
