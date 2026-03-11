@@ -717,6 +717,17 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         return &more;
       }
       break;
+      case ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID:
+      {
+        static constexpr zb_attr_more_info_t more = {
+          .unit = "seconds",
+          .scaled_unit = "",
+          .min = "0",
+          .max = "64800",
+          .notes = "Set peak demand event icon for the specified number of seconds.",
+        };
+        return &more;
+      }
     }
   }
   

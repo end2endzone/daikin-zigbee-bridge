@@ -40,6 +40,10 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   while (!Serial && millis() < 3000);
 #endif // #ifdef ENABLE_SERIAL_DEBUGGING_IN_CTOR
 
+  // Init _stelpro_peak_demand_icon_timer as "disabled"
+  _stelpro_peak_demand_icon_timer.setTimeOutTime(0);
+  _stelpro_peak_demand_icon_timer.reset();
+
   _device_id = ESP_ZB_HA_THERMOSTAT_DEVICE_ID;
   
   // Init all attributes
@@ -66,6 +70,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _stelpro_system_mode                        .init("_stelpro_system_mode"                   , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_SYSTEM_MODE_ID);                                 
   _stelpro_power                              .init("_stelpro_power"                         , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_POWER_ID);                                 
   _stelpro_energy                             .init("_stelpro_energy"                        , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_ENERGY_ID);                                 
+  _stelpro_peak_demand_icon                   .init("_stelpro_peak_demand_icon"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID);                                 
 
   // Fill the attribute list to allowing processing all fields
   _zigbee_attribute_list.push_back(&_local_temperature             );
@@ -91,6 +96,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _zigbee_attribute_list.push_back(&_stelpro_system_mode           );
   _zigbee_attribute_list.push_back(&_stelpro_power                 );
   _zigbee_attribute_list.push_back(&_stelpro_energy                );
+  _zigbee_attribute_list.push_back(&_stelpro_peak_demand_icon      );
 
   // Assert all attributes are initialized
   {
@@ -115,6 +121,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _stelpro_system_mode                        .setDefaultValue(ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT);
   _stelpro_power                              .setDefaultValue(0);
   _stelpro_energy                             .setDefaultValue(0);
+  _stelpro_peak_demand_icon                   .setDefaultValue(0);
 
   // Build cluster lists
   {
@@ -173,6 +180,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_SYSTEM_MODE_ID                                    , ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT ))                                   logEntry("Failed to set attribute 'STELPRO_SYSTEM_MODE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_POWER_ID                                          , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_POWER' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint32_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_ENERGY_ID                                         , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_ENERGY' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID                              , 0 ))                                                                        logEntry("Failed to set attribute 'STELPRO_PEAK_DEMAND_ICON' value in cluster list!");
 
   // Set endpoint configuration
   _ep_config = {
@@ -213,6 +221,13 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
     // _system_mode was updated from the coordinator
     // Update _stelpro_system_mode from _system_mode
     updateSystemModes(&_system_mode, &_stelpro_system_mode);
+  }
+
+  // Special case for StelproPeakDemandIcon
+  if (attr == &_stelpro_peak_demand_icon) {
+    // Start matching timer and start counting from this point
+    _stelpro_peak_demand_icon_timer.setTimeOutTime(STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL * 1000);
+    _stelpro_peak_demand_icon_timer.reset();
   }
 
   // Check if value has changed. Ignore the attribute set command if not changed.
@@ -361,6 +376,13 @@ bool ZigbeeStelproH420Thermostat::setStelproEnergy(uint32_t value) {
   return success;
 }
 
+bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
+  bool success = _stelpro_peak_demand_icon.set(value);
+  if (!success)
+    return false;
+  return success;
+}
+
 void ZigbeeStelproH420Thermostat::updateEnergy() {
 }
 
@@ -373,6 +395,35 @@ bool ZigbeeStelproH420Thermostat::update() {
     }
   }
   
+  // Check if an update for StelproPeakDemandIcon is required
+  if (_stelpro_peak_demand_icon_timer.getTimeOutTime() != 0 && _stelpro_peak_demand_icon_timer.hasTimedOut()) { // if active and has timed out
+    uint16_t remaining = 0;
+    getStelproPeakDemandIcon(remaining); // don't care if the getter has worked or not
+
+    // 1 round of timer has elapsed
+    if (remaining > STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL) {
+      remaining -= STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL;
+    } else {
+      remaining = 0;
+    }
+
+    //// DEBUG:
+    //if (remaining == 3570) {
+    //  remaining = 20;
+    //}
+
+    setStelproPeakDemandIcon(remaining);
+
+    // If the event is done
+    if (remaining == 0) {
+      // Disable the timer
+      _stelpro_peak_demand_icon_timer.setTimeOutTime(0);
+    }
+
+    // Start counting from here again
+    _stelpro_peak_demand_icon_timer.reset();
+  }
+
   return true;
 }
 
@@ -459,6 +510,7 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   logEntry("-----> _stelpro_system_mode          .get()=%d", _stelpro_system_mode          .get());
   logEntry("-----> _stelpro_power                .get()=%d", _stelpro_power                .get());
   logEntry("-----> _stelpro_energy               .get()=%d", _stelpro_energy               .get());
+  logEntry("-----> _stelpro_peak_demand_icon     .get()=%d", _stelpro_peak_demand_icon     .get());
 }
 
 bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
@@ -510,6 +562,7 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   CAPTURE_ATTR(_stelpro_system_mode              , snapshot.stelpro_system_mode               );
   CAPTURE_ATTR(_stelpro_power                    , snapshot.stelpro_power                     );
   CAPTURE_ATTR(_stelpro_energy                   , snapshot.stelpro_energy                    );
+  CAPTURE_ATTR(_stelpro_peak_demand_icon         , snapshot.stelpro_peak_demand_icon          );
 
   #undef CAPTURE_ATTR
 
@@ -550,6 +603,7 @@ void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_
   logEntry("    _stelpro_system_mode          = %d,  %s",         snapshot.stelpro_system_mode          ,     zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)snapshot.stelpro_system_mode));
   logEntry("    _stelpro_power                = %d W",            snapshot.stelpro_power                );
   logEntry("    _stelpro_energy               = %d Wh",           snapshot.stelpro_energy               );
+  logEntry("    _stelpro_peak_demand_icon     = %d",              snapshot.stelpro_peak_demand_icon     );
 }
 
 esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *stelpro_cfg) {
@@ -686,6 +740,21 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
       ESP_ZB_ZCL_ATTR_TYPE_U32,
       ESP_ZB_ZCL_ATTR_ACCESS_REPORTING | ESP_ZB_ZCL_ATTR_ACCESS_READ_ONLY,
       _stelpro_energy.getDefaultDataPointer()
+    );
+    logError(err, __FILE__, __LINE__);
+  }
+  #endif
+
+  #if 1
+  {
+    // StelproPeakDemandIcon :
+    err = esp_zb_cluster_add_attr(
+      esp_zb_thermostat_cluster,
+      _stelpro_peak_demand_icon.getClusterId(),
+      _stelpro_peak_demand_icon.getAttributeId(),
+      ESP_ZB_ZCL_ATTR_TYPE_U16,
+      ESP_ZB_ZCL_ATTR_ACCESS_REPORTING | ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+      _stelpro_peak_demand_icon.getDefaultDataPointer()
     );
     logError(err, __FILE__, __LINE__);
   }

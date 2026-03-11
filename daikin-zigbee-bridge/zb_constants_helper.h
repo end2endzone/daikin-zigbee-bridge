@@ -686,6 +686,7 @@ static const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_
       case ZB_STELPRO_ATTR_POWER_ID:                        return "StelproPower";
       case ZB_STELPRO_ATTR_ENERGY_ID:                       return "StelproEnergy";
       case ZB_STELPRO_ATTR_SYSTEM_MODE_ID:                  return "StelproSystemMode";
+      case ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID:             return "StelproPeakDemandIcon";
     };
   }
 

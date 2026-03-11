@@ -16,11 +16,13 @@
 #include "logging.h"
 #include "ZigbeeAttributeT.hpp"
 #include "stelpro_constants.h"
+#include <SoftTimers.h>
 
 #ifdef USE_ENERGY_CALCULATOR
 #include "EnergyCalculator.h"
 #endif // #ifdef USE_ENERGY_CALCULATOR
 
+#define STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL 10 /* in seconds */
 
 /**
  * @brief Zigbee Stelpro H420 thermostat device clusters configuration
@@ -125,6 +127,9 @@ public:
   void onStelproSystemModeChange(void (*callback)(uint8_t)) {
     _stelpro_system_mode.onValueChange(callback);
   }
+  void onStelproPeakDemandIconChange(void (*callback)(uint16_t)) {
+    _stelpro_peak_demand_icon.onValueChange(callback);
+  }
 
   // Zigbee atributes getters
   // Thermostat cluster mandatory attributes
@@ -154,6 +159,7 @@ public:
   bool getStelproSystemMode(uint8_t& output) const              { return _stelpro_system_mode           .get(output); }
   bool getStelproPower(uint16_t& output) const                  { return _stelpro_power                 .get(output); }
   bool getStelproEnergy(uint32_t& output) const                 { return _stelpro_energy                .get(output); }
+  bool getStelproPeakDemandIcon(uint16_t& output) const         { return _stelpro_peak_demand_icon      .get(output); }
 
   // Zigbee atributes setters
   // Thermostat cluster mandatory attributes
@@ -183,6 +189,7 @@ public:
   bool setStelproSystemMode(uint8_t mode);
   bool setStelproPower(uint16_t output);
   bool setStelproEnergy(uint32_t output);
+  bool setStelproPeakDemandIcon(uint16_t seconds);
 
   // Update energy calculations (call in loop)
   void updateEnergy();
@@ -196,6 +203,8 @@ public:
 private:
   void zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) override;
   bool updateSystemModes(ZigbeeAttribute<uint8_t> * source, ZigbeeAttribute<uint8_t> * target);
+
+  SoftTimer _stelpro_peak_demand_icon_timer;
 
   /**
    * @brief Create Stelpro H420 thermostat cluster list
@@ -238,7 +247,7 @@ public:
     uint8_t     stelpro_system_mode               ;
     uint16_t    stelpro_power                     ;
     uint32_t    stelpro_energy                    ;
-
+    uint16_t     stelpro_peak_demand_icon         ;
   } zb_zcl_stelpro_thermostat_snapshot_t;
   #pragma pack(pop)
 
@@ -273,6 +282,7 @@ private:
   ZigbeeAttribute<uint8_t>    _stelpro_system_mode              ;
   ZigbeeAttribute<uint16_t>   _stelpro_power                    ;
   ZigbeeAttribute<uint32_t>   _stelpro_energy                   ;
+  ZigbeeAttribute<uint16_t>   _stelpro_peak_demand_icon         ;
 
   // The list of all attributes, for handling attributes in loops  
   ZigbeeAttributeList _zigbee_attribute_list;

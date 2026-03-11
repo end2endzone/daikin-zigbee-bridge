@@ -74,6 +74,7 @@ enum LED_MODE {
   LED_MODE_IDENTIFY,
   LED_MODE_DISCONNECTED,
   LED_MODE_CONNECTED,
+  LED_MODE_PEAK_DEMAND_EVENT,
 };
 LED_MODE previousLedMode = LED_MODE_OFF;
 
@@ -89,6 +90,8 @@ Button2 button;
 // Update timers
 SoftTimer tempSimulationUpdateTimer;
 SoftTimer identifyTimer;
+
+bool peak_demand = false;
 
 // -------------------------------------------------------------------------
 //                          Daikin support section
@@ -459,6 +462,10 @@ void onStelproSystemModeChange(uint8_t mode) {
   logEntry("Stelpro system mode changed from coordinator to: 0x%02x (%s)", mode, zb_constants_zcl_thermostat_system_mode_attr_to_string((esp_zb_zcl_thermostat_system_mode_t)mode));
 }
 
+void onStelproPeakDemandIconChange(uint16_t seconds) {
+  logEntry("Stelpro PeakDemandIcon value changed from coordinator to: %d seconds (%d hours)", seconds, (seconds/3600));
+}
+
 // -------------------------------------------------------------------------
 //                            LED Status Update
 // -------------------------------------------------------------------------
@@ -471,6 +478,10 @@ void updateLEDStatus() {
     msg = "Indentify - LED set to fast YELLOW blink";
     newLedMode = LED_MODE_IDENTIFY;
     blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_YELLOW);
+  } else if (peak_demand) {
+    msg = "PEAK DEMAND EVENT - LED set to slow PURPLE pulse";
+    newLedMode = LED_MODE_PEAK_DEMAND_EVENT;
+    blinker.set(RgbLedBlinker::MODE_PULSE_ONCE_PER_15_SECONDS, RgbLedBlinker::COLOR_PURPLE);
   } else if (!Zigbee.connected()) {
     msg = "Disconnected - LED set to fast RED blink";
     newLedMode = LED_MODE_DISCONNECTED;
@@ -550,6 +561,7 @@ void setup() {
   zbThermostat->onOccupancyChange(onOccupancyChange);
   zbThermostat->onStelproOutdoorTemperatureChange(onStelproOutdoorTemperatureChange);
   zbThermostat->onStelproSystemModeChange(onStelproSystemModeChange);
+  zbThermostat->onStelproPeakDemandIconChange(onStelproPeakDemandIconChange);
 
   // Set manufacturer and model
   zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
@@ -619,6 +631,13 @@ void setup() {
 }
 
 void loop() {
+  // Update peak_demand flag before updateLEDStatus() since it affect the LED
+  peak_demand = false;
+  uint16_t peak_demand_remaining_time = 0;
+  if (zbThermostat->getStelproPeakDemandIcon(peak_demand_remaining_time)) {
+    peak_demand = (peak_demand_remaining_time > 0);
+  }
+
   // Update LED status based on connection state
   updateLEDStatus();
   
@@ -636,6 +655,6 @@ void loop() {
   }
   zbThermostat->updateEnergy();  // Update energy simulation calculations and Zigbee attributes
   simulateTemperature();
-  
+
   delay(10);
 }

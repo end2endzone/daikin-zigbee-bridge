@@ -52,6 +52,14 @@
 #define ZB_STELPRO_ATTR_OUTDOOR_TEMP_MIN_VALUE  -3200
 #define ZB_STELPRO_ATTR_OUTDOOR_TEMP_MAX_VALUE  19900
 
+// StelproPeakDemandIcon:
+//  Set peak demand event icon for the specified number of seconds.
+//  A custom attribute that defines how long the thermostat should display the peak demand icon on the face of the thermostat.
+//  Value is in seconds but usually given as multiple of full hours.
+#define ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID 0x4105
+#define ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_MIN_VALUE     0
+#define ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_MAX_VALUE 64800
+
 // Power & Energy:
 //    According to https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/devices/stelpro.ts, lines 10 to 29,
 //    Stelpro seems to expose power and energy in the Thermostat cluster using custom attributes:
