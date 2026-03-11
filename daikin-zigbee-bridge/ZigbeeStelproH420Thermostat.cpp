@@ -624,7 +624,7 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
       _stelpro_outdoor_temperature.getClusterId(),
       _stelpro_outdoor_temperature.getAttributeId(),
       ESP_ZB_ZCL_ATTR_TYPE_S16,
-      ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
+      ESP_ZB_ZCL_ATTR_ACCESS_REPORTING | ESP_ZB_ZCL_ATTR_ACCESS_READ_WRITE,
       _stelpro_outdoor_temperature.getDefaultDataPointer()
     );
     logError(err, __FILE__, __LINE__);
@@ -678,7 +678,7 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     );
     logError(err, __FILE__, __LINE__);
 
-    //  & StelproEnergy :
+    // StelproEnergy :
     err = esp_zb_cluster_add_attr(
       esp_zb_thermostat_cluster,
       _stelpro_energy.getClusterId(),

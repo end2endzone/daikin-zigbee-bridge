@@ -77,9 +77,11 @@ enum LED_MODE {
 };
 LED_MODE previousLedMode = LED_MODE_OFF;
 
-// The class ZigbeeStelproH420Thermostat calls zigbee functions in its constructor.
-// Create the instance on the heap, during setup() to prevent calling zigbee functions during static initialization (before setup()).
-ZigbeeStelproH420Thermostat * zbThermostat = nullptr;
+// ZigbeeStelproH420Thermostat invokes Zigbee API functions inside its constructor.
+// Therefore, the object must be created dynamically (on the heap) during setup().
+// This avoids calling Zigbee functions during static initialization, which occurs before setup() runs.
+// During static initialization, a FreeRTOS task executes in parallel, causing a race condition that crashes the ESP32‑C6.
+ZigbeeStelproH420Thermostat* zbThermostat = nullptr;
 
 // Button handler
 Button2 button;
@@ -381,6 +383,11 @@ void simulateTemperature() {
 
   //
   printAllAttributes();
+
+  // force reportable attributes to report their values to the controller
+  if (!zbThermostat->report()) {
+    logEntry("ERROR: Failed to report zbThermostat!");
+  }
 }
 
 // -------------------------------------------------------------------------
