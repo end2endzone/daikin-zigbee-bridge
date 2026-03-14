@@ -22,8 +22,9 @@
 #include "EnergyCalculator.h"
 #endif // #ifdef USE_ENERGY_CALCULATOR
 
-#define STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL 10 /* in seconds */
-#define STELPRO_ENERGY_UPDATE_INTERVAL 10 /* in seconds */
+#define STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL      10 /* in seconds */
+#define STELPRO_ENERGY_UPDATE_INTERVAL                10 /* in seconds */
+#define STELPRO_TEMPERATURE_DIFFERENCE_THRESHOLD      50  /* 0.5°C */
 
 /**
  * @brief Zigbee Stelpro H420 thermostat device clusters configuration
@@ -201,9 +202,10 @@ public:
 private:
   void zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) override;
   bool updateSystemModes(ZigbeeAttribute<uint8_t> * source, ZigbeeAttribute<uint8_t> * target);
+  bool updateHeatingLogic();
   bool updateEnergy();
-  void updatePreviousAttributeValues();
-  void updateStelproPeakDemandIcon();
+  bool updatePreviousAttributeValues();
+  bool updateStelproPeakDemandIcon();
 
   SoftTimer _stelpro_peak_demand_icon_timer;
   SoftTimer _energy_computation_timer;

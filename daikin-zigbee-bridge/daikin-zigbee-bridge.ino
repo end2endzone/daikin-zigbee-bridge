@@ -55,17 +55,18 @@
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
 
 // Temperature simulation timing
-#define SIMULATION_UPDATE_INTERVAL             5000 //  5.0 seconds
+#define SIMULATION_UPDATE_INTERVAL            5000  //  5.0 seconds
 #define SIMULATION_DEFAULT_ROOM_TEMPERATURE   2000  // 20.0°C
 #define SIMULATION_DEFAULT_HEATING_SETPOINT   2400  // 24.0°C
 #define SIMULATION_TEMPERATURE_DIFF_HIGH       500  //  5.0°C
 #define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
 #define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
 #define SIMULATION_TEMPERATURE_STEP_HIGH      (5 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
-#define SIMULATION_TEMPERATURE_THRESHOLD      50  // 0.5°C
 
 // Factory reset delay
 #define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
+
+#define FORCE_REPORTING_INTERVAL           15000  // 15.0 seconds
 
 // RGB LED blinker
 RgbLedBlinker blinker;
@@ -89,6 +90,7 @@ Button2 button;
 
 // Update timers
 SoftTimer tempSimulationUpdateTimer;
+SoftTimer forceReportingTimer;
 SoftTimer identifyTimer;
 
 bool peak_demand = false;
@@ -197,6 +199,11 @@ void initTempSimulationUpdateTimer() {
   tempSimulationUpdateTimer.reset();
 }
 
+void initForceReportingTimer() {
+  forceReportingTimer.setTimeOutTime(FORCE_REPORTING_INTERVAL);
+  forceReportingTimer.reset();
+}
+
 // -------------------------------------------------------------------------
 //                            Button Callbacks
 // -------------------------------------------------------------------------
@@ -244,152 +251,85 @@ void printAllAttributes() {
   log_i("};");
 }
 
+/**
+ * @brief Simulate local temperature changes.
+ * The local temperature must drifts towards an hypothetical "target_temp".
+ * When heating, target_temp is the heating setpoint.
+ * When not heating, target_temp is the default room temperature.
+ */
 void simulateTemperature() {
-  if (!tempSimulationUpdateTimer.hasTimedOut()) {
-    return;
+  // Make sure we do not call this function too often...
+  if (tempSimulationUpdateTimer.getTimeOutTime() != 0 && !tempSimulationUpdateTimer.hasTimedOut()) {
+    return; // too soon
   }
-  
-  // reset timer for next iteration
-  initTempSimulationUpdateTimer();
+  // reset timer for next iteration timestamps
+  tempSimulationUpdateTimer.reset();
 
   // Get current values
   int16_t local_temp = 0;
   int16_t setpoint = 0;
-  uint8_t pi_heating_demand = 0;
   uint16_t running_state = 0;
-  uint8_t system_mode = 0;
-  uint16_t power = 0;
-  uint32_t energy = 0;
 
   // Get actuals
-  zbThermostat->getLocalTemperature(local_temp);
-  zbThermostat->getOccupiedHeatingSetpoint(setpoint);
-  zbThermostat->getPIHeatingDemand(pi_heating_demand);
-  zbThermostat->getRunningState(running_state);
-  zbThermostat->getSystemMode(system_mode);
-  zbThermostat->getStelproPower(power);
-  zbThermostat->getStelproEnergy(energy);
+  bool success = true;
+  success &= zbThermostat->getLocalTemperature(local_temp);
+  success &= zbThermostat->getOccupiedHeatingSetpoint(setpoint);
+  success &= zbThermostat->getRunningState(running_state);
+  if (!success) {
+    log_e("Unable to simulate local temperature change. Failed to get zigbee attribute values.");
+    return;
+  }
 
   int16_t new_local_temp = local_temp;
-  uint8_t new_pi_heating_demand = pi_heating_demand;
-  uint16_t new_running_state = running_state;
-  uint16_t new_power = power;
-  uint32_t new_energy = energy;
 
-  // Compute energy use since las update and at it to the previous energy value
-  static const double MILLISECONDS_TO_SECONDS = 0.001;
-  static const double SECONDS_TO_HOURS = 1/3600.0;
-  double elapsed_hours_since_last_update = tempSimulationUpdateTimer.getTimeOutTime()  * MILLISECONDS_TO_SECONDS * SECONDS_TO_HOURS;
-  uint32_t energy_use_deltaT = (uint32_t)(power * elapsed_hours_since_last_update);
-  new_energy = energy + energy_use_deltaT;
-
-  int16_t temp_diff = setpoint - local_temp; // positive when requiring heating
-  if (abs(temp_diff) < SIMULATION_TEMPERATURE_THRESHOLD) {
-    // Nothing to do.
-    // Set everything to OFF, temperature do not need to change.
-    new_pi_heating_demand = 0;
-    new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
-    new_power = 0;
-  } else {
-    // Temperature difference is above the threshold. Temperature must change and system must be updated.
-
-    // Compute new system mode based on current situation setpoint vs local_temp.
-    if (setpoint > local_temp) {
-      // Thermostat must HEAT
-      new_running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
-    } else {
-      new_running_state = THERMOSTAT_RUNNING_STATE_IDLE;
-      new_power = 0;
-    }
-
-    int16_t target_temp = setpoint;
-    
-    // Compute target temperature
-    if (new_running_state == THERMOSTAT_RUNNING_STATE_IDLE) {
-      // When off, temperature drifts toward room temp
-      target_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE; // SIMULATION_DEFAULT_ROOM_TEMPERATURE is the new setpoint
-    }
-
-    // Update new_temp towards target temperature
-    if (local_temp < target_temp - SIMULATION_TEMPERATURE_DIFF_HIGH ) {
-      new_local_temp += SIMULATION_TEMPERATURE_STEP_HIGH;   // Heat faster when far from setpoint
-    } else if (local_temp < target_temp) {
-      new_local_temp += SIMULATION_TEMPERATURE_STEP_LOW;    // Heat slower when close to setpoint
-    } else if (local_temp > target_temp + SIMULATION_TEMPERATURE_DIFF_HIGH) {
-      new_local_temp -= SIMULATION_TEMPERATURE_STEP_HIGH;   // Cool faster when too hot
-    } else if (local_temp > target_temp) {
-      new_local_temp -= SIMULATION_TEMPERATURE_STEP_LOW;    // Cool slower when close
-    }
-
-    // Compute new pi_heating_demand
-    if ((new_running_state | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT) > 0) {
-      int16_t tmp = (int16_t)map(abs(temp_diff), 0000, 0300, (int16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE, (int16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE); // map [0°C,3°C] to [0%,100%]
-      if (tmp > 100) tmp = 100;
-      if (tmp < 0) tmp = 0;
-      new_pi_heating_demand = (uint8_t)tmp;
-
-      // compute new power
-      new_power = (uint16_t)map(new_pi_heating_demand, (uint16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE, (uint16_t)ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE, 0, STELPRO_MAX_POWER_WATTS); // map [0%,100%] to [0W,4000W]
-    }
+  int16_t target_temp = setpoint;
+  
+  // Compute target temperature
+  if (running_state == THERMOSTAT_RUNNING_STATE_IDLE) {
+    // When off, temperature drifts toward room temp
+    target_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE; // SIMULATION_DEFAULT_ROOM_TEMPERATURE is the new setpoint
   }
 
-  // Update Energy
-  if (pi_heating_demand > 0) {
-    zbThermostat->setStelproEnergy(new_energy);
+  // Update new_temp towards target temperature
+  if (local_temp < target_temp - SIMULATION_TEMPERATURE_DIFF_HIGH ) {
+    new_local_temp += SIMULATION_TEMPERATURE_STEP_HIGH;   // Heat faster when far from setpoint
+  } else if (local_temp < target_temp) {
+    new_local_temp += SIMULATION_TEMPERATURE_STEP_LOW;    // Heat slower when close to setpoint
+  } else if (local_temp > target_temp + SIMULATION_TEMPERATURE_DIFF_HIGH) {
+    new_local_temp -= SIMULATION_TEMPERATURE_STEP_HIGH;   // Cool faster when too hot
+  } else if (local_temp > target_temp) {
+    new_local_temp -= SIMULATION_TEMPERATURE_STEP_LOW;    // Cool slower when close
   }
-
-  // Note:
-  // Zigbee attribute `pi_heating_demand` can not be set to a value (even 0) if :
-  // * attribute `system_mode` is IDLE or
-  // * HEATING bit in `running_state` is not set.
-  // So we must set this flag sometimes before (and sometimes after) `system_mode` and `running_state` to make sure it is accepted.
-  bool pi_heating_demand_is_dirty = (new_pi_heating_demand != pi_heating_demand);
-  uint16_t tmp_running_state = 0;
-  if (pi_heating_demand_is_dirty && zbThermostat->getRunningState(tmp_running_state) && (tmp_running_state & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)) {
-    // If heating bit is already set, it is safe to update pi_heating_demand now.
-    // This cover use case when `running_state` transitions from `HEATING` --> `IDLE`.
-    // We must update `pi_heating_demand` before HEATING flag in `runnig_state` is cleared.
-    zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
-    pi_heating_demand_is_dirty = false;
-
-    // Update current power usage
-    zbThermostat->setStelproPower(new_power);
-  }
-
-  // Update thermostat attribute, if changed
-  if (new_running_state != running_state) {
-    zbThermostat->setRunningState(new_running_state);
-  }
+  
+  bool new_local_temp_success = false;
   if (new_local_temp != local_temp) {
-    zbThermostat->setLocalTemperature(new_local_temp);
+    if (!zbThermostat->setLocalTemperature(new_local_temp)) {
+      log_e("Unable to simulate local temperature changes. Function setLocalTemperature() has failed.");
+      return;
+    }
   }
-  
-  // If pi_heating_demand is still dirty, we must update it now
-  if (pi_heating_demand_is_dirty) {
-    // If pi_heating_demand is still dirty, we update it.
-    // This cover use case when `running_state` has just transitioned from `IDLE` --> `HEATING`.
-    // We must update `pi_heating_demand` after HEATING flag in `runnig_state` is set.
-    zbThermostat->setPIHeatingDemand(new_pi_heating_demand);
-    pi_heating_demand_is_dirty = false;
 
-    // Update current power usage
-    zbThermostat->setStelproPower(new_power);
-  }
-  
-  log_i("Simulation Update --> Temp: %.1f°C, Setpoint: %.1f°C, Demand: %d%%, State: %s, Power: %dW, Energy: %dWh",
+  log_i("Simulation Update --> Temp: %.1f°C --> %.1f°C, Setpoint: %.1f°C, TargetTemp: %.1f°C",
+                local_temp / 100.0,
                 new_local_temp / 100.0,
                 setpoint / 100.0,
-                new_pi_heating_demand,
-                zb_constants_zcl_thermostat_running_state_attr_to_string(new_running_state).c_str(),
-                new_power,
-                new_energy);
+                target_temp / 100.0);
 
   //
   printAllAttributes();
+}
+
+void reportAttributes() {
+  // Make sure we do not call this function too often...
+  if (forceReportingTimer.getTimeOutTime() != 0 && !forceReportingTimer.hasTimedOut()) {
+    return; // too soon
+  }
+  // reset timer for next iteration timestamps
+  forceReportingTimer.reset();
 
   // force reportable attributes to report their values to the controller
   if (!zbThermostat->report()) {
-    log_e("Failed to report zbThermostat!");
+    log_e("zbThermostat has failed to report())!");
   }
 }
 
@@ -540,6 +480,9 @@ void setup() {
   // Initialize temperature update timer
   initTempSimulationUpdateTimer();
   
+  // Initialize force reporting timer
+  initForceReportingTimer();
+
   // Create the thermostat on the heap.
   zbThermostat = new ZigbeeStelproH420Thermostat(STELPRO_ENDPOINT);
 
@@ -631,15 +574,15 @@ void setup() {
 }
 
 void loop() {
+  static uint32_t loop_count = 0;
+  loop_count++;
+
   // Update peak_demand flag before updateLEDStatus() since it affect the LED
   peak_demand = false;
   uint16_t peak_demand_remaining_time = 0;
   if (zbThermostat->getStelproPeakDemandIcon(peak_demand_remaining_time)) {
     peak_demand = (peak_demand_remaining_time > 0);
   }
-
-  // Update LED status based on connection state
-  updateLEDStatus();
   
   // Disable identifyTimer, after timed out
   if (identifyTimer.getTimeOutTime() != 0 && identifyTimer.hasTimedOut()) { // if active and has timed out
@@ -647,14 +590,18 @@ void loop() {
     identifyTimer.reset();
   }
 
+  // Update LED status based on connection state
+  updateLEDStatus();
+
   // Update all components
   blinker.loop();
   button.loop();
-  if (!zbThermostat->update()) { // remember previous values
-    log_w("zbThermostat->update() has failed");
+  if (!zbThermostat->update()) {
+    log_w("zbThermostat has failed to update()!");
   }
-  zbThermostat->updateEnergy();  // Update energy simulation calculations and Zigbee attributes
+
   simulateTemperature();
+  reportAttributes();
 
   delay(10);
 }

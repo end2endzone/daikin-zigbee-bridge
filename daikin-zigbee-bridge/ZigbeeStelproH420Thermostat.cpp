@@ -377,25 +377,15 @@ bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::updateEnergy() {
+bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
+  // Capture actual intput value
   zb_zcl_stelpro_thermostat_snapshot_t input = {0};
   if (!getSnapshot(input))
     return false;
-
   zb_zcl_stelpro_thermostat_snapshot_t output = input;
 
-  // Check if an energy update is required
-  if (_energy_computation_timer.getTimeOutTime() != 0 && _energy_computation_timer.hasTimedOut()) { // if active and has timed out
-    // Compute energy use since last update. Use the previous power value to compute output energy.
-    static const double MILLISECONDS_TO_SECONDS = 0.001;
-    static const double SECONDS_TO_HOURS = 1/3600.0;
-    double elapsed_hours_since_last_update = tempSimulationUpdateTimer.getTimeOutTime()  * MILLISECONDS_TO_SECONDS * SECONDS_TO_HOURS;
-    uint32_t energy_use_deltaT = (uint32_t)(power * elapsed_hours_since_last_update);
-    output.stelpro_energy = input.stelpro_energy + energy_use_deltaT;
-  }
-
   int16_t temp_diff = input.occupied_heating_setpoint - input.local_temperature; // positive when requiring heating
-  if (abs(temp_diff) < SIMULATION_TEMPERATURE_THRESHOLD) {
+  if (abs(temp_diff) < STELPRO_TEMPERATURE_DIFFERENCE_THRESHOLD) {
     // Nothing to do.
     // Set everything to OFF, temperature do not need to change.
     output.pi_heating_demand = 0;
@@ -405,7 +395,7 @@ bool ZigbeeStelproH420Thermostat::updateEnergy() {
     // Temperature difference is above the threshold. Temperature must change and system must be updated.
 
     // Compute new system mode based on current situation setpoint vs local_temp.
-    if (setpoint > local_temp) {
+    if (input.occupied_heating_setpoint > input.local_temperature) {
       // Thermostat must HEAT
       output.running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
     } else {
@@ -437,40 +427,48 @@ bool ZigbeeStelproH420Thermostat::updateEnergy() {
     }
   }
 
-  // Update Energy
-  if (pi_heating_demand > 0) {
-    if (!zbThermostat->setStelproEnergy(new_energy)) {
-      return false;
-    }
-  }
-
   // Note:
   // Zigbee attribute `pi_heating_demand` can not be set to a value (even 0) if :
   // * attribute `system_mode` is IDLE or
   // * HEATING bit in `running_state` is not set.
   // So we must set this flag sometimes before (and sometimes after) `system_mode` and `running_state` to make sure it is accepted.
+  // Using the following dirty bit to know if an update is required 
   bool pi_heating_demand_is_dirty = (output.pi_heating_demand != input.pi_heating_demand);
+
+  // Updating `pi_heating_demand` and `stelpro_power`
   uint16_t tmp_running_state = 0;
-  if (pi_heating_demand_is_dirty && zbThermostat->getRunningState(tmp_running_state) && (tmp_running_state & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)) {
+  if (pi_heating_demand_is_dirty && this->getRunningState(tmp_running_state) && (tmp_running_state & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT)) {
     // If heating bit is already set, it is safe to update pi_heating_demand now.
     // This cover use case when `running_state` transitions from `HEATING` --> `IDLE`.
-    // We must update `pi_heating_demand` before HEATING flag in `runnig_state` is cleared.
-    if (!zbThermostat->setPIHeatingDemand(output.pi_heating_demand)) {
+    // We must update `pi_heating_demand` and `stelpro_power` before HEATING flag in `runnig_state` is cleared.
+    if (!this->setPIHeatingDemand(output.pi_heating_demand)) {
+      log_e("*** Failed updating attribute 'pi_heating_demand' to '%u'.", output.pi_heating_demand);
       return false;
     }
     pi_heating_demand_is_dirty = false;
 
     // Update current power usage
-    if (!zbThermostat->setStelproPower(output.stelpro_power)) {
+    if (!this->setStelproPower(output.stelpro_power)) {
+      log_e("*** Failed updating attribute 'stelpro_power' to '%u'.", output.stelpro_power);
       return false;
     }
+
+    // Log the change
+    log_i("Heating logic update:  Demand: %d%%, Power: %dW",
+                  output.pi_heating_demand,
+                  output.stelpro_power);
   }
 
   // Update thermostat state, if changed
-  if (output.running_state != input.running_state) {
-    if (!zbThermostat->setRunningState(output.running_state)) {
+  bool running_state_dirty = (output.running_state != input.running_state);
+  if (running_state_dirty) {
+    if (!this->setRunningState(output.running_state)) {
+      log_e("*** Failed updating attribute 'running_state' to '%u'.", output.running_state);
       return false;
     }
+
+    // Log the change
+    log_i("Heating logic update:  State: %s", zb_constants_zcl_thermostat_running_state_attr_to_string(output.running_state).c_str());
   }
   
   // If pi_heating_demand is still dirty, we must update it now
@@ -478,15 +476,72 @@ bool ZigbeeStelproH420Thermostat::updateEnergy() {
     // If pi_heating_demand is still dirty, we update it.
     // This cover use case when `running_state` has just transitioned from `IDLE` --> `HEATING`.
     // We must update `pi_heating_demand` after HEATING flag in `runnig_state` is set.
-    if (!zbThermostat->setPIHeatingDemand(output.pi_heating_demand)) {
+    if (!this->setPIHeatingDemand(output.pi_heating_demand)) {
+      log_e("*** Failed updating attribute 'pi_heating_demand' to '%u'.", output.pi_heating_demand);
       return false;
     }
     pi_heating_demand_is_dirty = false;
 
     // Update current power usage
-    if (!zbThermostat->setStelproPower(output.stelpro_power)) {
+    if (!this->setStelproPower(output.stelpro_power)) {
+      log_e("*** Failed updating attribute 'stelpro_power' to '%u'.", output.stelpro_power);
       return false;
     }
+
+    // Log the change
+    log_i("Heating logic update:  Demand: %d%%, Power: %dW",
+                  output.pi_heating_demand,
+                  output.stelpro_power);
+
+  }
+
+  return true;
+}
+
+bool ZigbeeStelproH420Thermostat::updateEnergy() {
+  // Make sure we do not call this function too often...
+  if (_energy_computation_timer.getTimeOutTime() != 0 && !_energy_computation_timer.hasTimedOut()) {
+    return true; // too soon
+  }
+  // reset timer for next iteration timestamps
+  _energy_computation_timer.reset();
+
+  // Capture actual intput value
+  zb_zcl_stelpro_thermostat_snapshot_t input = {0};
+  if (!getSnapshot(input))
+    return false;
+  zb_zcl_stelpro_thermostat_snapshot_t output = input;
+
+  // Does energy monitoring needs update ?
+  if (input.pi_heating_demand == 0 || input.stelpro_power == 0) {
+    return true; // nothing to do
+  }
+
+  // Compute energy use since last update. Use the previous power value to compute output energy.
+  static const double MILLISECONDS_TO_SECONDS = 0.001;
+  static const double SECONDS_TO_HOURS = 1/3600.0;
+  double elapsed_hours_since_last_update = _energy_computation_timer.getTimeOutTime()  * MILLISECONDS_TO_SECONDS * SECONDS_TO_HOURS;
+  uint32_t energy_use_deltaT = (uint32_t)(input.stelpro_power * elapsed_hours_since_last_update);
+  output.stelpro_energy = input.stelpro_energy + energy_use_deltaT;
+
+  log_i("Energy consumption update:  Increasing total energy by %uW, going from %uW to %uW",
+    energy_use_deltaT,
+    input.stelpro_energy,
+    output.stelpro_energy);
+
+  // Update Energy
+  bool stelpro_energy_is_dirty = (output.stelpro_energy != input.stelpro_energy);
+  if (input.pi_heating_demand > 0 && stelpro_energy_is_dirty) {
+    if (!this->setStelproEnergy(output.stelpro_energy)) {
+      log_e("*** Failed updating attribute 'stelpro_energy' to '%u'.", output.stelpro_energy);
+      return false;
+    }
+
+    // Energy update successful
+    stelpro_energy_is_dirty = false;
+
+    // Reset timer to the next energy update
+    _energy_computation_timer.reset();
   }
 
   return true;
@@ -496,6 +551,8 @@ bool ZigbeeStelproH420Thermostat::update() {
   if (!updatePreviousAttributeValues())
     return false;
   if (!updateStelproPeakDemandIcon())
+    return false;
+  if (!updateHeatingLogic())
     return false;
   if (!updateEnergy())
     return false;
@@ -513,7 +570,7 @@ bool ZigbeeStelproH420Thermostat::updatePreviousAttributeValues() {
   return true;
 }
 
-void ZigbeeStelproH420Thermostat::updateStelproPeakDemandIcon() {
+bool ZigbeeStelproH420Thermostat::updateStelproPeakDemandIcon() {
   // Check if an update for StelproPeakDemandIcon is required
   if (_stelpro_peak_demand_icon_timer.getTimeOutTime() != 0 && _stelpro_peak_demand_icon_timer.hasTimedOut()) { // if active and has timed out
     uint16_t remaining = 0;
