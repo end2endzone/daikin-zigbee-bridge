@@ -1,0 +1,162 @@
+[3/14/2026, 4:56:44 PM] z2m: Configuring '0xbc33acfffe123456'
+[3/14/2026, 4:56:45 PM] z2m: Successfully configured '0xbc33acfffe123456' (definition v0.0.0)
+[3/14/2026, 4:56:45 PM] z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/bridge/response/device/configure', payload:
+```
+{
+    "data": {
+        "id": "0xbc33acfffe123456"
+    },
+    "status": "ok",
+    "transaction": "djrri-2"
+}
+```
+[3/14/2026, 4:56:46 PM] zh:ember: [NCP COUNTERS] 16415,1715,7556,5698,444,8,1,1,3614,2867,0,4,65,0,0,0,0,0,0,0,0,106,0,0,0,0,2,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0
+[3/14/2026, 4:56:46 PM] zh:ember: [ASH COUNTERS] 77969,16375,2872,13503,0,0,0,0,352812,13504,13489,1,0,14,0,0,0,0,0,0,0,0,0,0,14,0,0
+[3/14/2026, 4:56:47 PM] z2m:mqtt: MQTT publish: topic 'zigbee2mqtt/bridge/health', payload:
+```
+{
+    "response_time": 1773521807642,
+    "os": {
+        "load_average": [
+            0.08,
+            0.19,
+            0.31
+        ],
+        "memory_used_mb": 1392.75,
+        "memory_percent": 8.7142
+    },
+    "process": {
+        "uptime_sec": 7207,
+        "memory_used_mb": 149.23,
+        "memory_percent": 0.9337
+    },
+    "mqtt": {
+        "connected": true,
+        "queued": 0,
+        "published": 10419,
+        "received": 331
+    },
+    "devices": {
+        "0x404ccafffe563248": {
+            "messages": 6215,
+            "messages_per_sec": 0.8632,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c1383e3f07dec8": {
+            "messages": 1379,
+            "messages_per_sec": 0.1918,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0x003c84fffea6d648": {
+            "messages": 125,
+            "messages_per_sec": 0.0174,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c13805e054bb83": {
+            "messages": 182,
+            "messages_per_sec": 0.0257,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xbc33acfffe123456": {
+            "messages": 40,
+            "messages_per_sec": 0.0057,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c13887221c2983": {
+            "messages": 1,
+            "messages_per_sec": 0.0001,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c13806bde2810c": {
+            "messages": 18,
+            "messages_per_sec": 0.0026,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c138d7da322ae7": {
+            "messages": 10,
+            "messages_per_sec": 0.0015,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0x588e81fffe30bbb4": {
+            "messages": 5,
+            "messages_per_sec": 0.0007,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c1387fc834a2d8": {
+            "messages": 3,
+            "messages_per_sec": 0.0005,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c13898964ba13a": {
+            "messages": 9,
+            "messages_per_sec": 0.0015,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0x002446fffd09506f": {
+            "messages": 20,
+            "messages_per_sec": 0.0033,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c1387bfdd5a11a": {
+            "messages": 30,
+            "messages_per_sec": 0.0055,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0x0022a300002528fe": {
+            "messages": 79,
+            "messages_per_sec": 0.0151,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c13829a1c32fbc": {
+            "messages": 22,
+            "messages_per_sec": 0.005,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0x588e81fffe338d61": {
+            "messages": 3,
+            "messages_per_sec": 0.0014,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c13876bbec1fdd": {
+            "messages": 3,
+            "messages_per_sec": 0.0014,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c138fe255521fa": {
+            "messages": 3,
+            "messages_per_sec": 0.0016,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0x588e81fffe35bca3": {
+            "messages": 2,
+            "messages_per_sec": 0.0013,
+            "leave_count": 0,
+            "network_address_changes": 0
+        },
+        "0xa4c1389a06798c06": {
+            "messages": 1,
+            "messages_per_sec": 0.0009,
+            "leave_count": 0,
+            "network_address_changes": 0
+        }
+    }
+}
+```

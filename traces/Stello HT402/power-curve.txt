@@ -1,0 +1,11 @@
+MAX: 1220W
+
+local 20.5
+
+setpoint 20.0: 0W
+setpoint 20.5: 178W
+setpoint 21.0: 869W
+setpoint 21.5: 1192W
+setpoint 22.0: 1192W
+setpoint 30.0: 1188W
+

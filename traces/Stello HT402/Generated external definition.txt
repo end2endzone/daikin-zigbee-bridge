@@ -1,0 +1,7 @@
+export default {
+    zigbeeModel: ['HT402'],
+    model: 'HT402',
+    vendor: 'Stello',
+    description: 'Automatically generated definition',
+    extend: [],
+};

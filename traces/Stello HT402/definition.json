@@ -1,0 +1,175 @@
+{
+    "description": "Hilo thermostat",
+    "exposes": [
+        {
+            "access": 7,
+            "description": "Enables/disables physical input on the device",
+            "label": "Keypad lockout",
+            "name": "keypad_lockout",
+            "property": "keypad_lockout",
+            "type": "enum",
+            "values": [
+                "unlock",
+                "lock1",
+                "lock2"
+            ]
+        },
+        {
+            "access": 1,
+            "description": "Instantaneous measured power",
+            "label": "Power",
+            "name": "power",
+            "property": "power",
+            "type": "numeric",
+            "unit": "W"
+        },
+        {
+            "access": 1,
+            "description": "Sum of consumed energy",
+            "label": "Energy",
+            "name": "energy",
+            "property": "energy",
+            "type": "numeric",
+            "unit": "kWh"
+        },
+        {
+            "features": [
+                {
+                    "access": 7,
+                    "description": "Temperature setpoint",
+                    "label": "Occupied heating setpoint",
+                    "name": "occupied_heating_setpoint",
+                    "property": "occupied_heating_setpoint",
+                    "type": "numeric",
+                    "unit": "°C",
+                    "value_max": 30,
+                    "value_min": 5,
+                    "value_step": 0.5
+                },
+                {
+                    "access": 5,
+                    "description": "Current temperature measured on the device",
+                    "label": "Local temperature",
+                    "name": "local_temperature",
+                    "property": "local_temperature",
+                    "type": "numeric",
+                    "unit": "°C"
+                },
+                {
+                    "access": 7,
+                    "description": "Mode of this device",
+                    "label": "System mode",
+                    "name": "system_mode",
+                    "property": "system_mode",
+                    "type": "enum",
+                    "values": [
+                        "heat"
+                    ]
+                },
+                {
+                    "access": 5,
+                    "description": "The current running state",
+                    "label": "Running state",
+                    "name": "running_state",
+                    "property": "running_state",
+                    "type": "enum",
+                    "values": [
+                        "idle",
+                        "heat"
+                    ]
+                }
+            ],
+            "type": "climate"
+        },
+        {
+            "access": 2,
+            "description": "Set peak demand event icon for the specified number of hours",
+            "label": "Peak demand icon",
+            "name": "peak_demand_icon",
+            "property": "peak_demand_icon",
+            "type": "numeric",
+            "unit": "hours",
+            "value_max": 18,
+            "value_min": 0
+        },
+        {
+            "access": 2,
+            "description": "Outdoor temperature displayed on the thermostat",
+            "label": "Outdoor temperature display",
+            "name": "outdoor_temperature_display",
+            "property": "outdoor_temperature_display",
+            "type": "numeric",
+            "unit": "°C",
+            "value_max": 199,
+            "value_min": -32
+        },
+        {
+            "access": 1,
+            "category": "diagnostic",
+            "description": "Link quality (signal strength)",
+            "label": "Linkquality",
+            "name": "linkquality",
+            "property": "linkquality",
+            "type": "numeric",
+            "unit": "lqi",
+            "value_max": 255,
+            "value_min": 0
+        }
+    ],
+    "model": "HT402",
+    "options": [
+        {
+            "access": 2,
+            "description": "Calibrates the power value (percentual offset), takes into effect on next report of device.",
+            "label": "Power calibration",
+            "name": "power_calibration",
+            "property": "power_calibration",
+            "type": "numeric",
+            "value_step": 0.1
+        },
+        {
+            "access": 2,
+            "description": "Number of digits after decimal point for power, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+            "label": "Power precision",
+            "name": "power_precision",
+            "property": "power_precision",
+            "type": "numeric",
+            "value_max": 3,
+            "value_min": 0
+        },
+        {
+            "access": 2,
+            "description": "Calibrates the energy value (percentual offset), takes into effect on next report of device.",
+            "label": "Energy calibration",
+            "name": "energy_calibration",
+            "property": "energy_calibration",
+            "type": "numeric",
+            "value_step": 0.1
+        },
+        {
+            "access": 2,
+            "description": "Number of digits after decimal point for energy, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+            "label": "Energy precision",
+            "name": "energy_precision",
+            "property": "energy_precision",
+            "type": "numeric",
+            "value_max": 3,
+            "value_min": 0
+        },
+        {
+            "access": 2,
+            "description": "Controls the temperature unit of the thermostat (default celsius).",
+            "label": "Thermostat unit",
+            "name": "thermostat_unit",
+            "property": "thermostat_unit",
+            "type": "enum",
+            "values": [
+                "celsius",
+                "fahrenheit"
+            ]
+        }
+    ],
+    "source": "native",
+    "supports_ota": false,
+    "vendor": "Stelpro"
+}
