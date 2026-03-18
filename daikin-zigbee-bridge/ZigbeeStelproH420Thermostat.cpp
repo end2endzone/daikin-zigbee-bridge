@@ -176,6 +176,13 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_value_in_cluster_list<uint32_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_ENERGY_ID                                         , 0 ))                                                                        log_w("Failed to set attribute 'STELPRO_ENERGY' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID                              , 0 ))                                                                         log_w("Failed to set attribute 'STELPRO_PEAK_DEMAND_ICON' value in cluster list!");
 
+  // Force some zigbee attributes to be reportable.
+  // The following attributes are reportable according to zigbee2mqtt's UI with a real Stelpro H402 thermostat.
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID     , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'OCCUPIED_HEATING_SETPOINT' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID                   , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'SYSTEM_MODE' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID             , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'PI_HEATING_DEMAND' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG       , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID      , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'KEYPAD_LOCKOUT' reporting access!");
+
   // Set endpoint configuration
   _ep_config = {
     .endpoint = _endpoint,

@@ -596,6 +596,21 @@ static bool zb_set_attribute_value_in_cluster_list(esp_zb_cluster_list_t *list, 
   return true;
 }
 
+static bool zb_set_attribute_access_flag_in_cluster_list(esp_zb_cluster_list_t *list, uint16_t cluster_id, uint16_t attribute_id, uint8_t access_flag, bool enabled)
+{
+  esp_zb_zcl_attr_t *attr = zb_find_attribute_in_cluster_list(list, cluster_id, attribute_id);
+  if (attr == nullptr || attr->data_p == nullptr) {
+    return false;
+  }
+
+  if (enabled)
+    attr->access |= access_flag;
+  else
+    attr->access &= ~access_flag;
+
+  return true;
+}
+
 static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_id, uint16_t attribute_id) {
   if (cluster_id == ESP_ZB_ZCL_CLUSTER_ID_IDENTIFY) {
     if (attribute_id == ESP_ZB_ZCL_ATTR_IDENTIFY_IDENTIFY_TIME_ID) {

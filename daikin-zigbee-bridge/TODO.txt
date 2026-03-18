@@ -14,5 +14,3 @@
 - Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
 - Rename `toHex()` and `toBin` to match `snake_case`.
 - Change the device manufacturer from `Stelpro` to `Stello` as per real device.
-- Force implementing reporting for `occupiedHeatingSetpoint`, `systemMode`, `pIHeatingDemand` and `keypadLockout` as per real device.
-- Fix Reconfigure failure issue
