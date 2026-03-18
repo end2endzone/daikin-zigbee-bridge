@@ -144,3 +144,41 @@ static bool toBin(const void* input, size_t input_size, char* buffer, size_t buf
   buffer[pos] = '\0';
   return true;
 }
+
+static void endian_swap(void* buffer, size_t buffer_size) {
+  if (buffer == NULL || buffer_size <= 1)
+    return;
+
+  uint8_t* bytes = (uint8_t*)buffer;
+
+  for (size_t i = 0; i < buffer_size / 2; i++) {
+    uint8_t tmp = bytes[i];
+    bytes[i] = bytes[buffer_size - 1 - i];
+    bytes[buffer_size - 1 - i] = tmp;
+  }
+}
+
+static void lowercase(void* buffer, size_t buffer_size) {
+  if (buffer == NULL || buffer_size == 0)
+    return;
+
+  uint8_t* bytes = (uint8_t*)buffer;
+
+  for (size_t i = 0; i < buffer_size; i++) {
+    if (bytes[i] >= 'A' && bytes[i] <= 'Z') {
+      bytes[i] = bytes[i] + ('a' - 'A');
+    }
+  }
+}
+
+static void lowercase_str(char* str) {
+  if (str == NULL)
+    return;
+
+  char* p = nullptr;
+  for (p = str; *p != '\0'; p++) {
+    if (*p >= 'A' && *p <= 'Z') {
+      *p = *p + ('a' - 'A');
+    }
+  }
+}

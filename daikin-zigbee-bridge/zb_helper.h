@@ -11,6 +11,7 @@
 #include "format_helper.h"
 #include "zb_constants_helper.h"
 #include "stelpro_constants.h"
+#include "esp_mac.h"
 
 typedef enum {
   ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_UNLOCK = 0x00,
@@ -733,4 +734,166 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
   
   // Nothing special for this attribute
   return nullptr;
+}
+
+typedef uint8_t esp_48bit_addr_t[6];
+typedef uint8_t esp_64bit_addr_t[8];
+typedef uint8_t esp_eui64_addr_t[8];
+
+/**
+ * @brief Convert a 64bit esp_zb_ieee_addr_t address to its hex representation in a String.
+ * For example: 0x0123456789abcdef.
+ * ZBOSS stores 64-bit of IEEE long address in little-endian order internally, so byte[0] is the LSB.
+ * See functions `esp_zb_set_long_address()` and `esp_zb_get_long_address()` from `esp-zigbee-lib\include\nwk\esp_zigbee_nwk.h`.
+ * @param addr  Pointer to bytes containing the address.
+ */
+static String zb_ieee_long_addr_to_string(esp_zb_ieee_addr_t addr) {
+  char buffer[24] = {0};
+
+  // Print characters in reverse order.
+  snprintf(buffer, sizeof(buffer), "0x%02x%02x%02x%02x%02x%02x%02x%02x", 
+    addr[7],
+    addr[6],
+    addr[5],
+    addr[4],
+    addr[3],
+    addr[2],
+    addr[1],
+    addr[0]);
+
+  return String(buffer);    
+}
+
+/**
+ * @brief Convert a 48bit base MAC address to its hex representation in a String.
+ * For example: 0x0123456789ab.
+ * Value is in big-endian order internally, so byte[0] is the MSB.
+ * See functions `esp_read_mac()`, `esp_base_mac_addr_set()` (deprecated) and `esp_iface_mac_addr_set()` from ``.
+ * @param addr  Pointer to bytes containing the address.
+ */
+static String esp_base_ieee_addr_to_string(esp_48bit_addr_t addr) {
+  char buffer[24] = {0};
+
+  // Print characters in natural order.
+  snprintf(buffer, sizeof(buffer), "0x%02x%02x%02x%02x%02x%02x", 
+    addr[0],
+    addr[1],
+    addr[2],
+    addr[3],
+    addr[4],
+    addr[5]);
+
+  return String(buffer);    
+}
+
+/**
+ * @brief Convert a 64bit base MAC address to its hex representation in a String.
+ * For example: 0x0123456789abcdef.
+ * Value is in big-endian order internally, so byte[0] is the MSB.
+ * See functions `esp_read_mac()`, `esp_base_mac_addr_set()` (deprecated) and `esp_iface_mac_addr_set()` from ``.
+ * @param addr  Pointer to bytes containing the address.
+ */
+static String esp_eui64_addr_to_string(esp_eui64_addr_t addr) {
+  char buffer[24] = {0};
+
+  // Print characters in natural order.
+  snprintf(buffer, sizeof(buffer), "0x%02x%02x%02x%02x%02x%02x%02x%02x", 
+    addr[0],
+    addr[1],
+    addr[2],
+    addr[3],
+    addr[4],
+    addr[5],
+    addr[6],
+    addr[7]);
+
+  return String(buffer);    
+}
+
+static void zb_ieee_addr_set_oui(const uint8_t target_oui[3]) {
+  // From https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/misc_system_api.html#mac-address
+  // In ESP-IDF, the MAC addresses for the various network interfaces are calculated from a single base MAC address.
+  // By default, the Espressif base MAC address is used. This base MAC address is pre-programmed into the 
+  // ESP32 eFuse in the factory during production.
+  //
+  //   | Interface     | MAC Address (4 universally administered, default) | MAC Address (2 universally administered)   |
+  //   |---------------|---------------------------------------------------|--------------------------------------------|
+  //   | Wi-Fi Station | base_mac                                          | base_mac                                   |
+  //   | Wi-Fi SoftAP  | base_mac, +1 to the last octet                    | Local MAC (derived from Wi-Fi Station MAC) |
+  //   | Bluetooth     | base_mac, +2 to the last octet                    | base_mac, +1 to the last octet             |
+  //   | Ethernet      | base_mac, +3 to the last octet                    | Local MAC (derived from Bluetooth MAC)     |
+  //
+
+  // From esp32\3.3.7\libraries\ESP32\examples\MacAddress\GetMacAddress\GetMacAddress.ino :
+  // esp_mac_type_t values:
+  //   ESP_MAC_WIFI_STA - MAC for WiFi Station (6 bytes)
+  //   ESP_MAC_WIFI_SOFTAP - MAC for WiFi Soft-AP (6 bytes)
+  //   ESP_MAC_BT - MAC for Bluetooth (6 bytes)
+  //   ESP_MAC_ETH - MAC for Ethernet (6 bytes)
+  //   ESP_MAC_IEEE802154 - if CONFIG_SOC_IEEE802154_SUPPORTED=y, MAC for IEEE802154 (8 bytes)
+  //   ESP_MAC_BASE - Base MAC for that used for other MAC types (6 bytes)
+  //   ESP_MAC_EFUSE_FACTORY - MAC_FACTORY eFuse which was burned by Espressif in production (6 bytes)
+  //   ESP_MAC_EFUSE_CUSTOM - MAC_CUSTOM eFuse which was can be burned by customer (6 bytes)
+  //   ESP_MAC_EFUSE_EXT - if CONFIG_SOC_IEEE802154_SUPPORTED=y, MAC_EXT eFuse which is used as an extender for IEEE802154 MAC (2 bytes)
+
+  // From https://github.com/espressif/esp-idf/blob/master/examples/system/base_mac_address/main/base_mac_address_example_main.c#L67
+  // From https://github.com/espressif/esp-idf/tree/v5.5.3/examples/system/base_mac_address
+
+  esp_err_t ret = ESP_OK;
+
+  // Get base MAC address from eFuse BLK0 (default option, burned by Espressif in production).
+  // Value is 6 bytes long, in big-endian order internally, so byte[0] is the MSB.
+  uint8_t base_mac_addr[6] = {0};
+  ret = esp_read_mac(base_mac_addr, ESP_MAC_EFUSE_FACTORY);
+  if (ret != ESP_OK) {
+    log_e("Failed to get base MAC address from eFuse BLK0!");
+    logError(ret);
+    log_e("Aborting");
+    abort();
+  }
+  log_i("Base MAC Address (EFUSE BLK0): %s", esp_base_ieee_addr_to_string(base_mac_addr).c_str());
+
+  // Get EUI-64 zigbee address.
+  // Value is 8 bytes long, in big-endian order internally, so byte[0] is the MSB.
+  //
+  // Address layout (big-endian) in relation to base mac address:
+  //   Bytes [0..2] = OUI  (base_mac[0] XOR 0x02, base_mac[1], base_mac[2])
+  //   Bytes [3..4] = 0xFF, 0xFE  (FF:FE insertion)
+  //   Bytes [5..6] = base_mac[3], base_mac[4]
+  //   Bytes [7]    = base_mac[5] + 3  (ESP_MAC_IEEE802154 offset)
+  esp_eui64_addr_t zigbee_addr = {0};
+  ret = esp_read_mac(zigbee_addr, ESP_MAC_IEEE802154);
+  if (ret != ESP_OK) {
+    log_e("Failed to get zigbee MAC address!");
+    logError(ret);
+    log_e("Aborting");
+    abort();
+  }
+  log_i("Default Zigbee address: %s", esp_eui64_addr_to_string(zigbee_addr).c_str());
+
+  // Apply the OUI (create a derived EUI-64 zigbee address)
+  zigbee_addr[0] = 0xBC;
+  zigbee_addr[1] = 0x33;
+  zigbee_addr[2] = 0xAC;
+
+  // Set a new (derived?) EUI-64 zigbee address.
+  log_i("Changing Zigbee address to %s", esp_eui64_addr_to_string(zigbee_addr).c_str());
+  ret = esp_iface_mac_addr_set(zigbee_addr, ESP_MAC_IEEE802154);
+  if (ret != ESP_OK) {
+    log_e("Failed to set zigbee MAC address!");
+    logError(ret);
+    log_e("Aborting");
+    abort();
+  }
+
+  // Confirm the change
+  esp_eui64_addr_t derived_zigbee_addr = {0};
+  ret = esp_read_mac(derived_zigbee_addr, ESP_MAC_IEEE802154);
+  if (ret != ESP_OK) {
+    log_e("Failed to get derived zigbee MAC address!");
+    logError(ret);
+    log_e("Aborting");
+    abort();
+  }
+  log_i("Derived Zigbee address: %s", esp_eui64_addr_to_string(derived_zigbee_addr).c_str());
 }

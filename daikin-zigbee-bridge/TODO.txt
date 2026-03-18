@@ -13,7 +13,6 @@
   ```
 - Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
 - Rename `toHex()` and `toBin` to match `snake_case`.
-- Change the OUI prefix in the IEEE address (EUI-64 address) to match `Silicon Laboratories` instead of `Espressif Inc`. The Organizationally Unique Identifier (OUI) is the first 24 bits (3 bytes) of a device's 64-bit IEEE address.
 - Change the device manufacturer from `Stelpro` to `Stello` as per real device.
 - Force implementing reporting for `occupiedHeatingSetpoint`, `systemMode`, `pIHeatingDemand` and `keypadLockout` as per real device.
 - Fix Reconfigure failure issue

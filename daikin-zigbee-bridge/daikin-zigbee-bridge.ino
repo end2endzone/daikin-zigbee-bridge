@@ -483,6 +483,12 @@ void setup() {
   // Initialize force reporting timer
   initForceReportingTimer();
 
+  // Change the OUI prefix in the IEEE address (EUI-64 address) 
+  // to match `Silicon Laboratories` instead of `Espressif Inc`.
+  // This function must be called before calling Zigbee.begin().
+  const uint8_t target_oui[3] = { 0xBC, 0x33, 0xAC };
+  zb_ieee_addr_set_oui(target_oui);
+
   // Create the thermostat on the heap.
   zbThermostat = new ZigbeeStelproH420Thermostat(STELPRO_ENDPOINT);
 
@@ -528,6 +534,11 @@ void setup() {
     ESP.restart();
   }
   log_i("Zigbee stack ready.");
+
+  // Print the device zigbee ieee address
+  esp_zb_ieee_addr_t device_ieee_long_addr = {0};
+  esp_zb_get_long_address(device_ieee_long_addr); // ZBOSS stores 64-bit of IEEE long address in little-endian order internally, so byte[0] is the LSB.
+  log_i("Device zigbee address: %s", zb_ieee_long_addr_to_string(device_ieee_long_addr).c_str());
 
   //log_i("Waiting 5000 ms...");
   //delay(5000);
