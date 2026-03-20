@@ -20,7 +20,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Espressif ESP32-C6-DevKitC-1",
+  "name": "Espressif nanoESP32-C6",
   "upload": {
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
