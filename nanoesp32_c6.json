@@ -9,7 +9,10 @@
     "f_flash": "80000000L",
     "flash_mode": "qio",
     "mcu": "esp32c6",
-    "variant": "esp32c6"
+    "variant": "esp32c6",
+    "arduino": {
+        "memory_type": "qio_qspi"
+    }
   },
   "connectivity": [
     "wifi",
