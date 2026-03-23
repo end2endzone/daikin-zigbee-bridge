@@ -15,9 +15,10 @@ enum TypeSign {
 
 static const char * toString(TypeSign type_sign) {
   switch (type_sign) {
-    case TYPE_SIGN_UNKNOWN:   return "unknown";
     case TYPE_SIGN_UNSIGNED:  return "unsigned";
     case TYPE_SIGN_SIGNED:    return "signed";
+    default:
+    case TYPE_SIGN_UNKNOWN:   return "unknown";
   };
 }
 
