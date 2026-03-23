@@ -1,0 +1,54 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Arduino: Compile",
+            "type": "shell",
+            "command": "arduino-cli",
+            "args": [
+                "compile",
+                "--fqbn", "${config:myproject.fqbn}",
+                "--build-path", "${workspaceFolder}/build",
+                "${workspaceFolder}/daikin-zigbee-bridge/."
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arduino: Upload",
+            "type": "shell",
+            "command": "arduino-cli",
+            "args": [
+                "upload",
+                "--fqbn", "${config:myproject.fqbn}",
+                "--port", "${config:myproject.port}",
+                "${workspaceFolder}/daikin-zigbee-bridge/."
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arduino: Compile & Upload",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Arduino: Compile",
+                "Arduino: Upload"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
