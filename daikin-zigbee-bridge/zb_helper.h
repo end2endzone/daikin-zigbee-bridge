@@ -279,7 +279,7 @@ static bool zb_zcl_attribute_data_pointer_to_string(char *buffer, size_t buffer_
       }
 
       // Output as hexedecimal
-      bool success = toBin(data_p, data_size, buffer, buffer_size);
+      bool success = to_bin(data_p, data_size, buffer, buffer_size);
       return success;
     }
     break;
@@ -321,7 +321,7 @@ static bool zb_zcl_attribute_data_pointer_to_string(char *buffer, size_t buffer_
       }
 
       // Output as hexedecimal
-      bool success = toHex(data_p, data_size, buffer, buffer_size);
+      bool success = to_hex(data_p, data_size, buffer, buffer_size);
       return success;
     }
     break;

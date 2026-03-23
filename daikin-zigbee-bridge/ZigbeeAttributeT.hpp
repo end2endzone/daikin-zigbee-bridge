@@ -137,7 +137,7 @@ public:
     if (buffer_size >= 1)
       buffer[0] = '\0';
     if (get(value)) {
-      toHex(&value, sizeof(T), buffer, buffer_size);
+      to_hex(&value, sizeof(T), buffer, buffer_size);
     }
   }
 

@@ -37,7 +37,7 @@ static String strformat(const char* fmt, ...) {
  * Returns true  when the full representation fits input buffer.
  * Returns false otherwise.
  */
-static bool toHex(const void* input, size_t input_size, char* buffer, size_t buffer_size)
+static bool to_hex(const void* input, size_t input_size, char* buffer, size_t buffer_size)
 {
   if ( buffer == NULL || buffer_size == 0 )
     return false;
@@ -94,7 +94,7 @@ static bool toHex(const void* input, size_t input_size, char* buffer, size_t buf
  * Returns true  when the full representation fits in buffer.
  * Returns false otherwise.
  */
-static bool toBin(const void* input, size_t input_size, char* buffer, size_t buffer_size)
+static bool to_bin(const void* input, size_t input_size, char* buffer, size_t buffer_size)
 {
   if ( buffer == NULL || buffer_size == 0 )
     return false;
