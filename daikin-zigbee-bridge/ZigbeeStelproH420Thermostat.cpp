@@ -123,8 +123,10 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
 
     // Change default values from macro ESP_ZB_DEFAULT_THERMOSTAT_CONFIG()
     {
-      // Change from basic power source to constant power    
-      stelpro_cfg.basic_cfg.power_source = ESP_ZB_AF_NODE_POWER_SOURCE_CONSTANT_POWER;
+      // Stelpro's HT402 thermostat has a constant power source (ESP_ZB_AF_NODE_POWER_SOURCE_CONSTANT_POWER)
+      // but it's attribute ESP_ZB_ZCL_ATTR_BASIC_POWER_SOURCE_ID is not set and report 0
+      // which is the default unset value.
+      stelpro_cfg.basic_cfg.power_source = 0;
       
       // For `occupied_cooling_setpoint`, do not use default value `ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_DEFAULT_VALUE` of 26.0°C.
       // If you do, this will set an upper limit for `occupied_heating_setpoint` at 25.0°C.
@@ -803,6 +805,26 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _pi_heating_demand      .getAttributeId() , _pi_heating_demand      .getDefaultDataPointer());   logError(err);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _outdoor_temperature    .getAttributeId() , _outdoor_temperature    .getDefaultDataPointer());   logError(err);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _occupancy              .getAttributeId() , _occupancy              .getDefaultDataPointer());   logError(err);
+
+  // Hardcoded Basic cluster attributes
+  #if 1
+  {
+    static uint8_t app_version = 33;
+    static uint8_t* date_code = (uint8_t*)"\01720000000 00000\u0000"; // (sizeof("20000000 00000\u0000") - 1) == 15 == \017
+    static uint8_t hw_version = 1;
+    static uint8_t* location_desc = (uint8_t*)"\012Thermostat"; // (sizeof("Thermostat") - 1) == 10 == \012
+    static int8_t physical_env = 0;
+    static uint8_t stack_version = 34;
+
+    // Add attribute limits
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_APPLICATION_VERSION_ID,   &app_version);      logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_DATE_CODE_ID,              date_code);        logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_HW_VERSION_ID,            &hw_version);       logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_LOCATION_DESCRIPTION_ID,   location_desc);    logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_PHYSICAL_ENVIRONMENT_ID,  &physical_env);     logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_STACK_VERSION_ID,         &stack_version);    logError(err);
+  }
+  #endif
 
   // Hardcoded HEATING MIN/MAX/ABS SETPOINTS
   #if 1

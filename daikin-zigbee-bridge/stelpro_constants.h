@@ -9,7 +9,7 @@
 //   HT402 uses endpoint 25, not 10!
 #define STELPRO_ENDPOINT 25
 #define STELPRO_MANUFACTURER_CODE 0x1185
-#define STELPRO_MANUFACTURER_NAME "Stelpro"
+#define STELPRO_MANUFACTURER_NAME "Stello"
 #define STELPRO_MODEL_NAME "HT402"
 
 // Default Stelpro thermostat values (in hundredths of degrees Celsius)

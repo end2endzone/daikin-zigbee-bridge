@@ -460,8 +460,8 @@ void setup() {
   log_i("========================================");
   log_i("  Stelpro HT402 Thermostat Emulator");
   log_i("========================================");
-  log_i("Model: HT402 (Hilo)");
-  log_i("Manufacturer: Stelpro");
+  log_i("Model: %s (Hilo)", STELPRO_MODEL_NAME);
+  log_i("Manufacturer: %s", STELPRO_MANUFACTURER_NAME);
   log_i("Endpoint: %d", STELPRO_ENDPOINT);
   log_i("Type: Line-voltage heating thermostat");
   log_i("========================================");
