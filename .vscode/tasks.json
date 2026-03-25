@@ -29,6 +29,7 @@
             "args": [
                 "upload",
                 "--fqbn", "${config:myproject.fqbn}",
+                "--build-path", "${workspaceFolder}/build",
                 "--port", "${config:myproject.port}",
                 "${workspaceFolder}/daikin-zigbee-bridge/."
             ],
