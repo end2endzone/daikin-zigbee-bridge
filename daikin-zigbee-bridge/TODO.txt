@@ -12,27 +12,3 @@
                               void* data_p);
   ```
 - Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
-- Change the device manufacturer from `Stelpro` to `Stello` as per real device.
-- Expose more fields from Basic cluster as per HT402 thermostat:
-  - Values: 
-      {
-        "appVersion":33,
-        "dateCode":"20000000 00000\u0000",
-        "hwVersion":1,
-        "locationDesc":"Thermostat",
-        "manufacturerName":"Stello",
-        "modelId":"HT402",
-        "physicalEnv":0,
-        "powerSource":0,
-        "stackVersion":34
-      }
-  - Fields types:
-    - appVersion (UINT8)
-    - dateCode (CHAR_STR)
-    - hwVersion (UINT8)
-    - locationDesc (CHAR_STR)
-    - manufacturerName (CHAR_STR)
-    - modelId (CHAR_STR)
-    - physicalEnv (ENUM8)
-    - powerSource (ENUM8)
-    - stackVersion (UINT8)
