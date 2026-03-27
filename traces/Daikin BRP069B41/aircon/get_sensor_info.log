@@ -1,0 +1,3 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/aircon/get_sensor_info"
+ret=OK,htemp=27.0,hhum=-,otemp=0.5,err=0,cmpfreq=0
+ret=OK,htemp=26.0,hhum=-,otemp=-6.0,err=0,cmpfreq=32

@@ -1,0 +1,2 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/i-do-not-exist"
+ret=PARAM NG,msg=404 Not Found

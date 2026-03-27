@@ -1,0 +1,2 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/aircon/get_year_power"
+ret=OK,previous_year=0/0/0/0/0/0/0/0/0/0/0/0,this_year=0/0/0

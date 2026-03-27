@@ -1,0 +1,2 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/common/get_wifi_setting"
+ret=OK,ssid=mynetworkname,security=mixed,key=%50%61%73%73%77%6F%72%64,link=1

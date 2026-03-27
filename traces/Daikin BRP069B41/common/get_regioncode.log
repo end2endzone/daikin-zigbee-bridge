@@ -1,0 +1,2 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/common/get_regioncode"
+ret=OK,reg=eu
