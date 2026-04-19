@@ -389,6 +389,7 @@ private:
 
   bool httpGet(const String &endpoint, String &response) {
     HTTPClient http;
+    http.setTimeout(3000); // 3 seconds timeout required for zigbee ?
     String url = "http://" + ip + endpoint;
     http.begin(url);
     int httpCode = http.GET();
@@ -403,6 +404,7 @@ private:
 
   bool httpPost(const String &endpoint, const String &payload) {
     HTTPClient http;
+    http.setTimeout(3000); // 3 seconds timeout required for zigbee ?
     String url = "http://" + ip + endpoint;
     http.begin(url);
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
