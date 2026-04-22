@@ -134,9 +134,7 @@ TestResult testNormalMessage() {
   ASSERT_NE(mock.available(), 0);
 
   // Ingest the sent message, reading all incomming bytes
-  while(mock.available() > 0) {
-    proto.loop();
-  }
+  proto.loop();
 
   // Assert the same message was received.
   ASSERT_EQ(expectedMsgId, lastMsgId);

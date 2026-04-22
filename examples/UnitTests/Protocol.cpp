@@ -2,10 +2,10 @@
 #include "esp32-hal-log.h"
 #include <esp_log.h>
 
-Protocol::Protocol(SerialInterface * serial, uint8_t *externalBuffer, uint16_t externalBufferSize) :
+Protocol::Protocol(SerialInterface * serial, uint8_t *buffer, uint16_t buffer_size) :
   port(serial),
-  buffer(externalBuffer),
-  bufferSize(externalBufferSize)
+  read_msg_buffer(buffer),
+  read_msg_buffer_size(buffer_size)
 {
 }
 
@@ -16,7 +16,7 @@ void Protocol::onMessageReceived(MessageCallback cb)
 
 bool Protocol::checkSync()
 {
-  return memcmp(syncWindow, syncSignature, SYNC_LEN) == 0;
+  return memcmp(sync_window, SYNC_SIGNATURE, SYNC_SIGNATURE_SIZE) == 0;
 }
 
 uint8_t Protocol::calcCRC(const uint8_t *data, uint16_t length)
@@ -24,27 +24,32 @@ uint8_t Protocol::calcCRC(const uint8_t *data, uint16_t length)
   return calcCRC(0, data, length);
 }
 
-uint8_t Protocol::calcCRC(uint8_t msgId, const uint8_t *data, uint16_t length)
+uint8_t Protocol::calcCRC(uint8_t msg_id, const uint8_t *data, uint16_t length)
 {
-  uint8_t crc = msgId;
+  uint8_t crc = msg_id; // CRC is initialized to 0, but since we also include msg_id in the checksum, we initialize to `msg_id` because `0 ^= msg_id` equals `msg_id`.
   for (uint16_t i = 0; i < length; i++)
     crc ^= data[i];
   return crc;
 }
 
-void Protocol::sendMessage(uint8_t msgId, const uint8_t *payload, uint16_t payloadLen)
+void Protocol::sendMessage(uint8_t msg_id, const uint8_t *msg_payload, uint16_t msg_payload_size)
 {
-  static const uint16_t message_id_size = sizeof(msgId);
+  static const uint16_t message_id_size = sizeof(msg_id);
   static const uint16_t crc_size = 1;
 
-  uint16_t lenField = message_id_size + payloadLen + crc_size;
-  uint8_t crc = calcCRC(msgId, payload, payloadLen);
+  uint16_t write_msg_length = message_id_size + msg_payload_size + crc_size;
+  uint8_t crc = calcCRC(msg_id, msg_payload, msg_payload_size);
 
-  port->write(syncSignature, SYNC_LEN);
-  port->write((uint8_t)(lenField >> 8));
-  port->write((uint8_t)(lenField & 0xFF));
-  port->write(msgId);
-  port->write(payload, payloadLen);
+  // Write the SYNC_SIGNATURE bytes to trigger the beginnig of a new message
+  port->write(SYNC_SIGNATURE, SYNC_SIGNATURE_SIZE);
+
+  // Write the size of the message_info_t serialized fields
+  port->write((uint8_t)(write_msg_length >> 8));
+  port->write((uint8_t)(write_msg_length & 0xFF));
+
+  // Write message_info_t serialized field bytes
+  port->write(msg_id);
+  port->write(msg_payload, msg_payload_size);
   port->write(crc);
 }
 
@@ -56,16 +61,18 @@ void Protocol::loop()
 
     // Shift sync window by 1 byte.
     // Use memmove() since source and destination buffers overlaps.
-    memmove(syncWindow, syncWindow + 1, SYNC_LEN - 1);
-    syncWindow[SYNC_LEN - 1] = b;
+    memmove(sync_window, sync_window + 1, SYNC_SIGNATURE_SIZE - 1);
+    sync_window[SYNC_SIGNATURE_SIZE - 1] = b;
 
+    // A re-sync can be sent at any time
     if (checkSync())
     {
       if (state != WAIT_SYNC)
       {
-        log_e("Unexpected sync detected. State=%d msgLength=%u indexPos=%u", state, msgLength, indexPos);
+        log_e("Unexpected sync detected. State=%d read_msg_length=%u read_msg_index_pos=%u", state, read_msg_length, read_msg_index_pos);
       }
       state = WAIT_LEN1;
+      read_msg_length = 0;
       continue;
     }
 
@@ -75,21 +82,21 @@ void Protocol::loop()
       break;
 
     case WAIT_LEN1:
-      msgLength = ((uint16_t)b) << 8;
+      read_msg_length = ((uint16_t)b) << 8;
       state = WAIT_LEN2;
       break;
 
     case WAIT_LEN2:
-      msgLength |= b;
-      indexPos = 0;
+      read_msg_length |= b;
+      read_msg_index_pos = 0;
 
-      // There is no need to reset the machine state even if already know the size of the message is too big for our buffer.
-      // Continue reading the incomming bytes to our local buffer until we fill out the buffer.
+      // There is no need to reset the machine state even if already know the size of the message is too big for our msg_buffer.
+      // Continue reading the incomming bytes to our local msg_buffer until we fill out the msg_buffer.
       // This simplify the error handling code since it is processed all at the same location.
       //
-      //if (msgLength > bufferSize)
+      //if (read_msg_length > msg_buffer_size)
       //{
-      //  log_e("Buffer overflow: msgLength=%u bufferSize=%u", msgLength, bufferSize);
+      //  log_e("Buffer overflow: read_msg_length=%u msg_buffer_size=%u", read_msg_length, msg_buffer_size);
       //  state = WAIT_SYNC;
       //  break;
       //}
@@ -99,40 +106,45 @@ void Protocol::loop()
 
     case WAIT_PAYLOAD:
       // Check overflow
-      if (indexPos >= bufferSize)
+      if (read_msg_index_pos >= read_msg_buffer_size)
       {
-        log_e("Buffer overflow during payload: msgLength=%u bufferSize=%u", msgLength, bufferSize);
+        log_e("Buffer overflow during msg_payload: read_msg_length=%u read_msg_buffer_size=%u", read_msg_length, read_msg_buffer_size);
         state = WAIT_SYNC;
+        read_msg_index_pos = 0;
         break;
       }
 
-      // Append to our buffer
-      buffer[indexPos] = b;
-      indexPos++;
+      // Append to our msg_buffer
+      read_msg_buffer[read_msg_index_pos] = b;
+      read_msg_index_pos++;
 
       // Message is 100% received
-      if (indexPos >= msgLength)
+      if (read_msg_index_pos >= read_msg_length)
       {
+        // Define message header and footer based on assumed transmissed message size `read_msg_length`.
+        message_header_t * msg_header = (message_header_t *)&read_msg_buffer[0];
+        message_footer_t * msg_footer = (message_footer_t *)&read_msg_buffer[read_msg_length - sizeof(message_footer_t)];
+        uint16_t msg_payload_size = read_msg_length - sizeof(message_header_t)+1 - sizeof(message_footer_t);
+
         // Check CRC
-        uint8_t crc = buffer[msgLength - 1];
-        uint8_t expected_crc = calcCRC(buffer, msgLength - 1);
-        if (crc != expected_crc)
+        const uint8_t & expected_crc = msg_footer->crc;
+        const uint8_t calculated_crc = calcCRC(msg_header->id, &msg_header->payload, msg_payload_size);
+        if (calculated_crc != expected_crc)
         {
-          log_e("CRC mismatch: got=%02X expected=%02X", crc, expected_crc);
+          log_e("CRC mismatch: calculated=%02X expected=%02X", calculated_crc, expected_crc);
           state = WAIT_SYNC;
+          read_msg_length = 0;
           break;
         }
         
         // Call the message callback function.
         if (callback)
         {
-          uint8_t msgId = buffer[0];
-          const uint8_t *payload = &buffer[1];
-          uint16_t payloadLen = msgLength - 2;
-          callback(msgId, payload, payloadLen);
+          callback(msg_header->id, &msg_header->payload, msg_payload_size);
         }
 
         state = WAIT_SYNC;
+        read_msg_length = 0;
       }
       break;
     }

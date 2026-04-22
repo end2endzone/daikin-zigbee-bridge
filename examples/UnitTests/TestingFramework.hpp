@@ -37,7 +37,7 @@ int testPrintv(const char* format, ...) {
   int len = stringPrintf(tempBuffer, format, args);
   va_end(args);
 
-  // Delegate to print function pointer  gTestPrintFuncPtr().
+  // Delegate to print function pointer gTestPrintFuncPtr().
   gTestPrintFuncPtr(tempBuffer.c_str());
 
   return len;

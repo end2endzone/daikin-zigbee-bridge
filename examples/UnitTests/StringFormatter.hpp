@@ -22,7 +22,10 @@ int stringPrintf(std::string & buffer, const char* format, va_list args) {
 
   // Print formatted string into temporary buffer
   std::string tempBuffer(len, '\0');
-  vsnprintf(tempBuffer.data(), tempBuffer.size() + 1, format, args);
+  va_list copy2;
+  va_copy(copy2, args);
+  vsnprintf(tempBuffer.data(), tempBuffer.size() + 1, format, copy2);
+  va_end(copy2);
 
   // Move tempBuffer by appending it to the given buffer
   buffer += std::move(tempBuffer);  // tempBuffer is now empty
