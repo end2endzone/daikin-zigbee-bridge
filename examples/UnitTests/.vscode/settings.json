@@ -1,0 +1,4 @@
+{
+    "myproject.fqbn": "esp32:esp32:esp32c6:DebugLevel=info,FlashFreq=80,FlashMode=qio,FlashSize=8M,PartitionScheme=zigbee_8MB,UploadSpeed=921600,ZigbeeMode=ed",
+    "myproject.port": "COM5",
+}
