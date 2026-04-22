@@ -40,19 +40,19 @@ void Protocol::sendMessage(uint8_t msgId, const uint8_t *payload, uint16_t paylo
   uint16_t lenField = message_id_size + payloadLen + crc_size;
   uint8_t crc = calcCRC(msgId, payload, payloadLen);
 
-  port.write(syncSignature, SYNC_LEN);
-  port.write((uint8_t)(lenField >> 8));
-  port.write((uint8_t)(lenField & 0xFF));
-  port.write(msgId);
-  port.write(payload, payloadLen);
-  port.write(crc);
+  port->write(syncSignature, SYNC_LEN);
+  port->write((uint8_t)(lenField >> 8));
+  port->write((uint8_t)(lenField & 0xFF));
+  port->write(msgId);
+  port->write(payload, payloadLen);
+  port->write(crc);
 }
 
 void Protocol::loop()
 {
-  while (port.available() > 0)
+  while (port->available() > 0)
   {
-    uint8_t b = port.read();
+    uint8_t b = port->read();
 
     // Shift sync window by 1 byte.
     // Use memmove() since source and destination buffers overlaps.

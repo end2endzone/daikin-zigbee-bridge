@@ -38,7 +38,7 @@ void handleMessage(uint8_t msgId, const uint8_t* payload, uint16_t payloadLen) {
   lastPayloadLen = payloadLen;
   if (payload) {
     #define truncate_size(a,b) (((a) < (b)) ? (a) : (b))
-    uint16_t copy_size = truncate_size(payloadLen, sizeof(payload));
+    uint16_t copy_size = truncate_size(payloadLen, sizeof(lastPayload));
     log_i("Copying %u bytes from payload (0x%04X) to lastPayload (0x%04X) which is %u bytes.", copy_size, payload, lastPayload, sizeof(lastPayload));
     memcpy(lastPayload, payload, copy_size);
   }
