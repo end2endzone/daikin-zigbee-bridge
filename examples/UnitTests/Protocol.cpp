@@ -5,7 +5,11 @@
 Protocol::Protocol(SerialInterface * serial, uint8_t *buffer, uint16_t buffer_size) :
   port(serial),
   read_msg_buffer(buffer),
-  read_msg_buffer_size(buffer_size)
+  read_msg_buffer_size(buffer_size),
+  state(WAIT_SYNC),
+  read_msg_length(0),
+  read_msg_index_pos(0),
+  callback(nullptr)
 {
 }
 

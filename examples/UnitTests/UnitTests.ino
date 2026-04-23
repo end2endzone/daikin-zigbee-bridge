@@ -23,37 +23,34 @@
 //Protocol proto(mockSerial, protoBuffer, sizeof(protoBuffer));
 
 // Global variables to capture callback results
-static uint8_t lastMsgId = 0;
-static uint8_t lastPayload[512];
-static uint16_t lastPayloadLen = 0;
+static uint16_t LAST_MESSAGE_BUFFER_SIZE_IN_BYTES = 128;
+static Protocol::message_info_t last_message_received = {0};
 
 //*******************************************************************************************************************
 //  Unit test functions
 //*******************************************************************************************************************
 
-void handleMessage(uint8_t msgId, const uint8_t* payload, uint16_t payloadLen) {
-  log_i("handleMessage(): msgId=%d, payload=0x%04X, payloadLen=%d", msgId, payload, payloadLen);
+void handleMessage(uint8_t msg_id, const uint8_t* payload, uint16_t payload_size) {
+  log_i("handleMessage(): msg_id=%d, payload=0x%04X, payload_size=%d", msg_id, payload, payload_size);
 
-  lastMsgId = msgId;
-  lastPayloadLen = payloadLen;
+  last_message_received.id = msg_id;
+  last_message_received.payload_size = payload_size;
   if (payload) {
     #define truncate_size(a,b) (((a) < (b)) ? (a) : (b))
-    uint16_t copy_size = truncate_size(payloadLen, sizeof(lastPayload));
-    log_i("Copying %u bytes from payload (0x%04X) to lastPayload (0x%04X) which is %u bytes.", copy_size, payload, lastPayload, sizeof(lastPayload));
-    memcpy(lastPayload, payload, copy_size);
+    uint16_t copy_size = truncate_size(payload_size, LAST_MESSAGE_BUFFER_SIZE_IN_BYTES);
+    log_i("Copying %u bytes from payload (0x%04X) to last_message_received.payload (0x%04X) which is %u bytes.", copy_size, payload, last_message_received.payload, LAST_MESSAGE_BUFFER_SIZE_IN_BYTES);
+    
+    memcpy(last_message_received.payload, payload, copy_size);
+    //for(uint16_t i=0; i<copy_size; i++) {
+    //  last_message_received.payload[i] = payload[i];
+    //}
   }
 }
 
-//void sendThroughMock(MockSerial &mock, Protocol &proto, uint8_t msgId, const uint8_t* payload, uint16_t payloadLen) {
-//  mock.txBuffer.clear();
-//  proto.sendMessage(msgId, payload, payloadL en);
-//  mock.pushRx(mock.txBuffer.data(), mock.txBuffer.size());
-//}
-
 void resetLastMessageCapture() {
-  lastMsgId = 0;
-  lastPayloadLen = 0;
-  memset(lastPayload, 0, sizeof(lastPayload));
+  last_message_received.id = 0;
+  last_message_received.payload_size = 0;
+  memset(last_message_received.payload, 0, LAST_MESSAGE_BUFFER_SIZE_IN_BYTES);
 }
 
 void resetTestData()
@@ -109,19 +106,19 @@ TestResult testThisTestAlwaysFailsIntegerEquals()
 TestResult testNormalMessage() {
   MockSerial mock;
 
-  uint8_t buffer[512];
+  uint8_t buffer[128];
   Protocol proto(&mock, buffer, sizeof(buffer));
 
   proto.onMessageReceived(handleMessage);
 
   resetLastMessageCapture();
 
-  const uint8_t expectedMsgId = 3;
-  const uint8_t expectedPayload[] = {0x10, 0x20, 0x30};
-  const uint16_t expectedPayloadSize = sizeof(expectedPayload);
+  const uint8_t expected_msg_id = 125;
+  const uint8_t expected_payload[] = {0x10, 0x20, 0x30};
+  const uint16_t expected_payload_size = sizeof(expected_payload);
   
   // Send the message
-  proto.sendMessage(expectedMsgId, expectedPayload, expectedPayloadSize);
+  proto.sendMessage(expected_msg_id, expected_payload, expected_payload_size);
 
   // Make sure the SerialInterface reports nothing readable to this point
   ASSERT_EQ(mock.available(), 0);
@@ -137,9 +134,9 @@ TestResult testNormalMessage() {
   proto.loop();
 
   // Assert the same message was received.
-  ASSERT_EQ(expectedMsgId, lastMsgId);
-  ASSERT_EQ(expectedPayloadSize, lastPayloadLen);
-  ASSERT_EQ(memcmp(expectedPayload, lastPayload, expectedPayloadSize), 0);
+  ASSERT_EQ(expected_msg_id, last_message_received.id);
+  ASSERT_EQ(expected_payload_size, last_message_received.payload_size);
+  ASSERT_EQ(memcmp(expected_payload, last_message_received.payload, expected_payload_size), 0);
 }
 
 //*******************************************************************************************************************
@@ -150,6 +147,10 @@ void setup()
 {
   Serial.begin(115200);
   //Serial1.begin(115200, SERIAL_8N1, UART1_RX_PIN, UART1_TX_PIN);
+
+  // Allocate buffer for capturing lastest message read by Protocol class.
+  last_message_received.payload = new uint8_t[LAST_MESSAGE_BUFFER_SIZE_IN_BYTES];
+  last_message_received.payload_size = LAST_MESSAGE_BUFFER_SIZE_IN_BYTES;
 
   Serial.println();
 

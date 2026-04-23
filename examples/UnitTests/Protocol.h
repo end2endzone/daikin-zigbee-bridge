@@ -52,9 +52,9 @@ private:
   //message_info_t read_msg;
   uint16_t read_msg_length = 0; // a variable for storing the size of the incomming serialized fields of `message_info_t` sent through sendMessage()
 
-  uint8_t *read_msg_buffer;
+  uint8_t *read_msg_buffer = nullptr;
   uint16_t read_msg_index_pos = 0;
-  uint16_t read_msg_buffer_size;
+  uint16_t read_msg_buffer_size = 0;
 
   MessageCallback callback = nullptr;
 
