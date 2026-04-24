@@ -24,7 +24,7 @@
 
 // Global variables to capture callback results
 static uint16_t LAST_MESSAGE_BUFFER_SIZE_IN_BYTES = 128;
-static Protocol::message_info_t last_message_received = {0};
+static Protocol::message_info_t last_message_received = {};
 
 //*******************************************************************************************************************
 //  Unit test functions
@@ -61,7 +61,7 @@ void resetTestData()
 const char *getMillisTimestamp()
 {
   static char gTimestampBuffer[16];
-  sprintf(gTimestampBuffer, "%06d: ", millis());
+  sprintf(gTimestampBuffer, "%06lu: ", millis());
   return gTimestampBuffer;
 }
 
