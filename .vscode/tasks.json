@@ -9,6 +9,18 @@
                 "compile",
                 "--fqbn", "${config:myproject.fqbn}",
                 "--build-path", "${workspaceFolder}/build",
+                
+                //"--build-property", "\"compiler.cpp.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "\"compiler.c.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "\"build.extra_flags=\\\"-Wall -Wextra\\\"\"",
+                //"--build-property", "\"compiler.cxx.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "\"compiler.warning_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "build.extra_flags='${config:myproject.compiler.extra_flags}'",
+                //"--build-property", "compiler.cxx.extra_flags='${config:myproject.compiler.extra_flags}'",
+                //"--build-property", "compiler.warning_flags='${config:myproject.compiler.extra_flags}'",
+
+                "--warnings", "${config:myproject.compiler.warnings}",
+
                 "${workspaceFolder}/daikin-zigbee-bridge/."
             ],
             "group": {
