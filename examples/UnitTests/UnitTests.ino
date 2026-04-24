@@ -137,6 +137,8 @@ TestResult testNormalMessage() {
   ASSERT_EQ(expected_msg_id, last_message_received.id);
   ASSERT_EQ(expected_payload_size, last_message_received.payload_size);
   ASSERT_EQ(memcmp(expected_payload, last_message_received.payload, expected_payload_size), 0);
+
+  return TestResult::Pass;
 }
 
 //*******************************************************************************************************************
