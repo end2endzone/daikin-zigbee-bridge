@@ -13,7 +13,7 @@ public:
     rxBuffer.insert(rxBuffer.end(), data, data + len);
   }
 
-  int available() override
+  int available() const override
   {
     return rxBuffer.size();
   }
