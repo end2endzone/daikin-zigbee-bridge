@@ -125,7 +125,7 @@ TestResult testNormalMessage() {
 
   // Move the bytes written to the mock from the write buffer to the read buffer.
   // No corruption or missing bytes.
-  mock.rxBuffer = mock.txBuffer;
+  mock.copyTxToRx();
 
   // Make sure the SerialInterface reports nothing readable to this point
   ASSERT_NE(mock.available(), 0);
