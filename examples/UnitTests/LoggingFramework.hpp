@@ -36,7 +36,7 @@ void logMessageInternal(const char* message) {
 void logTimestamp(char* buffer, size_t buffer_size) {
 #if defined(ARDUINO) || defined(ESP32)
   unsigned long now = millis();
-  snprintf(buffer, buffer_size, "%06u", now);
+  snprintf(buffer, buffer_size, "%06lu", now);
 #else
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -55,7 +55,7 @@ static inline void logInternal(const char* file, int line, const char* format, .
   va_list args;
   va_start(args, format);
   // Determine required size (C99: vsnprintf with NULL and 0 returns required length)
-  int len = stringPrintf(message, format, args);
+  stringPrintf(message, format, args);
   va_end(args);
 
   // Build timestamp string
