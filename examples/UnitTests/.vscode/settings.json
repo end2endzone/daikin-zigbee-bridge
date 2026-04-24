@@ -1,4 +1,15 @@
 {
     "myproject.fqbn": "esp32:esp32:esp32c6:DebugLevel=info,FlashFreq=80,FlashMode=qio,FlashSize=8M,PartitionScheme=zigbee_8MB,UploadSpeed=921600,ZigbeeMode=ed",
+    
+    // Compiler Warnings accepted values:
+    //    none:     -w
+    //    default:  
+    //    more:     -Wall
+    //    all:      -Wall -Wextra
+    //    ???       -Werror
+    "myproject.compiler.extra_flags": "-Wall -Wextra",
+
+    "myproject.compiler.warnings": "all",
+
     "myproject.port": "COM5",
 }
