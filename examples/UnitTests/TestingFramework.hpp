@@ -89,8 +89,28 @@ inline const char* toUtf8Symbol(TestResult r) {
 
 #define TEST(func) runTest(#func, func)
 
-void runTest(const char* testName, TestFunc func)
-{
+void testTracesTrim() {
+  static const char TRIM_CHAR = '\n';
+
+  if (gTestTraces.empty()) return;
+
+  size_t start = 0;
+  size_t end = gTestTraces.size() - 1;
+
+  // Skip leading trim characters
+  while (start <= end && gTestTraces[start] == TRIM_CHAR) {
+    start++;
+  }
+
+  // Skip trailing trim characters
+  while (end >= start && gTestTraces[end] == TRIM_CHAR) {
+    end--;
+  }
+
+  gTestTraces = gTestTraces.substr(start, end - start + 1);
+}
+
+void runTest(const char* testName, TestFunc func) {
   // Reset test trace logs
   gTestTraces.clear();
 
@@ -110,8 +130,10 @@ void runTest(const char* testName, TestFunc func)
 
   // Print test log traces if test is not PASS 
   if (result != TestResult::Pass) {
-    if (!gTestTraces.empty())
+    if (!gTestTraces.empty()) {
+      testTracesTrim();
       testPrintv("%s\n", gTestTraces.c_str());
+    }
 
     // And print again the name of the test
     testPrintv("%s  %s\n", toUtf8Symbol(result), toString(result));
@@ -128,7 +150,7 @@ void runTest(const char* testName, TestFunc func)
 #define ASSERT_EQ(expected, actual) \
   do { \
     if ((expected) != (actual)) { \
-      testTracesAppend("ASSERT_EQ failed: expected=%d actual=%d (file %s, line %d)", \
+      testTracesAppend("ASSERT_EQ failed: expected=%d actual=%d (file %s, line %d)\n", \
                         (int)(expected), (int)(actual), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -137,7 +159,7 @@ void runTest(const char* testName, TestFunc func)
 #define ASSERT_NE(expected, actual) \
   do { \
     if ((expected) == (actual)) { \
-      testTracesAppend("ASSERT_NE failed: expected==actual==%d (file %s, line %d)", \
+      testTracesAppend("ASSERT_NE failed: expected==actual==%d (file %s, line %d)\n", \
                         (int)(expected), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -146,7 +168,7 @@ void runTest(const char* testName, TestFunc func)
 #define ASSERT_NEAR(expected, actual, epsilon) \
   do { \
     if (std::abs((expected) - (actual)) > (epsilon)) { \
-      testTracesAppend("ASSERT_NEAR failed: expected=%d actual=%d epsilon=%d (file %s, line %d)", \
+      testTracesAppend("ASSERT_NEAR failed: expected=%d actual=%d epsilon=%d (file %s, line %d)\n", \
                         (int)(expected), (int)(actual), (int)(epsilon), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -155,7 +177,7 @@ void runTest(const char* testName, TestFunc func)
 #define ASSERT_STRING_EQ(expected, actual) \
 do { \
     if (strcmp((expected), (actual)) != 0) { \
-        testTracesAppend("ASSERT_STREQ failed: expected=`%s` actual=`%s` (file %s, line %d)", \
+        testTracesAppend("ASSERT_STREQ failed: expected=`%s` actual=`%s` (file %s, line %d)\n", \
                           (expected), (actual), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -164,7 +186,7 @@ do { \
 #define ASSERT_STRING_NE(expected, actual) \
 do { \
     if (strcmp((expected), (actual)) == 0) { \
-        testTracesAppend("ASSERT_STRING_NE failed: expected==actual==`%s` (file %s, line %d)", \
+        testTracesAppend("ASSERT_STRING_NE failed: expected==actual==`%s` (file %s, line %d)\n", \
                           (actual), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -173,7 +195,7 @@ do { \
 #define ASSERT_STRING_CONTAINS(substring, actual) \
   do { \
     if (strstr((actual), (substring)) == 0) { \
-      testTracesAppend("ASSERT_STRING_CONTAINS failed: `%s` not found in `%s` (file %s, line %d)", \
+      testTracesAppend("ASSERT_STRING_CONTAINS failed: `%s` not found in `%s` (file %s, line %d)\n", \
                         (substring), (actual), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -182,7 +204,7 @@ do { \
 #define ASSERT_STRING_NOT_CONTAINS(substring, actual) \
   do { \
     if (strstr((actual), (substring)) != 0) { \
-      testTracesAppend("ASSERT_STRING_NOT_CONTAINS failed: `%s` found in `%s` (file %s, line %d)", \
+      testTracesAppend("ASSERT_STRING_NOT_CONTAINS failed: `%s` found in `%s` (file %s, line %d)\n", \
                         (substring), (actual), __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
@@ -191,7 +213,7 @@ do { \
 #define ASSERT_TRUE(cond) \
   do { \
     if (!(cond)) { \
-      testTracesAppend("ASSERT_TRUE failed: condition was false (file %s, line %d)", __FILE__, __LINE__); \
+      testTracesAppend("ASSERT_TRUE failed: condition was false (file %s, line %d)\n", __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
   } while (0)
@@ -199,7 +221,7 @@ do { \
 #define ASSERT_FALSE(cond) \
   do { \
     if ((cond)) { \
-      testTracesAppend("ASSERT_FALSE failed: condition was true (file %s, line %d)", __FILE__, __LINE__); \
+      testTracesAppend("ASSERT_FALSE failed: condition was true (file %s, line %d)\n", __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
   } while (0)
@@ -207,8 +229,16 @@ do { \
 #define ASSERT_FLOAT_EQ(expected, actual, epsilon) \
   do { \
     if (fabs((expected) - (actual)) > (epsilon)) { \
-      testTracesAppend("ASSERT_FLOAT_EQ failed: expected=%f actual=%f epsilon=%f (file %s, line %d)", \
+      testTracesAppend("ASSERT_FLOAT_EQ failed: expected=%f actual=%f epsilon=%f (file %s, line %d)\n", \
                         (expected), (actual), (epsilon), __FILE__, __LINE__); \
+      return TestResult::Fail; \
+    }\
+  } while (0)
+
+#define ASSERT_TEST_RESULT(result) \
+  do { \
+    if (TestResult::Fail == result) { \
+      testTracesAppend("ASSERT_TEST_RESULT failed: test result fail (file %s, line %d)\n", __FILE__, __LINE__); \
       return TestResult::Fail; \
     }\
   } while (0)

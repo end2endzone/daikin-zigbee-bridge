@@ -9,6 +9,9 @@ class Protocol
 public:
   typedef void (*MessageCallback)(uint8_t msg_id, const uint8_t *msg_payload, uint16_t msg_payload_size);
 
+  static constexpr uint8_t SYNC_SIGNATURE_SIZE = 7;
+  static constexpr uint8_t SYNC_SIGNATURE[SYNC_SIGNATURE_SIZE] = {0xAA, 0x55, 'D', 'Z', 'A', '4', 'H'};
+
   typedef struct message_info_s {
     uint8_t id; // unique id, indicate the type of payload, serialized
     uint8_t * payload; // payload actual bytes, serialized
@@ -34,9 +37,6 @@ public:
 private:
   SerialInterface * port;
 
-  static constexpr uint8_t SYNC_SIGNATURE_SIZE = 7;
-  static constexpr uint8_t SYNC_SIGNATURE[SYNC_SIGNATURE_SIZE] = {0xAA, 0x55, 'D', 'Z', 'A', '4', 'H'};
-
   uint8_t sync_window[SYNC_SIGNATURE_SIZE] = {0};
 
   enum ParseState
@@ -47,14 +47,14 @@ private:
     WAIT_PAYLOAD
   };
 
-  ParseState state = WAIT_SYNC;
+  ParseState state;
 
   //message_info_t read_msg;
-  uint16_t read_msg_length = 0; // a variable for storing the size of the incomming serialized fields of `message_info_t` sent through sendMessage()
+  uint16_t read_msg_length; // a variable for storing the size of the incomming serialized fields of `message_info_t` sent through sendMessage()
 
-  uint8_t *read_msg_buffer = nullptr;
-  uint16_t read_msg_index_pos = 0;
-  uint16_t read_msg_buffer_size = 0;
+  uint8_t *read_msg_buffer;
+  uint16_t read_msg_buffer_size;
+  uint16_t read_msg_index_pos;
 
   MessageCallback callback = nullptr;
 
