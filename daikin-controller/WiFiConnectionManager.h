@@ -82,7 +82,8 @@ public:
     // Options: WIFI_BW_HT20 (20MHz), WIFI_BW_HT40 (40MHz)
     esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20); 
   
-  Serial.println("Bandwidth set to 20MHz");
+    log_i("Bandwidth set to 20MHz");
+
     // Setup device in a disconnected state for a long period.
     wifi_state = WIFI_STATE::DISCONNECTED;
 
@@ -206,6 +207,7 @@ private:
     gatewayIP = WiFi.gatewayIP();
     dnsIP     = WiFi.dnsIP(0);
 
+    log_i("WiFi MAC     : %s", WiFi.macAddress().c_str());
     log_i("WiFi IP      : %s", WiFi.localIP().toString().c_str());
     log_i("WiFi Gateway : %s", gatewayIP.toString().c_str());
     log_i("WiFi DNS     : %s", dnsIP.toString().c_str());
@@ -237,11 +239,11 @@ private:
     if (ok) client.stop();
 
     if (!ok) {
-      log_e("*** TCP connection to dns %s has failed.", dnsIP.toString().c_str());
+      log_e("*** TCP connection to DNS %s has failed.", dnsIP.toString().c_str());
       return false;
     }
 
-    log_i("TCP connection to dns %s : success.", dnsIP.toString().c_str());
+    log_i("TCP connection to DNS %s : success.", dnsIP.toString().c_str());
     return ok;
   }
 

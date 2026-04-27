@@ -2,13 +2,65 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Arduino: Compile",
+            "label": "Arduino: <daikin-controller> - Compile",
+            "type": "shell",
+            "command": "arduino-cli",
+            "args": [
+                "compile",
+                "--libraries", "./shared",
+                "--fqbn", "${config:myproject.fqbn}",
+                "--build-path", "${workspaceFolder}/build/daikin-controller",
+                
+                //"--build-property", "\"compiler.cpp.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "\"compiler.c.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "\"build.extra_flags=\\\"-Wall -Wextra\\\"\"",
+                //"--build-property", "\"compiler.cxx.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "\"compiler.warning_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
+                //"--build-property", "build.extra_flags='${config:myproject.compiler.extra_flags}'",
+                //"--build-property", "compiler.cxx.extra_flags='${config:myproject.compiler.extra_flags}'",
+                //"--build-property", "compiler.warning_flags='${config:myproject.compiler.extra_flags}'",
+
+                "--warnings", "${config:myproject.compiler.warnings}",
+
+                "${workspaceFolder}/daikin-controller/."
+            ],
+            "group": {
+                "kind": "build",
+            },
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arduino: <daikin-controller> - Upload",
+            "type": "shell",
+            "command": "arduino-cli",
+            "args": [
+                "upload",
+                "--fqbn", "${config:myproject.fqbn}",
+                "--build-path", "${workspaceFolder}/build/daikin-controller",
+                "--port", "${config:myproject.port}",
+                "${workspaceFolder}/daikin-controller/."
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arduino: <daikin-zigbee-bridge> - Compile",
             "type": "shell",
             "command": "arduino-cli",
             "args": [
                 "compile",
                 "--fqbn", "${config:myproject.fqbn}",
-                "--build-path", "${workspaceFolder}/build",
+                "--build-path", "${workspaceFolder}/build/daikin-zigbee-bridge",
                 
                 //"--build-property", "\"compiler.cpp.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
                 //"--build-property", "\"compiler.c.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
@@ -25,7 +77,6 @@
             ],
             "group": {
                 "kind": "build",
-                "isDefault": true
             },
             "presentation": {
                 "reveal": "always",
@@ -35,13 +86,13 @@
             "problemMatcher": []
         },
         {
-            "label": "Arduino: Upload",
+            "label": "Arduino: <daikin-zigbee-bridge> - Updoad",
             "type": "shell",
             "command": "arduino-cli",
             "args": [
                 "upload",
                 "--fqbn", "${config:myproject.fqbn}",
-                "--build-path", "${workspaceFolder}/build",
+                "--build-path", "${workspaceFolder}/build/daikin-zigbee-bridge",
                 "--port", "${config:myproject.port}",
                 "${workspaceFolder}/daikin-zigbee-bridge/."
             ],
@@ -54,11 +105,39 @@
             "problemMatcher": []
         },
         {
-            "label": "Arduino: Compile & Upload",
+            "label": "Arduino: Compile <all>",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "Arduino: Compile",
-                "Arduino: Upload"
+                "Arduino: <daikin-controller> - Compile",
+                "Arduino: <daikin-zigbee-bridge> - Compile",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Arduino: <daikin-controller> - Compile & Upload",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Arduino: <daikin-controller> - Compile",
+                "Arduino: <daikin-controller> - Upload"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Arduino: <daikin-zigbee-bridge> - Compile & Upload",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Arduino: <daikin-zigbee-bridge> - Compile",
+                "Arduino: <daikin-zigbee-bridge> - Upload"
             ],
             "group": "build",
             "problemMatcher": []

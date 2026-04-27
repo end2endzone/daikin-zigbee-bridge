@@ -134,7 +134,7 @@ public:
   };
 
   // Lookup table: maps key enums to string key in payload
-  static constexpr char* KeyNames[] = {
+  static constexpr const char* KeyNames[] = {
     "ret",      // KEY_RETURN_STATUS
     "pow",      // KEY_DEVICE_POWER
     "mode",     // KEY_OPERATION_MODE
@@ -377,7 +377,7 @@ private:
   DaikinHttpPayload controlInfo;
   DaikinHttpPayload sensorInfo;
 
-  static constexpr char* MandatoryKeyNames[] = {
+  static constexpr const char* MandatoryKeyNames[] = {
     "pow",      // KEY_DEVICE_POWER
     "mode",     // KEY_OPERATION_MODE
     "stemp",    // KEY_TARGET_TEMP
