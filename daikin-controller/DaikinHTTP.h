@@ -1,3 +1,5 @@
+#pragma once
+
 #include <WiFi.h>
 #include <HTTPClient.h>
 

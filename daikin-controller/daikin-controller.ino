@@ -28,6 +28,14 @@
 #include "DaikinHTTP.h"
 #include "WiFiConnectionManager.h"
 
+
+#include "HardwareSerialAdapter.h"
+#include "Protocol.h"
+#include "daikin_messages.h"
+
+#define UART1_TX 17
+#define UART1_RX 16
+
 // Pin definitions
 #define LED_PIN RGB_BUILTIN   // RGB LED on ESP32-C6
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
@@ -35,7 +43,7 @@
 // Factory reset delay
 #define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
 
-#define FORCE_REPORTING_INTERVAL           29000  // 29.0 seconds (29 second is prime number)
+#define FORCE_REPORTING_INTERVAL          300000  //  5.0 minutes
 #define DAIKIN_ACTIVITY_DURATION             800  //  0.8 seconds
 
 // RGB LED blinker
@@ -56,7 +64,7 @@ Button2 button;
 SoftTimer forceReportingTimer;
 SoftTimer activityTimer;
 
-bool daikin_online = false;
+bool daikinOnline = false;
 
 // -------------------------------------------------------------------------
 //                          Daikin support section
@@ -65,6 +73,11 @@ WiFiConnectionManager wifiManager;
 
 DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
 
+HardwareSerialAdapter serialAdapter(&Serial1);
+
+#define PROTOCOL_BUFFER_SIZE 512
+uint8_t protoBuffer[PROTOCOL_BUFFER_SIZE];
+Protocol proto(&serialAdapter, protoBuffer, sizeof(protoBuffer));
 
 #if 0
 void daikinIncreaseTargetTempBy1() {
@@ -100,17 +113,24 @@ void daikinIncreaseTargetTempBy1() {
 }
 #endif // #if 0
 
-void daikinPullAndPrintInfo() {
-  daikin_online = false;
+bool daikinPullInfo() {
+  daikinOnline = false;
   if (!daikin.pull()) {
     log_e("*** Failed to pull Daikin device info.");
-    return;
+    return false;
   }
-  daikin_online = true;
+  daikinOnline = true;
 
   // start activity timer
   activityTimer.setTimeOutTime(DAIKIN_ACTIVITY_DURATION);
   activityTimer.reset();
+
+  return true;
+}
+
+void daikinPullAndPrintInfo() {
+  if (!daikinPullInfo())
+    return;
 
   log_i("Daikin heatpump attributes: {");
 
@@ -154,6 +174,106 @@ void daikinPullAndPrintInfo() {
   log_i("};");
 }
 
+
+#define ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, expected, actual) do { \
+  if ((expected) != (actual)) { \
+    log_e("Unexpected payload size for message id 0x%02X: expected %s which is %lu bytes, got %lu bytes.", \
+          msg_id, #expected, (unsigned long)(expected), (unsigned long)(actual)); \
+    return; \
+  } \
+} while (0)
+
+#define ASSERT_DAIKIN_PULL_INFO_SUCCESS() do { \
+  if (!daikinPullInfo()) { \
+    log_e("Failed to pull Daikin device info."); \
+    return; \
+  } \
+} while (0)
+
+
+void handleProtocolMessageRequest(uint8_t msg_id, const uint8_t *payload, uint16_t payload_size)
+{
+  log_i("Message request id 0x%02X received (%u bytes)\n", msg_id, payload_size);
+
+  switch (msg_id)
+  {
+  case DAIKIN_MESSAGE_GET_IP_ADDRESS_RESPONSE_ID: {
+    ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_get_ip_address_request_t), payload_size);
+    ASSERT_DAIKIN_PULL_INFO_SUCCESS();
+
+    //const daikin_get_ip_address_request_t * request = (const daikin_get_ip_address_request_t *)payload;
+
+    // Prepare response
+    daikin_get_ip_address_response_t response = {};
+
+    // Fill response
+    snprintf(response.ip, sizeof(response.ip), "%s", WiFi.localIP().toString().c_str());
+
+    // Send response
+    proto.sendMessage(DAIKIN_MESSAGE_GET_IP_ADDRESS_REQUEST_ID, (const uint8_t*)&response, sizeof(response));
+
+    break;
+  }
+  case DAIKIN_MESSAGE_SET_TARGET_TEMPERATURE_REQUEST_ID: {
+    ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_set_target_temperature_request_t), payload_size);
+    ASSERT_DAIKIN_PULL_INFO_SUCCESS();
+
+    const daikin_set_target_temperature_request_t * request = (const daikin_set_target_temperature_request_t *)payload;
+    
+    // Implement request
+    daikin.setTargetTemp(request->temp / 100.0);
+    log_i("Updating target temperature to %.2f°C");
+    if (!daikin.push()) {
+      log_e("*** Failed to push Daikin device info.");
+      return;
+    }
+
+    // Prepare response
+    daikin_set_target_temperature_response_t response = {};
+
+    // Fill response
+    float target_temp = daikin.getTargetTemp();
+    response.temp = (uint16_t)(target_temp * 100);
+
+    // Send response
+    proto.sendMessage(DAIKIN_MESSAGE_SET_TARGET_TEMPERATURE_RESPONSE_ID, (const uint8_t*)&response, sizeof(response));
+
+    break;
+  }
+  case DAIKIN_MESSAGE_GET_STATUS_REQUEST_ID: {
+    ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_get_status_request_t), payload_size);
+    ASSERT_DAIKIN_PULL_INFO_SUCCESS();
+
+    //const daikin_get_status_request_t * request = (const daikin_get_status_request_t *)payload;
+    
+    // Prepare response
+    daikin_get_status_response_t response = {};
+
+    // Fill response
+    snprintf(response.name, sizeof(response.name), "%s", daikin.getDeviceName().c_str());
+    response.power = (int)daikin.getPower();
+    response.mode = (int)daikin.getMode();
+    response.fan_rate = (int)daikin.getFanRate();
+    response.fan_dir = (int)daikin.getFanDir();
+    response.preset = (int)daikin.getPreset();
+
+    float target_temp  = daikin.getTargetTemp();
+    float indoor_temp  = daikin.getIndoorTemp();
+    float outdoor_temp = daikin.getOutdoorTemp();
+
+    response.target_temp  = (uint16_t)(target_temp  * 100);
+    response.indoor_temp  = (uint16_t)(indoor_temp  * 100);
+    response.outdoor_temp = (uint16_t)(outdoor_temp * 100);
+
+    // Send response
+    proto.sendMessage(DAIKIN_MESSAGE_GET_STATUS_RESPONSE_ID, (const uint8_t*)&response, sizeof(response));
+
+    break;
+  }
+  default:
+    log_e("Unknown message received: id 0x%02X, %lu bytes.", msg_id, payload_size);
+  }
+}
 
 // -------------------------------------------------------------------------
 //                          Reset/init functions
@@ -217,7 +337,7 @@ void updateLEDStatus() {
       msg = "WiFi Unstable - LED set to fast ORANGE blink";
     newLedMode = LED_MODE_WIFI_DISCONNECTED;
     blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_ORANGE);
-  } else if (!daikin_online) {
+  } else if (!daikinOnline) {
     msg = "DAIKIN Heatpump offline - LED set to fast PURPLE blink";
     newLedMode = LED_MODE_DAIKIN_OFFLINE;
     blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_PURPLE);
@@ -243,6 +363,7 @@ void updateLEDStatus() {
 // -------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
+  Serial1.begin(115200, SERIAL_8N1, UART1_RX, UART1_TX);
 
   // Initialize RGB LED blinker
   blinker.setup(LED_PIN);
@@ -250,7 +371,8 @@ void setup() {
   blinker.loop(); // force the LED to turn off
 
   // Wait up to 3s for serial
-  while (!Serial && millis() < 3000);
+  while (!Serial  && millis() < 3000);
+  while (!Serial1 && millis() < 3000);
   
   log_i("========================================");
   log_i("  Daiking Controller");
@@ -269,6 +391,9 @@ void setup() {
   
   // Initialize force reporting timer
   initForceReportingTimer();
+
+  // Set protocol callback function
+  proto.onMessageReceived(handleProtocolMessageRequest);
 
   wifiManager.setup();
 
@@ -297,7 +422,7 @@ void setup() {
   activityTimer.setTimeOutTime(0);
   activityTimer.reset();
 
-  // Force a pull from Daikin controller immediately to force `daikin_online` flag to true ASAP.
+  // Force a pull from Daikin controller immediately to force `daikinOnline` flag to true ASAP.
   daikinPullAndPrintInfo();
 
   // Connected - for LED to show updated status
@@ -327,6 +452,9 @@ void loop() {
 
   // Print Daikin info periodicaly.
   daikinReportCheck();
+
+  // Parse any incomming messages
+  proto.loop();
 
   delay(10);
 }
