@@ -7,6 +7,7 @@
             "command": "arduino-cli",
             "args": [
                 "compile",
+                "--libraries", "${workspaceFolder}/../../shared",
                 "--fqbn", "${config:myproject.fqbn}",
                 "--build-path", "${workspaceFolder}/build",
                 
