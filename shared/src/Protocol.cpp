@@ -1,6 +1,7 @@
 #include "Protocol.h"
 #include "esp32-hal-log.h"
 #include <esp_log.h>
+#include <SoftTimers.h>
 
 Protocol::Protocol(SerialInterface * serial, uint8_t *buffer, uint16_t buffer_size) :
   port(serial),
@@ -36,7 +37,7 @@ uint8_t Protocol::calcCRC(uint8_t msg_id, const uint8_t *data, uint16_t length)
   return crc;
 }
 
-void Protocol::sendMessage(uint8_t msg_id, const uint8_t *msg_payload, uint16_t msg_payload_size)
+size_t Protocol::sendMessage(uint8_t msg_id, const uint8_t *msg_payload, uint16_t msg_payload_size)
 {
   static const uint16_t message_id_size = sizeof(msg_id);
   static const uint16_t crc_size = 1;
@@ -44,18 +45,32 @@ void Protocol::sendMessage(uint8_t msg_id, const uint8_t *msg_payload, uint16_t 
   uint16_t write_msg_length = message_id_size + msg_payload_size + crc_size;
   uint8_t crc = calcCRC(msg_id, msg_payload, msg_payload_size);
 
+  size_t write_total = 0;
+  size_t last_write_size =0;
+
+  #define ASSERT_WRITE_OK(expression) { \
+    last_write_size = (expression); \
+    if (last_write_size == 0) return 0; \
+    write_total += last_write_size; \
+  }
+
   // Write the SYNC_SIGNATURE bytes to trigger the beginnig of a new message
-  port->write(SYNC_SIGNATURE, SYNC_SIGNATURE_SIZE);
+  ASSERT_WRITE_OK(port->write(SYNC_SIGNATURE, SYNC_SIGNATURE_SIZE));
 
   // Write the size of the message_info_t serialized fields
-  port->write((uint8_t)(write_msg_length >> 8));
-  port->write((uint8_t)(write_msg_length & 0xFF));
+  ASSERT_WRITE_OK(port->write((uint8_t)(write_msg_length >> 8)));
+  ASSERT_WRITE_OK(port->write((uint8_t)(write_msg_length & 0xFF)));
 
   // Write message_info_t serialized field bytes
-  port->write(msg_id);
-  if (msg_payload_size > 0)
-    port->write(msg_payload, msg_payload_size);
-  port->write(crc);
+  ASSERT_WRITE_OK(port->write(msg_id));
+  if (msg_payload_size > 0) {
+    ASSERT_WRITE_OK(port->write(msg_payload, msg_payload_size));
+  }
+  ASSERT_WRITE_OK(port->write(crc));
+
+  #undef ASSERT_WRITE_OK
+  
+  return write_total;
 }
 
 void Protocol::loop()
@@ -154,4 +169,31 @@ void Protocol::loop()
       break;
     }
   }
+}
+
+size_t Protocol::flushReadBuffer(unsigned long timeout_time) {
+  size_t read_size = 0;
+
+  // flush all existing bytes from the serial's input buffer
+  while (port->available() > 0)
+  {
+    port->read();
+    read_size++;
+  }
+
+  // keep flushing for a specific amount of time
+  if (timeout_time > 0) {
+    SoftTimer timer;
+    timer.setTimeOutTime(timeout_time);
+    timer.reset();
+    while(!timer.hasTimedOut()) {
+      while (port->available() > 0)
+      {
+        port->read();
+        read_size++;
+      }
+    }
+  }
+
+  return read_size;
 }

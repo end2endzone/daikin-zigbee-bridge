@@ -28,10 +28,20 @@ public:
     uint8_t crc;
   } message_footer_t;
  
+  /*
+  enum class ParseMessageResult
+  {
+    PARSE_MESSAGE_RESULT_SUCCESS = 0,
+    PARSE_MESSAGE_RESULT_UNKNOWN,
+    PARSE_MESSAGE_RESULT_TIMEOUT,
+  };
+  */
+
   Protocol(SerialInterface * serial, uint8_t *buffer, uint16_t buffer_size);
 
   void loop();
-  void sendMessage(uint8_t msg_id, const uint8_t *msg_payload, uint16_t msg_payload_size);
+  size_t flushReadBuffer(unsigned long timeout_time);
+  size_t sendMessage(uint8_t msg_id, const uint8_t *msg_payload, uint16_t msg_payload_size);
   void onMessageReceived(MessageCallback cb);
 
 private:
