@@ -183,13 +183,6 @@ void daikinPullAndPrintInfo() {
   } \
 } while (0)
 
-#define ASSERT_DAIKIN_PULL_INFO_SUCCESS() do { \
-  if (!daikinPullInfo()) { \
-    log_e("Failed to pull Daikin device info."); \
-    return; \
-  } \
-} while (0)
-
 
 void handleProtocolMessageRequest(uint8_t msg_id, const uint8_t *payload, uint16_t payload_size)
 {
@@ -199,15 +192,21 @@ void handleProtocolMessageRequest(uint8_t msg_id, const uint8_t *payload, uint16
   {
   case DAIKIN_MESSAGE_GET_IP_ADDRESS_RESPONSE_ID: {
     ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_get_ip_address_request_t), payload_size);
-    ASSERT_DAIKIN_PULL_INFO_SUCCESS();
-
-    //const daikin_get_ip_address_request_t * request = (const daikin_get_ip_address_request_t *)payload;
 
     // Prepare response
     daikin_get_ip_address_response_t response = {};
+    response.result.success = true;
+    response.result.result = MESSAGE_RESULT_OK;
 
-    // Fill response
-    snprintf(response.ip, sizeof(response.ip), "%s", WiFi.localIP().toString().c_str());
+    if (!daikinPullInfo()) {
+      response.result.success = false;
+      response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PULL_FAIL;
+    } else {
+      //const daikin_get_ip_address_request_t * request = (const daikin_get_ip_address_request_t *)payload;
+
+      // Fill response
+      snprintf(response.ip, sizeof(response.ip), "%s", WiFi.localIP().toString().c_str());
+    }
 
     // Send response
     proto.sendMessage(DAIKIN_MESSAGE_GET_IP_ADDRESS_REQUEST_ID, (const uint8_t*)&response, sizeof(response));
@@ -216,24 +215,28 @@ void handleProtocolMessageRequest(uint8_t msg_id, const uint8_t *payload, uint16
   }
   case DAIKIN_MESSAGE_SET_TARGET_TEMPERATURE_REQUEST_ID: {
     ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_set_target_temperature_request_t), payload_size);
-    ASSERT_DAIKIN_PULL_INFO_SUCCESS();
-
-    const daikin_set_target_temperature_request_t * request = (const daikin_set_target_temperature_request_t *)payload;
-    
-    // Implement request
-    daikin.setTargetTemp(request->temp / 100.0);
-    log_i("Updating target temperature to %.2f°C");
-    if (!daikin.push()) {
-      log_e("*** Failed to push Daikin device info.");
-      return;
-    }
 
     // Prepare response
     daikin_set_target_temperature_response_t response = {};
+    response.result.success = true;
+    response.result.result = MESSAGE_RESULT_OK;
 
-    // Fill response
-    float target_temp = daikin.getTargetTemp();
-    response.temp = (uint16_t)(target_temp * 100);
+    if (!daikinPullInfo()) {
+      response.result.success = false;
+      response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PULL_FAIL;
+    } else {
+      const daikin_set_target_temperature_request_t * request = (const daikin_set_target_temperature_request_t *)payload;
+      
+      // Implement request
+      daikin.setTargetTemp(request->temp / 100.0);
+      log_i("Updating target temperature to %.2f°C");
+      if (!daikin.push()) {
+        log_e("*** Failed to push Daikin device info.");
+        
+        response.result.success = false;
+        response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PUSH_FAIL;
+      }
+    }
 
     // Send response
     proto.sendMessage(DAIKIN_MESSAGE_SET_TARGET_TEMPERATURE_RESPONSE_ID, (const uint8_t*)&response, sizeof(response));
@@ -242,28 +245,34 @@ void handleProtocolMessageRequest(uint8_t msg_id, const uint8_t *payload, uint16
   }
   case DAIKIN_MESSAGE_GET_STATUS_REQUEST_ID: {
     ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_get_status_request_t), payload_size);
-    ASSERT_DAIKIN_PULL_INFO_SUCCESS();
-
-    //const daikin_get_status_request_t * request = (const daikin_get_status_request_t *)payload;
     
     // Prepare response
     daikin_get_status_response_t response = {};
+    response.result.success = true;
+    response.result.result = MESSAGE_RESULT_OK;
 
-    // Fill response
-    snprintf(response.name, sizeof(response.name), "%s", daikin.getDeviceName().c_str());
-    response.power = (int)daikin.getPower();
-    response.mode = (int)daikin.getMode();
-    response.fan_rate = (int)daikin.getFanRate();
-    response.fan_dir = (int)daikin.getFanDir();
-    response.preset = (int)daikin.getPreset();
+    if (!daikinPullInfo()) {
+      response.result.success = false;
+      response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PULL_FAIL;
+    } else {
+      //const daikin_get_status_request_t * request = (const daikin_get_status_request_t *)payload;
 
-    float target_temp  = daikin.getTargetTemp();
-    float indoor_temp  = daikin.getIndoorTemp();
-    float outdoor_temp = daikin.getOutdoorTemp();
+      // Fill response
+      snprintf(response.name, sizeof(response.name), "%s", daikin.getDeviceName().c_str());
+      response.power = (int)daikin.getPower();
+      response.mode = (int)daikin.getMode();
+      response.fan_rate = (int)daikin.getFanRate();
+      response.fan_dir = (int)daikin.getFanDir();
+      response.preset = (int)daikin.getPreset();
 
-    response.target_temp  = (uint16_t)(target_temp  * 100);
-    response.indoor_temp  = (uint16_t)(indoor_temp  * 100);
-    response.outdoor_temp = (uint16_t)(outdoor_temp * 100);
+      float target_temp  = daikin.getTargetTemp();
+      float indoor_temp  = daikin.getIndoorTemp();
+      float outdoor_temp = daikin.getOutdoorTemp();
+
+      response.target_temp  = (uint16_t)(target_temp  * 100);
+      response.indoor_temp  = (uint16_t)(indoor_temp  * 100);
+      response.outdoor_temp = (uint16_t)(outdoor_temp * 100);
+    }
 
     // Send response
     proto.sendMessage(DAIKIN_MESSAGE_GET_STATUS_RESPONSE_ID, (const uint8_t*)&response, sizeof(response));
