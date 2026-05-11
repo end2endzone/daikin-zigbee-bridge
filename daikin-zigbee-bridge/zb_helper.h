@@ -220,7 +220,7 @@ static bool zb_zcl_attribute_data_pointer_to_string(char *buffer, size_t buffer_
     case ESP_ZB_ZCL_ATTR_TYPE_32BIT:
     case ESP_ZB_ZCL_ATTR_TYPE_U32: {
       uint32_t v = *(uint32_t *)data_p;
-      if (snprintf(buffer, buffer_size, "%u", v) < 0)
+      if (snprintf(buffer, buffer_size, "%lu", v) < 0)
         return false;
       return true;
     }
@@ -361,9 +361,12 @@ static bool zb_zcl_attribute_to_string(char* buffer, size_t buffer_size, uint16_
   // Compute the value of the data as a string
   char data_str[DATA_VALUE_STRING_BUFFER_SIZE];
   bool success = zb_zcl_attribute_data_pointer_to_string(data_str, DATA_VALUE_STRING_BUFFER_SIZE, (esp_zb_zcl_attr_type_t)attr->type, attr->data_p);
+  if (!success) {
+    snprintf(data_str, sizeof(data_str), "ERROR-%s-%d", logBaseFileName(__FILE__), __LINE__);
+  }
 
   int result = snprintf(buffer, buffer_size, "id=0x%04x (%s), type=0x%02x (%s), access=0x%02x (%s), manuf_code=0x%04x, data_p=0x%08x, data=%s",
-      attr->id, attr_name, attr->type, attr_type_name, attr->access, attr_access_name, attr->manuf_code, attr->data_p, data_str);
+      attr->id, attr_name, attr->type, attr_type_name, attr->access, attr_access_name, attr->manuf_code, (uintptr_t)attr->data_p, data_str);
   
   if (result < 0)
     return false;
@@ -483,7 +486,7 @@ static bool zb_zcl_attribute_is_sentinel(esp_zb_zcl_attr_t* attr) {
   if (attr == nullptr)
     return false;
 
-  static const esp_zb_zcl_attr_t ZB_ZCL_SENTINEL_ATTRIBUTE = {0};
+  static const esp_zb_zcl_attr_t ZB_ZCL_SENTINEL_ATTRIBUTE = {};
   bool is_sentinel = (memcmp(attr, &ZB_ZCL_SENTINEL_ATTRIBUTE, sizeof(ZB_ZCL_SENTINEL_ATTRIBUTE)) == 0);
   return is_sentinel;
 }
@@ -499,7 +502,7 @@ static bool zb_zcl_cluster_is_sentinel(esp_zb_zcl_cluster_t* cluster) {
   if (cluster == nullptr)
     return false;
 
-  static const esp_zb_zcl_cluster_t ZB_ZCL_SENTINEL_CLUSTER = {0};
+  static const esp_zb_zcl_cluster_t ZB_ZCL_SENTINEL_CLUSTER = {};
   bool is_sentinel = (memcmp(cluster, &ZB_ZCL_SENTINEL_CLUSTER, sizeof(ZB_ZCL_SENTINEL_CLUSTER)) == 0);
   return is_sentinel;
 }
