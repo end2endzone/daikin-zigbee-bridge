@@ -19,6 +19,7 @@
         // For Arduino libraries
         "${env:USERPROFILE}/Documents/Arduino/libraries/SoftTimers/src",
         "${env:USERPROFILE}/Documents/Arduino/libraries/Button2/src",
+        "${env:USERPROFILE}/Documents/Arduino/libraries/SerialTransfer/src",
 
         // For Zigbee.h, ZigbeeEP.h, ZigbeeEP.cpp
         "${env:HOME}/Arduino15/packages/esp32/hardware/esp32/*/libraries/Zigbee/src",
