@@ -59,6 +59,7 @@
             "command": "arduino-cli",
             "args": [
                 "compile",
+                "--libraries", "./shared",
                 "--fqbn", "${config:myproject.fqbn}",
                 "--build-path", "${workspaceFolder}/build/daikin-zigbee-bridge",
                 
