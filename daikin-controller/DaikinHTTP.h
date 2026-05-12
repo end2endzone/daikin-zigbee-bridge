@@ -378,6 +378,7 @@ private:
   DaikinHttpPayload basicInfo;
   DaikinHttpPayload controlInfo;
   DaikinHttpPayload sensorInfo;
+  uint16_t          timeout; // milliseconds
 
   static constexpr const char* MandatoryKeyNames[] = {
     "pow",      // KEY_DEVICE_POWER
@@ -391,7 +392,7 @@ private:
 
   bool httpGet(const String &endpoint, String &response) {
     HTTPClient http;
-    http.setTimeout(3000); // 3 seconds timeout required for zigbee ?
+    http.setTimeout(timeout);
     String url = "http://" + ip + endpoint;
     http.begin(url);
     int httpCode = http.GET();
@@ -406,7 +407,7 @@ private:
 
   bool httpPost(const String &endpoint, const String &payload) {
     HTTPClient http;
-    http.setTimeout(3000); // 3 seconds timeout required for zigbee ?
+    http.setTimeout(timeout);
     String url = "http://" + ip + endpoint;
     http.begin(url);
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -423,7 +424,11 @@ private:
   // Payload public utility functions
   //------------------------------------------------------
 public:
-  DaikinHTTP(String ipAddr) : ip(ipAddr) {}
+  DaikinHTTP(String ipAddr) :
+    ip(ipAddr),
+    timeout((uint16_t)-1)
+  {
+  }
 
   bool pullBasicInfo() {
     controlInfo.clear();
@@ -496,6 +501,14 @@ public:
 
   const DaikinHttpPayload& getSensorInfoPayload() const {
     return sensorInfo;
+  }
+
+  void setTimeout(uint16_t timeout) {
+    this->timeout = timeout;
+  }
+
+  uint16_t getTimeout() const {
+    return timeout;
   }
 
   //------------------------------------------------------
