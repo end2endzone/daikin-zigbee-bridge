@@ -43,15 +43,6 @@
 #include "zb_helper.h"
 #include "ZigbeeAttributeT.hpp"
 
-#define ENABLE_DAIKINHTTP 
-#ifdef ENABLE_DAIKINHTTP
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include "secrets.h"
-#include "DaikinHTTP.h"
-#include "WiFiConnectionManager.h"
-#endif // ENABLE_DAIKINHTTP
-
 // Pin definitions
 #define LED_PIN RGB_BUILTIN   // RGB LED on ESP32-C6
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
@@ -99,105 +90,6 @@ SoftTimer forceReportingTimer;
 SoftTimer identifyTimer;
 
 bool peak_demand = false;
-bool daikin_online = false;
-
-// -------------------------------------------------------------------------
-//                          Daikin support section
-// -------------------------------------------------------------------------
-#ifdef ENABLE_DAIKINHTTP
-
-WiFiConnectionManager wifiManager;
-
-DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
-
-SoftTimer daikinInfoTimer;
-
-
-#if 0
-void daikinIncreaseTargetTempBy1() {
-  // Pull to refresh latest data
-  log_i("Pulling device info...");
-  if (!daikin.pull()) {
-    log_e("*** Failed to pull Daikin device info.");
-    return;
-  }
-  log_i("pulled!");
-  log_i("actual    payload=" + daikin.getControlInfoPayload().get());
-
-  float target_temp = daikin.getTargetTemp();
-  target_temp += 1.0;
-  daikin.setTargetTemp(target_temp);
-  log_i("temporary payload=" + daikin.getControlInfoPayload().get());
-
-  log_i("Pushing new device info...");
-  if (!daikin.push()) {
-    log_e("*** Failed to push Daikin device info.");
-    return;
-  }
-  log_i("pushed!");
-
-  // Pull again to refresh changes
-  log_i("Pulling device info...");
-  if (!daikin.pull()) {
-    log_e("*** Failed to pull Daikin device info.");
-    return;
-  }
-  log_i("pulled!");
-  log_i("actual    payload=" + daikin.getControlInfoPayload().get());
-}
-#endif // #if 0
-
-void daikinPullAndPrintInfo() {
-  daikin_online = false;
-  if (!daikin.pull()) {
-    log_e("*** Failed to pull Daikin device info.");
-    return;
-  }
-  daikin_online = true;
-
-  log_i("Daikin heatpump attributes: {");
-
-  // Print payloads
-  log_d("     DEBUG: Basic payload:   %s", daikin.getBasicInfoPayload().get()  .c_str());
-  log_d("     DEBUG: Control payload: %s", daikin.getControlInfoPayload().get().c_str());
-  log_d("     DEBUG: Sensor payload:  %s", daikin.getSensorInfoPayload().get() .c_str());
-
-  // Print basic info
-  {
-    String device_name = daikin.getDeviceName();
-    log_i("     Device name:  %s", device_name.c_str());
-  }
-  
-  // Print control info
-  {
-    DaikinHTTP::Power power = daikin.getPower();
-    DaikinHTTP::Mode mode = daikin.getMode();
-    DaikinHTTP::FanRate fan = daikin.getFanRate();
-    DaikinHTTP::FanDir FanDir = daikin.getFanDir();
-    DaikinHTTP::Preset preset = daikin.getPreset();
-    float target_temp = daikin.getTargetTemp();
-
-    log_i("     Power:        %s", DaikinHTTP::toString(power).c_str());
-    log_i("     Mode:         %s", DaikinHTTP::toString(mode).c_str());
-    log_i("     Fan rate:     %s", DaikinHTTP::toString(fan).c_str());
-    log_i("     Fan dir:      %s", DaikinHTTP::toString(FanDir).c_str());
-    log_i("     Preset:       %s", DaikinHTTP::toString(preset).c_str());
-    log_i("     Target Temp:  %s", String(target_temp).c_str());
-  }
-
-  // Print sensor info
-  {
-    float indoor_temp = daikin.getIndoorTemp();
-    float outdoor_temp = daikin.getOutdoorTemp();
-
-    log_i("     Indoor Temp:  %s", String(indoor_temp).c_str());
-    log_i("     Outdoor Temp: %s", String(outdoor_temp).c_str());
-  }
-
-  log_i("};");
-}
-
-#endif // ENABLE_DAIKINHTTP
 
 // -------------------------------------------------------------------------
 //                          Reset/init functions
@@ -211,13 +103,6 @@ void initForceReportingTimer() {
   forceReportingTimer.setTimeOutTime(FORCE_REPORTING_INTERVAL);
   forceReportingTimer.reset();
 }
-
-#ifdef ENABLE_DAIKINHTTP
-void initDaikinInfoTimer() {
-  daikinInfoTimer.setTimeOutTime(DAIKIN_PRINT_INFO_INTERVAL);
-  daikinInfoTimer.reset();
-}
-#endif // ENABLE_DAIKINHTTP
 
 // -------------------------------------------------------------------------
 //                            Button Callbacks
@@ -257,7 +142,7 @@ void printAllAttributes() {
   log_i("attributes: {");
 
   // Get and show all thermostat attributes
-  ZigbeeStelproH420Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {0};
+  ZigbeeStelproH420Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {};
   bool readed = zbThermostat->getSnapshot(actuals);
   if (!readed)
     log_i("ERROR: Failed to read snapshot!");
@@ -316,7 +201,6 @@ void simulateTemperature() {
     new_local_temp -= SIMULATION_TEMPERATURE_STEP_LOW;    // Cool slower when close
   }
   
-  bool new_local_temp_success = false;
   if (new_local_temp != local_temp) {
     if (!zbThermostat->setLocalTemperature(new_local_temp)) {
       log_e("Unable to simulate local temperature changes. Function setLocalTemperature() has failed.");
@@ -347,19 +231,6 @@ void reportAttributes() {
     log_e("zbThermostat has failed to report())!");
   }
 }
-
-#ifdef ENABLE_DAIKINHTTP
-void daikinLoop() {
-  // Make sure we do not call this function too often...
-  if (daikinInfoTimer.getTimeOutTime() != 0 && !daikinInfoTimer.hasTimedOut()) {
-    return; // too soon
-  }
-  // reset timer for next iteration timestamps
-  daikinInfoTimer.reset();
-
-  daikinPullAndPrintInfo();
-}
-#endif // ENABLE_DAIKINHTTP
 
 // -------------------------------------------------------------------------
 //                            Zigbee Callbacks
@@ -446,17 +317,6 @@ void updateLEDStatus() {
     msg = "Zigbee Disconnected - LED set to fast RED blink";
     newLedMode = LED_MODE_ZIGBEE_DISCONNECTED;
     blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_RED);
-  } else if (!wifiManager.isHealthy()) {
-    if (!wifiManager.isConnected())
-      msg = "WiFi Disconnected - LED set to fast ORANGE blink";
-    else
-      msg = "WiFi Unstable - LED set to fast ORANGE blink";
-    newLedMode = LED_MODE_WIFI_DISCONNECTED;
-    blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_ORANGE);
-  } else if (!daikin_online) {
-    msg = "DAIKIN Heatpump offline - LED set to fast PURPLE blink";
-    newLedMode = LED_MODE_DAIKIN_OFFLINE;
-    blinker.set(RgbLedBlinker::MODE_BLINK_FAST, RgbLedBlinker::COLOR_PURPLE);
   } else if (identifyTimer.getTimeOutTime() != 0 && !identifyTimer.hasTimedOut()) { // if active and not timed out
     msg = "Indentify - LED set to fast YELLOW blink";
     newLedMode = LED_MODE_IDENTIFY;
@@ -518,11 +378,6 @@ void setup() {
   // Initialize force reporting timer
   initForceReportingTimer();
 
-#ifdef ENABLE_DAIKINHTTP
-  // Initialize daikin info timer
-  initDaikinInfoTimer();
-#endif // ENABLE_DAIKINHTTP
-
   // Change the OUI prefix in the IEEE address (EUI-64 address) 
   // to match `Silicon Laboratories` instead of `Espressif Inc`.
   // This function must be called before calling Zigbee.begin().
@@ -566,28 +421,6 @@ void setup() {
   
   //log_i("Waiting 5000 ms...");
   //delay(5000);
-
-#ifdef ENABLE_DAIKINHTTP
-  wifiManager.setup();
-
-  log_i("Connecting to wifi...");
-  size_t loop_count = 0;
-  while (wifiManager.getState() != WiFiConnectionManager::WIFI_STATE::HEALTHY) {
-    loop_count++;
-    if (loop_count % 25 == 0) {
-      log_i("WiFi state: %s", WiFiConnectionManager::toString(wifiManager.getState()));
-    }
-
-    wifiManager.loop(); // call loop to allow wifiManager to detect and change state
-
-    // Keep LED blinking during connection
-    updateLEDStatus();
-    blinker.loop();
-
-    delay(100);
-  }
-  log_i("Connected to wifi!");
-#endif // ENABLE_DAIKINHTTP
 
   log_i("Starting Zigbee stack...");
   if (!Zigbee.begin()) {
@@ -673,7 +506,6 @@ void loop() {
 
   simulateTemperature();
   reportAttributes();
-  daikinLoop();
 
   delay(10);
 }
