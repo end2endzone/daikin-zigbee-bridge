@@ -29,9 +29,8 @@
 #include "WiFiConnectionManager.h"
 
 
-#include "HardwareSerialAdapter.h"
-#include "Protocol.h"
-#include "daikin_messages.h"
+#include "DaikinBridgeImpl.h"
+#include "DaikinSerialListener.h"
 
 #define UART1_TX 17
 #define UART1_RX 16
@@ -70,14 +69,9 @@ bool daikinOnline = false;
 //                          Daikin support section
 // -------------------------------------------------------------------------
 WiFiConnectionManager wifiManager;
-
+DaikinBridgeImpl     bridge;
+DaikinSerialListener listener;
 DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
-
-HardwareSerialAdapter serialAdapter(&Serial1);
-
-#define PROTOCOL_BUFFER_SIZE 512
-uint8_t protoBuffer[PROTOCOL_BUFFER_SIZE];
-Protocol proto(&serialAdapter, protoBuffer, sizeof(protoBuffer));
 
 #if 0
 void daikinIncreaseTargetTempBy1() {
@@ -172,148 +166,6 @@ void daikinPullAndPrintInfo() {
   }
 
   log_i("};");
-}
-
-void handleMessageGetIpAddress(const daikin_get_ip_address_request_t & request, daikin_get_ip_address_response_t & response) {
-  response.result.success = false;
-  response.result.result = MESSAGE_RESULT_UNKNOWN;
-
-  if (!daikinPullInfo()) {
-    response.result.success = false;
-    response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PULL_FAIL;
-    return;
-  }
-
-  // Fill response
-  snprintf(response.ip, sizeof(response.ip), "%s", WiFi.localIP().toString().c_str());
-
-  // Success
-  response.result.success = true;
-  response.result.result = MESSAGE_RESULT_OK;
-}
-
-void handleMessageSetTargetTemperature(const daikin_set_target_temperature_request_t & request, daikin_set_target_temperature_response_t & response) {
-  response.result.success = false;
-  response.result.result = MESSAGE_RESULT_UNKNOWN;
-
-  if (!daikinPullInfo()) {
-    response.result.success = false;
-    response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PULL_FAIL;
-    return;
-  }
-    
-  // Implement request
-  daikin.setTargetTemp(request.temp / 100.0);
-  log_i("Updating target temperature to %.2f°C");
-  if (!daikin.push()) {
-    log_e("*** Failed to push Daikin device info.");
-    
-    response.result.success = false;
-    response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PUSH_FAIL;
-    return;
-  }
-
-  // Success
-  response.result.success = true;
-  response.result.result = MESSAGE_RESULT_OK;
-}
-
-void handleMessageGetStatus(const daikin_get_status_request_t & request, daikin_get_status_response_t & response) {
-  response.result.success = false;
-  response.result.result = MESSAGE_RESULT_UNKNOWN;
-
-  if (!daikinPullInfo()) {
-    response.result.success = false;
-    response.result.result = MESSAGE_RESULT_DAIKIN_INFO_PULL_FAIL;
-    return;
-  }
-
-  // Fill response
-  snprintf(response.name, sizeof(response.name), "%s", daikin.getDeviceName().c_str());
-  response.power = (int)daikin.getPower();
-  response.mode = (int)daikin.getMode();
-  response.fan_rate = (int)daikin.getFanRate();
-  response.fan_dir = (int)daikin.getFanDir();
-  response.preset = (int)daikin.getPreset();
-
-  float target_temp  = daikin.getTargetTemp();
-  float indoor_temp  = daikin.getIndoorTemp();
-  float outdoor_temp = daikin.getOutdoorTemp();
-
-  response.target_temp  = (uint16_t)(target_temp  * 100);
-  response.indoor_temp  = (uint16_t)(indoor_temp  * 100);
-  response.outdoor_temp = (uint16_t)(outdoor_temp * 100);
-
-  // Success
-  response.result.success = true;
-  response.result.result = MESSAGE_RESULT_OK;
-}
-
-#define ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, expected, actual) do { \
-  if ((expected) != (actual)) { \
-    log_e("Unexpected payload size for message id 0x%02X: expected %s which is %lu bytes, got %lu bytes.", \
-          msg_id, #expected, (unsigned long)(expected), (unsigned long)(actual)); \
-    return; \
-  } \
-} while (0)
-
-void handleProtocolMessageRequest(uint8_t msg_id, const uint8_t *payload, uint16_t payload_size)
-{
-  log_i("Message request id 0x%02X received (%u bytes)\n", msg_id, payload_size);
-
-  switch (msg_id)
-  {
-  case DAIKIN_MESSAGE_GET_IP_ADDRESS_RESPONSE_ID: {
-    // Validate the request
-    ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_get_ip_address_request_t), payload_size);
-    const daikin_get_ip_address_request_t * request = (const daikin_get_ip_address_request_t *)payload;
-    
-    // Prepare response
-    daikin_get_ip_address_response_t response = {};
-
-    // Handle the message
-    handleMessageGetIpAddress(*request, response);
-
-    // Send response
-    proto.sendMessage(DAIKIN_MESSAGE_GET_IP_ADDRESS_REQUEST_ID, (const uint8_t*)&response, sizeof(response));
-
-    break;
-  }
-  case DAIKIN_MESSAGE_SET_TARGET_TEMPERATURE_REQUEST_ID: {
-    // Validate the request
-    ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_set_target_temperature_request_t), payload_size);
-    const daikin_set_target_temperature_request_t * request = (const daikin_set_target_temperature_request_t *)payload;
-
-    // Prepare response
-    daikin_set_target_temperature_response_t response = {};
-
-    // Handle the message
-    handleMessageSetTargetTemperature(*request, response);
-
-    // Send response
-    proto.sendMessage(DAIKIN_MESSAGE_SET_TARGET_TEMPERATURE_RESPONSE_ID, (const uint8_t*)&response, sizeof(response));
-
-    break;
-  }
-  case DAIKIN_MESSAGE_GET_STATUS_REQUEST_ID: {
-    // Validate the request
-    ASSERT_MESSAGE_PAYLOAD_SIZE(msg_id, sizeof(daikin_get_status_request_t), payload_size);
-    const daikin_get_status_request_t * request = (const daikin_get_status_request_t *)payload;
-    
-    // Prepare response
-    daikin_get_status_response_t response = {};
-
-    // Handle the message
-    handleMessageGetStatus(*request, response);
-
-    // Send response
-    proto.sendMessage(DAIKIN_MESSAGE_GET_STATUS_RESPONSE_ID, (const uint8_t*)&response, sizeof(response));
-
-    break;
-  }
-  default:
-    log_e("Unknown message received: id 0x%02X, %lu bytes.", msg_id, payload_size);
-  }
 }
 
 // -------------------------------------------------------------------------
@@ -414,7 +266,10 @@ void setup() {
   // Wait up to 3s for serial
   while (!Serial  && millis() < 3000);
   while (!Serial1 && millis() < 3000);
-  
+
+  bridge.begin(&daikin);
+  listener.begin(Serial1, &bridge);
+
   log_i("========================================");
   log_i("  Daiking Controller");
   log_i("========================================");
@@ -432,9 +287,6 @@ void setup() {
   
   // Initialize force reporting timer
   initForceReportingTimer();
-
-  // Set protocol callback function
-  proto.onMessageReceived(handleProtocolMessageRequest);
 
   wifiManager.setup();
 
@@ -495,7 +347,7 @@ void loop() {
   daikinReportCheck();
 
   // Parse any incomming messages
-  proto.loop();
-
+  listener.loop();
+  
   delay(10);
 }

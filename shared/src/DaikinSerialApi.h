@@ -24,6 +24,9 @@ public:
   #define DAIKIN_IP_ADDRESS_SIZE            20
   #define DAIKIN_STATUS_MESSAGE_NAME_SIZE   32
 
+  // Default synchronous call timeout (milliseconds).
+  static constexpr unsigned long DEFAULT_TIMEOUT_MS = 5000UL;
+
   // ---------------------------------------------------------------------------
   // Daikin structures for the Serial Protocol API
   // ---------------------------------------------------------------------------
@@ -64,14 +67,14 @@ public:
   // Request the IP address of the Daikin controller from the zigbee-bridge.
   // When the function is succesful, addr->ip is populated with a null-terminated IPv4 string.
   // Returns ApiResult::OK with a valid `addr` when succesful. Returns another result otherwise.
-  ApiResult getIpAddress(daikin_ip_address_t *addr, unsigned long timeout_ms);
+  virtual ApiResult getIpAddress(daikin_ip_address_t *addr, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) = 0;
 
   // Send a new target temperature to the Daikin controller
   // which forwards it to the Daikin unit.
   // Argument `temperature` is expressed in units of 0.01 °C (e.g. 2100 = 21.00 °C).
-  ApiResult setTargetTemperature(uint16_t temperature, unsigned long timeout_ms);
+  virtual ApiResult setTargetTemperature(uint16_t temperature, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) = 0;
 
   // Request the full Daikin status of the Daikin controller from the zigbee-bridge.
   // Returns ApiResult::OK with a valid valid `status` when succesful. Returns another result otherwise.
-  ApiResult getStatus(daikin_status_info_t *status, unsigned long timeout_ms);
+  virtual ApiResult getStatus(daikin_status_info_t *status, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) = 0;
 };
