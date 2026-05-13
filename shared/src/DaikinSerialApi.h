@@ -42,9 +42,9 @@ public:
   //   Fan rate:     Level 5
   //   Fan dir:      Off
   //   Preset:       Error
-  //   Target Temp:  17.00
-  //   Indoor Temp:  22.50
-  //   Outdoor Temp: 18.00
+  //   Target Temp:  1700
+  //   Indoor Temp:  2250
+  //   Outdoor Temp: 1800
   // };
   typedef struct __attribute__((packed)) daikin_status_info_s {
     char name[DAIKIN_STATUS_MESSAGE_NAME_SIZE];
