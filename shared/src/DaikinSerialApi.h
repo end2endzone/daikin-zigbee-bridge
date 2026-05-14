@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "DaikinEnums.h"
 
 class DaikinSerialApi
 {
@@ -48,11 +49,11 @@ public:
   // };
   typedef struct __attribute__((packed)) daikin_status_info_s {
     char name[DAIKIN_STATUS_MESSAGE_NAME_SIZE];
-    int power;
-    int mode;
-    int fan_rate;
-    int fan_dir;
-    int preset;
+    DaikinEnums::Power power;
+    DaikinEnums::Mode mode;
+    DaikinEnums::FanRate fan_rate;
+    DaikinEnums::FanDir fan_dir;
+    DaikinEnums::Preset preset;
     uint16_t target_temp;
     uint16_t indoor_temp;
     uint16_t outdoor_temp;

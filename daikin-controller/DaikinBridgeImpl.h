@@ -59,11 +59,11 @@ public:
 
     // Fill output object
     snprintf(status->name, sizeof(status->name), "%s", _http->getDeviceName().c_str());
-    status->power = (int)_http->getPower();
-    status->mode = (int)_http->getMode();
-    status->fan_rate = (int)_http->getFanRate();
-    status->fan_dir = (int)_http->getFanDir();
-    status->preset = (int)_http->getPreset();
+    status->power = _http->getPower();
+    status->mode = _http->getMode();
+    status->fan_rate = _http->getFanRate();
+    status->fan_dir = _http->getFanDir();
+    status->preset = _http->getPreset();
 
     float target_temp  = _http->getTargetTemp();
     float indoor_temp  = _http->getIndoorTemp();
