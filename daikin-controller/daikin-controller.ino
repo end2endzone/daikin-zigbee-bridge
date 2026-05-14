@@ -141,18 +141,18 @@ void daikinPullAndPrintInfo() {
   
   // Print control info
   {
-    DaikinHTTP::Power power = daikin.getPower();
-    DaikinHTTP::Mode mode = daikin.getMode();
-    DaikinHTTP::FanRate fan = daikin.getFanRate();
-    DaikinHTTP::FanDir FanDir = daikin.getFanDir();
-    DaikinHTTP::Preset preset = daikin.getPreset();
+    DaikinEnums::Power power = daikin.getPower();
+    DaikinEnums::Mode mode = daikin.getMode();
+    DaikinEnums::FanRate fan = daikin.getFanRate();
+    DaikinEnums::FanDir FanDir = daikin.getFanDir();
+    DaikinEnums::Preset preset = daikin.getPreset();
     float target_temp = daikin.getTargetTemp();
 
-    log_i("     Power:        %s", DaikinHTTP::toString(power).c_str());
-    log_i("     Mode:         %s", DaikinHTTP::toString(mode).c_str());
-    log_i("     Fan rate:     %s", DaikinHTTP::toString(fan).c_str());
-    log_i("     Fan dir:      %s", DaikinHTTP::toString(FanDir).c_str());
-    log_i("     Preset:       %s", DaikinHTTP::toString(preset).c_str());
+    log_i("     Power:        %s", DaikinEnums::toString(power).c_str());
+    log_i("     Mode:         %s", DaikinEnums::toString(mode).c_str());
+    log_i("     Fan rate:     %s", DaikinEnums::toString(fan).c_str());
+    log_i("     Fan dir:      %s", DaikinEnums::toString(FanDir).c_str());
+    log_i("     Preset:       %s", DaikinEnums::toString(preset).c_str());
     log_i("     Target Temp:  %s", String(target_temp).c_str());
   }
 
