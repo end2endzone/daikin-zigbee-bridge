@@ -42,19 +42,14 @@
 #include "scope_debugger.h"
 #include "zb_helper.h"
 #include "ZigbeeAttributeT.hpp"
+#include "DaikinSerialLocalMock.h"
 
 // Pin definitions
 #define LED_PIN RGB_BUILTIN   // RGB LED on ESP32-C6
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
 
-// Temperature simulation timing
-#define SIMULATION_UPDATE_INTERVAL            5000  //  5.0 seconds
-#define SIMULATION_DEFAULT_ROOM_TEMPERATURE   2000  // 20.0°C
-#define SIMULATION_DEFAULT_HEATING_SETPOINT   2400  // 24.0°C
-#define SIMULATION_TEMPERATURE_DIFF_HIGH       500  //  5.0°C
-#define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
-#define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
-#define SIMULATION_TEMPERATURE_STEP_HIGH      (5 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
+// Temperature synchronisation timing
+#define TEMPERATURE_SYNC_UPDATE_INTERVAL   5000  //  5.0 seconds
 
 // Factory reset delay
 #define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
@@ -81,11 +76,13 @@ LED_MODE previousLedMode = LED_MODE_OFF;
 // During static initialization, a FreeRTOS task executes in parallel, causing a race condition that crashes the ESP32‑C6.
 ZigbeeStelproH420Thermostat* zbThermostat = nullptr;
 
+DaikinSerialLocalMock daikin;
+
 // Button handler
 Button2 button;
 
 // Update timers
-SoftTimer tempSimulationUpdateTimer;
+SoftTimer syncUpdateTimer;
 SoftTimer forceReportingTimer;
 SoftTimer identifyTimer;
 
@@ -94,9 +91,9 @@ bool peak_demand = false;
 // -------------------------------------------------------------------------
 //                          Reset/init functions
 // -------------------------------------------------------------------------
-void initTempSimulationUpdateTimer() {
-  tempSimulationUpdateTimer.setTimeOutTime(SIMULATION_UPDATE_INTERVAL);
-  tempSimulationUpdateTimer.reset();
+void initSyncUpdateTimer() {
+  syncUpdateTimer.setTimeOutTime(TEMPERATURE_SYNC_UPDATE_INTERVAL);
+  syncUpdateTimer.reset();
 }
 
 void initForceReportingTimer() {
@@ -134,8 +131,39 @@ void longClickDetected(Button2& btn) {
 }
 
 // -------------------------------------------------------------------------
-//                          Temperature Simulation
+//                  Temperature Simulation & synchronization        
 // -------------------------------------------------------------------------
+
+/**
+ * @brief Synchronize data 
+ * from Daikin Serial to Zigbee Thermostat and
+ * from the Zigbee Thermostat to Daikin Serial.
+ */
+void syncDaikinSerialAndZigbeeThermostat() {
+  // Make sure we do not call this function too often...
+  if (syncUpdateTimer.getTimeOutTime() != 0 && !syncUpdateTimer.hasTimedOut()) {
+    return; // too soon
+  }
+  // reset timer for next iteration timestamps
+  syncUpdateTimer.reset();
+
+  // Zigbee target temperature updates are synchronized in the zigbee callback.
+  
+  // Daikin Serial remote updates must be manually downloaded.
+  DaikinSerialApi::daikin_status_info_t remote_status = {};
+  DaikinSerialApi::ApiResult result = daikin.getStatus(&remote_status);
+  if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
+    log_e("Failed to get Remote Status from Daikin Controller: %s", DaikinSerialApi::toString(result).c_str());
+  } else {
+
+    // Set local temperature 
+    if (!zbThermostat->setLocalTemperature(remote_status.indoor_temp)) {
+      log_e("Unable to set local temperature. Synchronization has failed.");
+      return;
+    }
+  }
+  
+}
 
 void printAllAttributes() {
   
@@ -151,72 +179,6 @@ void printAllAttributes() {
   log_i("};");
 }
 
-/**
- * @brief Simulate local temperature changes.
- * The local temperature must drifts towards an hypothetical "target_temp".
- * When heating, target_temp is the heating setpoint.
- * When not heating, target_temp is the default room temperature.
- */
-void simulateTemperature() {
-  // Make sure we do not call this function too often...
-  if (tempSimulationUpdateTimer.getTimeOutTime() != 0 && !tempSimulationUpdateTimer.hasTimedOut()) {
-    return; // too soon
-  }
-  // reset timer for next iteration timestamps
-  tempSimulationUpdateTimer.reset();
-
-  // Get current values
-  int16_t local_temp = 0;
-  int16_t setpoint = 0;
-  uint16_t running_state = 0;
-
-  // Get actuals
-  bool success = true;
-  success &= zbThermostat->getLocalTemperature(local_temp);
-  success &= zbThermostat->getOccupiedHeatingSetpoint(setpoint);
-  success &= zbThermostat->getRunningState(running_state);
-  if (!success) {
-    log_e("Unable to simulate local temperature change. Failed to get zigbee attribute values.");
-    return;
-  }
-
-  int16_t new_local_temp = local_temp;
-
-  int16_t target_temp = setpoint;
-  
-  // Compute target temperature
-  if (running_state == THERMOSTAT_RUNNING_STATE_IDLE) {
-    // When off, temperature drifts toward room temp
-    target_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE; // SIMULATION_DEFAULT_ROOM_TEMPERATURE is the new setpoint
-  }
-
-  // Update new_temp towards target temperature
-  if (local_temp < target_temp - SIMULATION_TEMPERATURE_DIFF_HIGH ) {
-    new_local_temp += SIMULATION_TEMPERATURE_STEP_HIGH;   // Heat faster when far from setpoint
-  } else if (local_temp < target_temp) {
-    new_local_temp += SIMULATION_TEMPERATURE_STEP_LOW;    // Heat slower when close to setpoint
-  } else if (local_temp > target_temp + SIMULATION_TEMPERATURE_DIFF_HIGH) {
-    new_local_temp -= SIMULATION_TEMPERATURE_STEP_HIGH;   // Cool faster when too hot
-  } else if (local_temp > target_temp) {
-    new_local_temp -= SIMULATION_TEMPERATURE_STEP_LOW;    // Cool slower when close
-  }
-  
-  if (new_local_temp != local_temp) {
-    if (!zbThermostat->setLocalTemperature(new_local_temp)) {
-      log_e("Unable to simulate local temperature changes. Function setLocalTemperature() has failed.");
-      return;
-    }
-  }
-
-  log_i("Simulation Update --> Temp: %.1f°C --> %.1f°C, Setpoint: %.1f°C, TargetTemp: %.1f°C",
-                local_temp / 100.0,
-                new_local_temp / 100.0,
-                setpoint / 100.0,
-                target_temp / 100.0);
-
-  //
-  printAllAttributes();
-}
 
 void reportAttributes() {
   // Make sure we do not call this function too often...
@@ -252,10 +214,20 @@ void onLocalTemperatureChange(int16_t temperature) {
 
 void onOccupiedCoolSetpointChange(int16_t setpoint) {
   log_i("Occupied Cool Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
+  
+  DaikinSerialApi::ApiResult result = daikin.setTargetTemperature(setpoint);
+  if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
+    log_e("Failed to set Occupied Cool Setpoint in Daikin Controller to: %.1f°C: %s", setpoint / 100.0, DaikinSerialApi::toString(result).c_str());
+  }
 }
 
 void onOccupiedHeatSetpointChange(int16_t setpoint) {
   log_i("Occupied Heat Setpoint changed from coordinator to: %.1f°C", setpoint / 100.0);
+  
+  DaikinSerialApi::ApiResult result = daikin.setTargetTemperature(setpoint);
+  if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
+    log_e("Failed to set Occupied Cool Setpoint in Daikin Controller to: %.1f°C: %s", setpoint / 100.0, DaikinSerialApi::toString(result).c_str());
+  }
 }
 
 void onControlSequenceOfOperationChange(uint8_t csop) {
@@ -373,7 +345,7 @@ void setup() {
   button.setLongClickDetectedHandler(holdDetected);
   
   // Initialize temperature update timer
-  initTempSimulationUpdateTimer();
+  initSyncUpdateTimer();
   
   // Initialize force reporting timer
   initForceReportingTimer();
@@ -409,6 +381,8 @@ void setup() {
 
   // Set manufacturer and model
   zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
+
+  daikin.begin(Serial);
 
   // DEBUG
   //zbThermostat->debugClusterList();
@@ -504,7 +478,11 @@ void loop() {
     log_w("zbThermostat has failed to update()!");
   }
 
-  simulateTemperature();
+  daikin.loop();
+
+  // Should we download from daikin and update our zigbee thermostat ?
+  syncDaikinSerialAndZigbeeThermostat();
+
   reportAttributes();
 
   delay(10);
