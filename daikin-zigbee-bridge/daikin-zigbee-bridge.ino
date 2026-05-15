@@ -405,7 +405,7 @@ void setup() {
   log_i("Zigbee stack ready.");
 
   // Print the device zigbee ieee address
-  esp_zb_ieee_addr_t device_ieee_long_addr = {0};
+  esp_zb_ieee_addr_t device_ieee_long_addr = {};
   esp_zb_get_long_address(device_ieee_long_addr); // ZBOSS stores 64-bit of IEEE long address in little-endian order internally, so byte[0] is the LSB.
   log_i("Device zigbee address: %s", zb_ieee_long_addr_to_string(device_ieee_long_addr).c_str());
 

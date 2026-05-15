@@ -321,7 +321,7 @@ private:
 
   String decodePercentEncoded(const String& encoded) {
       String decoded;
-      char accumulator[3] = {0};  // holds two hex digits + null terminator
+      char accumulator[3] = {};  // holds two hex digits + null terminator
       int accIndex = 0; // accumulator index where the next insertation must be
 
       // for each characters in the encoded string

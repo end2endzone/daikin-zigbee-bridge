@@ -7,7 +7,7 @@
     //    more:     -Wall
     //    all:      -Wall -Wextra
     //    ???       -Werror
-    "myproject.compiler.extra_flags": "-Wall -Wextra",
+    "myproject.compiler.extra_flags": "'-Wno-unused-function -Wno-unused-variable'",
 
     "myproject.compiler.warnings": "all",
 

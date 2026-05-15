@@ -618,6 +618,10 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
   if (cluster_id == ESP_ZB_ZCL_CLUSTER_ID_IDENTIFY) {
     if (attribute_id == ESP_ZB_ZCL_ATTR_IDENTIFY_IDENTIFY_TIME_ID) {
       static constexpr zb_attr_more_info_t more = {
+        .unit = nullptr,
+        .scaled_unit = nullptr,
+        .min = nullptr,
+        .max = nullptr,
         .notes = "Duration in seconds the device stays in identify mode.",
       };
       return &more;
@@ -628,6 +632,8 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         static constexpr zb_attr_more_info_t more = {
           .unit = "°C",
           .scaled_unit = "0.01°C",
+          .min = nullptr,
+          .max = nullptr,
           .notes = "Value `0x8000` means _Not Available_.",
         };
         return &more;
@@ -657,6 +663,10 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       break;
       case ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID: {
         static constexpr zb_attr_more_info_t more = {
+          .unit = nullptr,
+          .scaled_unit = nullptr,
+          .min = nullptr,
+          .max = nullptr,
           .notes = "Changing this attribute also synchronises StelproSystemMode (0x401C). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately.",
         };
         return &more;
@@ -666,6 +676,8 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         static constexpr zb_attr_more_info_t more = {
           .unit = "°C",
           .scaled_unit = "0.01°C",
+          .min = nullptr,
+          .max = nullptr,
           .notes = "ZCL standard outdoor temperature, intended for a physical sensor on the device.",
         };
         return &more;
@@ -674,6 +686,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       case ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID: {
         static constexpr zb_attr_more_info_t more = {
           .unit = "%",
+          .scaled_unit = nullptr,
           .min = "0",
           .max = "100",
           .notes = "Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but this implementation uses `[0, 100]`.",
@@ -692,6 +705,9 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         static constexpr zb_attr_more_info_t more = {
           .unit = "°C",
           .scaled_unit = "0.01°C",
+          .min = nullptr,
+          .max = nullptr,
+          .notes = nullptr,
         };
         return &more;
       }
@@ -711,6 +727,10 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       case ZB_STELPRO_ATTR_SYSTEM_MODE_ID:
       {
         static constexpr zb_attr_more_info_t more = {
+          .unit = nullptr,
+          .scaled_unit = nullptr,
+          .min = nullptr,
+          .max = nullptr,
           .notes = "Mirror of the standard `SystemMode` attribute (`0x001C`). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately.",
         };
         return &more;
@@ -720,6 +740,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       {
         static constexpr zb_attr_more_info_t more = {
           .unit = "W",
+          .scaled_unit = nullptr,
           .min = "0",
           .max = "4000",
           .notes = "Instantaneous electrical power draw of the baseboard heater. Updated at runtime from the heating demand calculation. Zigbee2MQTT exposes this value directly in Watts.",
@@ -731,6 +752,9 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
       {
         static constexpr zb_attr_more_info_t more = {
           .unit = "Wh",
+          .scaled_unit = nullptr,
+          .min = nullptr,
+          .max = nullptr,
           .notes = "Cumulative energy consumption since last reset. The on-wire value is in **Watt-hours (Wh)**. Zigbee2MQTT divides by `1000` before publishing, so Home Assistant receives the value in **kWh**.",
         };
         return &more;
@@ -766,7 +790,7 @@ typedef uint8_t esp_eui64_addr_t[8];
  * @param addr  Pointer to bytes containing the address.
  */
 static String zb_ieee_long_addr_to_string(esp_zb_ieee_addr_t addr) {
-  char buffer[24] = {0};
+  char buffer[24] = {};
 
   // Print characters in reverse order.
   snprintf(buffer, sizeof(buffer), "0x%02x%02x%02x%02x%02x%02x%02x%02x", 
@@ -790,7 +814,7 @@ static String zb_ieee_long_addr_to_string(esp_zb_ieee_addr_t addr) {
  * @param addr  Pointer to bytes containing the address.
  */
 static String esp_base_ieee_addr_to_string(esp_48bit_addr_t addr) {
-  char buffer[24] = {0};
+  char buffer[24] = {};
 
   // Print characters in natural order.
   snprintf(buffer, sizeof(buffer), "0x%02x%02x%02x%02x%02x%02x", 
@@ -812,7 +836,7 @@ static String esp_base_ieee_addr_to_string(esp_48bit_addr_t addr) {
  * @param addr  Pointer to bytes containing the address.
  */
 static String esp_eui64_addr_to_string(esp_eui64_addr_t addr) {
-  char buffer[24] = {0};
+  char buffer[24] = {};
 
   // Print characters in natural order.
   snprintf(buffer, sizeof(buffer), "0x%02x%02x%02x%02x%02x%02x%02x%02x", 
@@ -861,7 +885,7 @@ static void zb_ieee_addr_set_oui(const uint8_t target_oui[3]) {
 
   // Get base MAC address from eFuse BLK0 (default option, burned by Espressif in production).
   // Value is 6 bytes long, in big-endian order internally, so byte[0] is the MSB.
-  uint8_t base_mac_addr[6] = {0};
+  uint8_t base_mac_addr[6] = {};
   ret = esp_read_mac(base_mac_addr, ESP_MAC_EFUSE_FACTORY);
   if (ret != ESP_OK) {
     log_e("Failed to get base MAC address from eFuse BLK0!");
@@ -879,7 +903,7 @@ static void zb_ieee_addr_set_oui(const uint8_t target_oui[3]) {
   //   Bytes [3..4] = 0xFF, 0xFE  (FF:FE insertion)
   //   Bytes [5..6] = base_mac[3], base_mac[4]
   //   Bytes [7]    = base_mac[5] + 3  (ESP_MAC_IEEE802154 offset)
-  esp_eui64_addr_t zigbee_addr = {0};
+  esp_eui64_addr_t zigbee_addr = {};
   ret = esp_read_mac(zigbee_addr, ESP_MAC_IEEE802154);
   if (ret != ESP_OK) {
     log_e("Failed to get zigbee MAC address!");
@@ -905,7 +929,7 @@ static void zb_ieee_addr_set_oui(const uint8_t target_oui[3]) {
   }
 
   // Confirm the change
-  esp_eui64_addr_t derived_zigbee_addr = {0};
+  esp_eui64_addr_t derived_zigbee_addr = {};
   ret = esp_read_mac(derived_zigbee_addr, ESP_MAC_IEEE802154);
   if (ret != ESP_OK) {
     log_e("Failed to get derived zigbee MAC address!");

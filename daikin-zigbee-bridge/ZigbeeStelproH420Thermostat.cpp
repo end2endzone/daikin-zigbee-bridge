@@ -388,7 +388,7 @@ bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
 
 bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
   // Capture actual intput value
-  zb_zcl_stelpro_thermostat_snapshot_t input = {0};
+  zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
     return false;
   zb_zcl_stelpro_thermostat_snapshot_t output = input;
@@ -516,7 +516,7 @@ bool ZigbeeStelproH420Thermostat::updateEnergy() {
   _energy_computation_timer.reset();
 
   // Capture actual intput value
-  zb_zcl_stelpro_thermostat_snapshot_t input = {0};
+  zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
     return false;
   zb_zcl_stelpro_thermostat_snapshot_t output = input;

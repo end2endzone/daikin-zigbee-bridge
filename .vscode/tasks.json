@@ -19,8 +19,12 @@
                 //"--build-property", "build.extra_flags='${config:myproject.compiler.extra_flags}'",
                 //"--build-property", "compiler.cxx.extra_flags='${config:myproject.compiler.extra_flags}'",
                 //"--build-property", "compiler.warning_flags='${config:myproject.compiler.extra_flags}'",
+                //"--build-property", "\"compiler.cpp.extra_flags=-Wno-unused-function\"",
+                //"--build-property", "\"compiler.c.extra_flags=-Wno-unused-function\"",
 
                 "--warnings", "${config:myproject.compiler.warnings}",
+                "--build-property", "\"compiler.cpp.extra_flags=${config:myproject.compiler.extra_flags}\"",
+                "--build-property", "\"compiler.c.extra_flags=${config:myproject.compiler.extra_flags}\"",
 
                 "${workspaceFolder}/daikin-controller/."
             ],
@@ -71,8 +75,12 @@
                 //"--build-property", "build.extra_flags='${config:myproject.compiler.extra_flags}'",
                 //"--build-property", "compiler.cxx.extra_flags='${config:myproject.compiler.extra_flags}'",
                 //"--build-property", "compiler.warning_flags='${config:myproject.compiler.extra_flags}'",
+                //"--build-property", "\"compiler.cpp.extra_flags=-Wno-unused-function\"",
+                //"--build-property", "\"compiler.c.extra_flags=-Wno-unused-function\"",
 
                 "--warnings", "${config:myproject.compiler.warnings}",
+                "--build-property", "\"compiler.cpp.extra_flags=${config:myproject.compiler.extra_flags}\"",
+                "--build-property", "\"compiler.c.extra_flags=${config:myproject.compiler.extra_flags}\"",
 
                 "${workspaceFolder}/daikin-zigbee-bridge/."
             ],
