@@ -19,6 +19,18 @@ public:
     API_RESULT_TIMEOUT,                 // No response was received within the deadline (controller-side).
   } ApiResult;
 
+  // Converts a ApiResult enum to a String
+  static String toString(ApiResult value) {
+    switch (value) {
+      case API_RESULT_OK                   : return "OK"                   ;
+      case API_RESULT_UNKNOWN_ERROR        : return "UNKNOWN_ERROR"        ;
+      case API_RESULT_DAIKIN_INFO_PULL_FAIL: return "DAIKIN_INFO_PULL_FAIL";
+      case API_RESULT_DAIKIN_INFO_PUSH_FAIL: return "DAIKIN_INFO_PUSH_FAIL";
+      case API_RESULT_TIMEOUT              : return "TIMEOUT"              ;
+      default:            return "Error";
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Shared constants
   // ---------------------------------------------------------------------------
@@ -46,6 +58,7 @@ public:
   //   Target Temp:  1700
   //   Indoor Temp:  2250
   //   Outdoor Temp: 1800
+  //   Comp Freq:    0
   // };
   typedef struct __attribute__((packed)) daikin_status_info_s {
     char name[DAIKIN_STATUS_MESSAGE_NAME_SIZE];
@@ -54,9 +67,10 @@ public:
     DaikinEnums::FanRate fan_rate;
     DaikinEnums::FanDir fan_dir;
     DaikinEnums::Preset preset;
-    uint16_t target_temp;
-    uint16_t indoor_temp;
-    uint16_t outdoor_temp;
+    int16_t target_temp;
+    int16_t indoor_temp;
+    int16_t outdoor_temp;
+    uint8_t compressor_freq;
   } daikin_status_info_t;
 
   virtual ~DaikinSerialApi() {}
@@ -73,7 +87,7 @@ public:
   // Send a new target temperature to the Daikin controller
   // which forwards it to the Daikin unit.
   // Argument `temperature` is expressed in units of 0.01 °C (e.g. 2100 = 21.00 °C).
-  virtual ApiResult setTargetTemperature(uint16_t temperature, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) = 0;
+  virtual ApiResult setTargetTemperature(int16_t temperature, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) = 0;
 
   // Request the full Daikin status of the Daikin controller from the zigbee-bridge.
   // Returns ApiResult::OK with a valid valid `status` when succesful. Returns another result otherwise.

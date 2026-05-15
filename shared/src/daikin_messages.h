@@ -56,7 +56,7 @@ typedef struct __attribute__((packed)) get_ip_address_response_s {
 } get_ip_address_response_t;
 
 typedef struct __attribute__((packed)) set_target_temp_request_s {
-  uint16_t temperature;   // units: 0.01 °C  (e.g. 2100 = 21.00 °C)
+  int16_t temperature;   // units: 0.01 °C  (e.g. 2100 = 21.00 °C)
 } set_target_temp_request_t;
 
 typedef struct __attribute__((packed)) set_target_temp_response_s {

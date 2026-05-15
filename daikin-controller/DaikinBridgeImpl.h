@@ -32,7 +32,7 @@ public:
     return API_RESULT_OK;
   }
 
-  ApiResult setTargetTemperature(uint16_t temperature, unsigned long timeout_ms) override
+  ApiResult setTargetTemperature(int16_t temperature, unsigned long timeout_ms) override
   {
     _http->setTimeout(timeout_ms);
     if (!daikinPullInfo()) {
