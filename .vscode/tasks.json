@@ -95,7 +95,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Arduino: <daikin-zigbee-bridge> - Updoad",
+            "label": "Arduino: <daikin-zigbee-bridge> - Upload",
             "type": "shell",
             "command": "arduino-cli",
             "args": [

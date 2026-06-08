@@ -11,5 +11,7 @@
 
     "myproject.compiler.warnings": "all",
 
+    // COM4, COM5 for zigbee-bridge
+    // COM6, COM7 for daikin-controller
     "myproject.port": "COM5",
 }
