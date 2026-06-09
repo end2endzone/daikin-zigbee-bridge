@@ -717,8 +717,8 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
         static constexpr zb_attr_more_info_t more = {
           .unit = "°C",
           .scaled_unit = "0.01°C",
-          .min = "-3200",
-          .max = "19900",
+          .min = "-9900", // confirmed with the physical device
+          .max = "19900", // confirmed with the physical device
           .notes = "Outdoor temperature displayed on the thermostat face.",
         };
         return &more;
@@ -731,7 +731,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
           .scaled_unit = nullptr,
           .min = nullptr,
           .max = nullptr,
-          .notes = "Mirror of the standard `SystemMode` attribute (`0x001C`). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately.",
+          .notes = "Mirror of the standard `SystemMode` attribute (`0x001C`). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately.",   // confirmed with the physical device
         };
         return &more;
       }

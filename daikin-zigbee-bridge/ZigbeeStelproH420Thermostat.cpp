@@ -881,6 +881,13 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     // Note that it could also be a bug in ESP ZIGBEE SDK's library which do not register attribute with custom manufacturer codes.
     // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
     // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
+    //
+    // Based on observations of a physical H420 thermostat ("appVersion":33,"hwVersion":1),
+    // * The attribute unit is 0.01°C. Value 1234 matches 12.34°C.
+    // * The unit can only show round numbers. Values are rounded down to the nearest integer. For example: value 1099 shows as 10°C.
+    // * The attribute accept values from -32768 to +32767.
+    // * The physical display can show values from -99°C to 199°C (-9900 to 19900).
+    // * Values lower than -9900 are displayed incorrectly on the device. They seems to be truncated to the 2 most significant digits. For example: value -19900 shows as -19 instead of -199.
     err = esp_zb_cluster_add_attr(
       esp_zb_thermostat_cluster,
       _stelpro_outdoor_temperature.getClusterId(),
