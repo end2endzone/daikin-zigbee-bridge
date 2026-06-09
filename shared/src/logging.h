@@ -34,3 +34,5 @@ static inline void logError(esp_err_t err) {
   const char * err_name = esp_err_to_name(err);
   log_e("*** Error: 0x%04x, %s", err, err_name);
 }
+
+#define LOG_LINE() log_i("LOG_LINE!")
