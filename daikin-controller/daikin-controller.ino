@@ -108,6 +108,7 @@ void daikinIncreaseTargetTempBy1() {
 #endif // #if 0
 
 bool daikinPullInfo() {
+  log_i("Pull data from Daikin controller...");
   daikinOnline = false;
   if (!daikin.pull()) {
     log_e("*** Failed to pull Daikin device info.");
@@ -122,10 +123,7 @@ bool daikinPullInfo() {
   return true;
 }
 
-void daikinPullAndPrintInfo() {
-  if (!daikinPullInfo())
-    return;
-
+void daikinPrintInfo() {
   log_i("Daikin heatpump attributes: {");
 
   // Print payloads
@@ -166,6 +164,14 @@ void daikinPullAndPrintInfo() {
   }
 
   log_i("};");
+}
+
+bool daikinPullAndPrintInfo() {
+  if (!daikinPullInfo())
+    return false;
+
+  daikinPrintInfo();
+  return true;
 }
 
 // -------------------------------------------------------------------------

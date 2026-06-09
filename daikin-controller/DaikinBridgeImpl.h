@@ -6,6 +6,8 @@
 #include "DaikinHTTP.h"
 
 extern bool daikinPullInfo();
+extern bool daikinPullAndPrintInfo();
+extern void daikinPrintInfo();
 
 class DaikinBridgeImpl : public DaikinSerialApi
 {
@@ -21,19 +23,26 @@ public:
 
   ApiResult getIpAddress(daikin_ip_address_t *addr, unsigned long timeout_ms) override
   {
+    log_i("Requesting Daikin IP...");
+
     _http->setTimeout(timeout_ms);
     if (!daikinPullInfo()) {
       return API_RESULT_DAIKIN_INFO_PULL_FAIL;
     }
 
     // Fill output object
-    snprintf(addr->ip, sizeof(addr->ip), "%s", WiFi.localIP().toString().c_str());
+    String local_ip = WiFi.localIP().toString();
+    snprintf(addr->ip, sizeof(addr->ip), "%s", local_ip.c_str());
+
+    log_i("Daikin IP: %s", local_ip.c_str());
 
     return API_RESULT_OK;
   }
 
   ApiResult setTargetTemperature(int16_t temperature, unsigned long timeout_ms) override
   {
+    log_i("Updating Daikin target temperature to %.2f°C...", temperature / 100.0);
+
     _http->setTimeout(timeout_ms);
     if (!daikinPullInfo()) {
       return API_RESULT_DAIKIN_INFO_PULL_FAIL;
@@ -41,17 +50,20 @@ public:
 
     // Implement request
     _http->setTargetTemp(temperature / 100.0);
-    log_i("Updating target temperature to %.2f°C");
     if (!_http->push()) {
       log_e("*** Failed to push Daikin device info.");
       return API_RESULT_DAIKIN_INFO_PUSH_FAIL;
     }
+
+    log_i("Target temperature set to %.2f°C...", temperature / 100.0);
 
     return API_RESULT_OK;
   }
 
   ApiResult getStatus(daikin_status_info_t *status, unsigned long timeout_ms) override
   {
+    log_i("Getting Daikin status...");
+
     _http->setTimeout(timeout_ms);
     if (!daikinPullInfo()) {
       return API_RESULT_DAIKIN_INFO_PULL_FAIL;
@@ -72,6 +84,9 @@ public:
     status->target_temp  = (uint16_t)(target_temp  * 100);
     status->indoor_temp  = (uint16_t)(indoor_temp  * 100);
     status->outdoor_temp = (uint16_t)(outdoor_temp * 100);
+
+    // Print status
+    daikinPrintInfo();
 
     return API_RESULT_OK;
   }
