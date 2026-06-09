@@ -393,6 +393,11 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
     return false;
   zb_zcl_stelpro_thermostat_snapshot_t output = input;
 
+  //// Debug: Log line numbers only when previous_occupied_heating_setpoint has changed.
+  //static int16_t previous_occupied_heating_setpoint = 9999;
+  //bool forceDebugging = (input.occupied_heating_setpoint != previous_occupied_heating_setpoint);
+  //previous_occupied_heating_setpoint = input.occupied_heating_setpoint;
+
   int16_t temp_diff = input.occupied_heating_setpoint - input.local_temperature; // positive when requiring heating
   if (abs(temp_diff) < STELPRO_TEMPERATURE_DIFFERENCE_THRESHOLD) {
     // Nothing to do.
@@ -409,11 +414,12 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
       output.running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
     } else {
       output.running_state = THERMOSTAT_RUNNING_STATE_IDLE;
+      output.pi_heating_demand = 0;
       output.stelpro_power = 0;
     }
 
     // Compute new pi_heating_demand
-    if ((output.running_state | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT) > 0) {
+    if ((output.running_state & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT) > 0) {
       // map [0°C,3°C] to [0%,100%]
       int16_t tmp = (int16_t)map(
         abs(temp_diff),
