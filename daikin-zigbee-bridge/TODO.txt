@@ -9,5 +9,3 @@
                               void* data_p);
   ```
 - Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
-- Modify Protocol::MessageCallback to return a boolean. Change the code in Protocol to check if a message is properly handled. Print an error if not.
-- Modify Protocol::sendMessage() to return a size_t for the amount of bytes written.
