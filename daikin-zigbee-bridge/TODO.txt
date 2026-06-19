@@ -9,3 +9,38 @@
                               void* data_p);
   ```
 - Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
+- Missing element `occupancy` and `temperature_display_mode` in the device's state:
+actual device:
+```json
+{
+    "energy": 0.05,
+    "keypad_lockout": "unlock",
+    "linkquality": 216,
+    "local_temperature": 23,
+    "occupancy": false,
+    "occupied_heating_setpoint": 5,
+    "peak_demand_icon": 17,
+    "pi_heating_demand": 0,
+    "power": 0,
+    "running_state": "idle",
+    "system_mode": "heat",
+    "temperature_display_mode": "celsius",
+    "outdoor_temperature_display": null
+}
+```
+current implementation:
+```json
+{
+    "energy": 0.05,
+    "keypad_lockout": "unlock",
+    "linkquality": 255,
+    "local_temperature": 24,
+    "occupied_heating_setpoint": 24,
+    "pi_heating_demand": 0,
+    "power": 0,
+    "running_state": "idle",
+    "system_mode": "heat",
+    "outdoor_temperature_display": null,
+    "peak_demand_icon": null
+}
+```
