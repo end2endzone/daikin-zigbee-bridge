@@ -49,13 +49,12 @@
 #define BUTTON_PIN BOOT_PIN   // BOOT button on ESP32-C6
 
 // Temperature synchronisation timing
-#define TEMPERATURE_SYNC_UPDATE_INTERVAL   5000  //  5.0 seconds
+#define TEMPERATURE_SYNC_UPDATE_INTERVAL  30000  // 30.0 seconds
 
 // Factory reset delay
 #define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
 
-#define FORCE_REPORTING_INTERVAL           15000  // 15.0 seconds
-#define DAIKIN_PRINT_INFO_INTERVAL          5000  //  5.0 seconds
+#define FORCE_REPORTING_INTERVAL           30000  // 30.0 seconds
 
 // RGB LED blinker
 RgbLedBlinker blinker;
@@ -135,11 +134,49 @@ void longClickDetected(Button2& btn) {
 // -------------------------------------------------------------------------
 
 /**
- * @brief Synchronize data 
- * from Daikin Serial to Zigbee Thermostat and
- * from the Zigbee Thermostat to Daikin Serial.
+ * @brief Force a Daikin Serial to Zigbee Thermostat synchronization.
+ * Daikin controller can change state without the zigbee bridge to be notified.
+ * This function make sure to synchronize the zigbee bridge from the Daikin Serial adaptor.
+ * 
+ * Returns true when the synchronization is succesful. Returns false otherwise.
  */
-void syncDaikinSerialAndZigbeeThermostat() {
+bool forceDaikinSerialToZigbeeThermostatSynchronization() {
+  // Note: Zigbee target temperature updates are synchronized synchronously in the zigbee callback.
+
+  log_i("Synchronizing zigbee controller from daikin serial adapter.");
+
+  // Daikin Serial remote updates must be manually pulled.
+  DaikinSerialApi::daikin_status_info_t remote_status = {};
+  DaikinSerialApi::ApiResult result = daikin.getStatus(&remote_status);
+  if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
+    log_e("Failed to get Remote Status from Daikin Controller: %s", DaikinSerialApi::toString(result).c_str());
+    return false;
+  } else {
+
+    // Set setpoint
+    if (!zbThermostat->setOccupiedHeatingSetpoint(remote_status.target_temp)) {
+      log_e("Unable to set setpoint. Synchronization has failed.");
+      return false;
+    }
+
+    // Set local temperature
+    if (!zbThermostat->setLocalTemperature(remote_status.indoor_temp)) {
+      log_e("Unable to set local temperature. Synchronization has failed.");
+      return false;
+    }
+  }
+
+  static const int NUM_INDOOR_UNIT = 2; // this project has 2 indoor units
+  String status_desc = DaikinSerialApi::toString(&remote_status, NUM_INDOOR_UNIT);
+  log_i("Daikin heatpump attributes: %s", status_desc.c_str());
+
+  return true;
+}
+
+/**
+ * @brief Check if a Daikin Serial to Zigbee Thermostat synchronization is required.
+ */
+void checkDaikinSerialToZigbeeThermostatSynchronization() {
   // Make sure we do not call this function too often...
   if (syncUpdateTimer.getTimeOutTime() != 0 && !syncUpdateTimer.hasTimedOut()) {
     return; // too soon
@@ -147,22 +184,7 @@ void syncDaikinSerialAndZigbeeThermostat() {
   // reset timer for next iteration timestamps
   syncUpdateTimer.reset();
 
-  // Zigbee target temperature updates are synchronized in the zigbee callback.
-  
-  // Daikin Serial remote updates must be manually downloaded.
-  DaikinSerialApi::daikin_status_info_t remote_status = {};
-  DaikinSerialApi::ApiResult result = daikin.getStatus(&remote_status);
-  if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
-    log_e("Failed to get Remote Status from Daikin Controller: %s", DaikinSerialApi::toString(result).c_str());
-  } else {
-
-    // Set local temperature 
-    if (!zbThermostat->setLocalTemperature(remote_status.indoor_temp)) {
-      log_e("Unable to set local temperature. Synchronization has failed.");
-      return;
-    }
-  }
-  
+  forceDaikinSerialToZigbeeThermostatSynchronization();
 }
 
 void printAllAttributes() {
@@ -416,10 +438,13 @@ void setup() {
   if (!zbThermostat->setup()) {
     log_i("WARNING: zbThermostat->setup() has failed!");
   }
-  
-  // Initialize simulation stuff
-  zbThermostat->setLocalTemperature(SIMULATION_DEFAULT_ROOM_TEMPERATURE);
-  zbThermostat->setOccupiedHeatingSetpoint(SIMULATION_DEFAULT_HEATING_SETPOINT);
+
+  // Forcing Zigbee Controller to be initialized with values from the Daikin Serial adaptor.
+  while(!forceDaikinSerialToZigbeeThermostatSynchronization()) {
+    static const unsigned long INIT_FAILURE_DELAY = 5000;
+    log_i("Initializing has failed. Retry again in %u ms.", INIT_FAILURE_DELAY);
+    delay(INIT_FAILURE_DELAY);
+  }
   
   // Init identifyTimer
   identifyTimer.setTimeOutTime(0);
@@ -481,7 +506,7 @@ void loop() {
   daikin.loop();
 
   // Should we download from daikin and update our zigbee thermostat ?
-  syncDaikinSerialAndZigbeeThermostat();
+  checkDaikinSerialToZigbeeThermostatSynchronization();
 
   reportAttributes();
 

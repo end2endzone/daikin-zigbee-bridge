@@ -60,6 +60,24 @@ public:
     return API_RESULT_OK;
   }
 
+  static void daikinHttp2DaikinStatusInfo(DaikinHTTP * http, daikin_status_info_t *status) {
+    // Fill status_info structure
+    snprintf(status->name, sizeof(status->name), "%s", http->getDeviceName().c_str());
+    status->power = http->getPower();
+    status->mode = http->getMode();
+    status->fan_rate = http->getFanRate();
+    status->fan_dir = http->getFanDir();
+    status->preset = http->getPreset();
+
+    float target_temp  = http->getTargetTemp();
+    float indoor_temp  = http->getIndoorTemp();
+    float outdoor_temp = http->getOutdoorTemp();
+
+    status->target_temp  = (uint16_t)(target_temp  * 100);
+    status->indoor_temp  = (uint16_t)(indoor_temp  * 100);
+    status->outdoor_temp = (uint16_t)(outdoor_temp * 100);
+  }
+
   ApiResult getStatus(daikin_status_info_t *status, unsigned long timeout_ms) override
   {
     log_i("Getting Daikin status...");
@@ -69,22 +87,8 @@ public:
       return API_RESULT_DAIKIN_INFO_PULL_FAIL;
     }
 
-    // Fill output object
-    snprintf(status->name, sizeof(status->name), "%s", _http->getDeviceName().c_str());
-    status->power = _http->getPower();
-    status->mode = _http->getMode();
-    status->fan_rate = _http->getFanRate();
-    status->fan_dir = _http->getFanDir();
-    status->preset = _http->getPreset();
-
-    float target_temp  = _http->getTargetTemp();
-    float indoor_temp  = _http->getIndoorTemp();
-    float outdoor_temp = _http->getOutdoorTemp();
-
-    status->target_temp  = (uint16_t)(target_temp  * 100);
-    status->indoor_temp  = (uint16_t)(indoor_temp  * 100);
-    status->outdoor_temp = (uint16_t)(outdoor_temp * 100);
-
+    daikinHttp2DaikinStatusInfo(_http, status);
+    
     // Print status
     daikinPrintInfo();
 

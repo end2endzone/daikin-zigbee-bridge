@@ -10,7 +10,6 @@
 #define SIMULATION_DEFAULT_HEATING_SETPOINT   2400  // 24.0°C
 #define SIMULATION_TEMPERATURE_DIFF_HIGH       500  //  5.0°C
 #define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
-#define SIMULATION_TEMPERATURE_STEP_LOW       (1 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
 #define SIMULATION_TEMPERATURE_STEP_HIGH      (5 * STELPRO_TEMP_MEASUREMENT_TOLERANCE)
 
 #define SIMULATION_COMPRESSOR_FREQ_IDLE          0
@@ -44,8 +43,8 @@ public:
     _status.fan_rate = DaikinEnums::FanRate::FAN_LEVEL5;
     _status.fan_dir = DaikinEnums::FanDir::FanDir_OFF;
     _status.preset = DaikinEnums::Preset::PRESET_NONE;
-    _status.target_temp = 2200;
-    _status.indoor_temp = 2200;
+    _status.target_temp = SIMULATION_DEFAULT_HEATING_SETPOINT;
+    _status.indoor_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE;
     _status.outdoor_temp = 3100;
     _status.compressor_freq = 0;
   }
@@ -87,9 +86,7 @@ private:
 
   /**
    * @brief Simulate local temperature changes.
-   * The local temperature must drifts towards an hypothetical "target_temp".
-   * When heating, target_temp is the heating setpoint.
-   * When not heating, target_temp is the default room temperature.
+   * Makes the local temperature drift toward an hypothetical "setpoint".
    */
   void simulateTemperature() {
     // Make sure we do not call this function too often...
@@ -128,10 +125,10 @@ private:
 
       // When not heating, local temperature drifts towards the default room temperature,
       // but only if local temperature > room temperature.
-      if (old_local_temp > SIMULATION_DEFAULT_ROOM_TEMPERATURE) {
+      if (old_local_temp > setpoint) {
 
         // Calculate speed gradient based on current temperature and target temperature.
-        int16_t diff = abs(old_local_temp - SIMULATION_DEFAULT_ROOM_TEMPERATURE);
+        int16_t diff = abs(old_local_temp - setpoint);
         if (diff > SIMULATION_TEMPERATURE_DIFF_HIGH) {
           new_local_temp -= SIMULATION_TEMPERATURE_STEP_HIGH;   // Cool faster when too hot
         } else {
@@ -140,51 +137,37 @@ private:
       }
     }
 
-    /*
-    // Compute target temperature
-    if (compressor_freq == SIMULATION_COMPRESSOR_FREQ_IDLE) {
-      // When off, temperature drifts toward room temp
-      target_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE; // SIMULATION_DEFAULT_ROOM_TEMPERATURE is the new setpoint
-    }
-
-    // Update new_temp towards target temperature
-    if (local_temp < target_temp - SIMULATION_TEMPERATURE_DIFF_HIGH ) {
-      new_local_temp += SIMULATION_TEMPERATURE_STEP_HIGH;   // Heat faster when far from setpoint
-    } else if (local_temp < target_temp) {
-      new_local_temp += SIMULATION_TEMPERATURE_STEP_LOW;    // Heat slower when close to setpoint
-    } else if (local_temp > target_temp + SIMULATION_TEMPERATURE_DIFF_HIGH) {
-      new_local_temp -= SIMULATION_TEMPERATURE_STEP_HIGH;   // Cool faster when too hot
-    } else if (local_temp > target_temp) {
-      new_local_temp -= SIMULATION_TEMPERATURE_STEP_LOW;    // Cool slower when close
-    }
-    
-    // Update official local temperature if it needs to change
-    if (new_local_temp != local_temp) {
-      _status.indoor_temp = new_local_temp;
-    }
-    */
+    bool has_changed = false;
 
     // Update official local temperature if it needs to change
     if (new_local_temp != old_local_temp) {
       _status.indoor_temp = new_local_temp;
+      has_changed = true;
     }
 
     // Update official mode if it needs to change
     if (new_mode != old_mode) {
       _status.mode = new_mode;
+      has_changed = true;
     }
 
     // Update official compressor frequency if it needs to change
     if (new_compressor_freq != old_compressor_freq) {
       _status.compressor_freq = new_compressor_freq;
+      has_changed = true;
     }
 
-    log_i("Simulation Update --> Temp: %.1f°C --> %.1f°C, Setpoint: %.1f°C, Comp. Freq: %d Hz --> %d Hz",
-                old_local_temp / 100.0,
-                new_local_temp / 100.0,
-                setpoint / 100.0,
-                old_compressor_freq,
-                new_compressor_freq);
+    if (has_changed) {
+      log_i("Simulation update: Temp: %.1f°C --> %.1f°C, Setpoint: %.1f°C, Comp. Freq: %d Hz --> %d Hz",
+        old_local_temp / 100.0,
+        new_local_temp / 100.0,
+        setpoint / 100.0,
+        old_compressor_freq,
+        new_compressor_freq);
+    }
+    // else {
+    //  log_i("Simulation Update --> No change.");
+    //}
   }
 
 };

@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "DaikinEnums.h"
+#include "format_helper.h"
+#include "logging.h"
 
 class DaikinSerialApi
 {
@@ -92,4 +94,147 @@ public:
   // Request the full Daikin status of the Daikin controller from the zigbee-bridge.
   // Returns ApiResult::OK with a valid valid `status` when succesful. Returns another result otherwise.
   virtual ApiResult getStatus(daikin_status_info_t *status, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) = 0;
+
+  // -------------------------------------------------------------------------
+  // Public helper functions
+  // -------------------------------------------------------------------------
+
+  /**
+   * @brief Check if an indoor unit is currently heating based on the given Daikin status info structure.
+   */
+  static bool isHeating(const daikin_status_info_t *status) {
+    if (status == nullptr) return false;
+    if (status->power != DaikinEnums::Power::POWER_ON)
+      return false;
+    if (status->compressor_freq == 0)
+      return false;
+    switch(status->mode) {
+      case DaikinEnums::Mode::MODE_AUTO:
+        return (status->target_temp > status->indoor_temp); // depends on setpoint vs indoor temperature
+        break;
+      case DaikinEnums::Mode::MODE_HEATING:
+        return true;
+        break;
+      default:
+        return false;
+    }
+    return false;
+  }
+
+  /**
+   * @brief Check if an indoor unit is currently cooling based on the given Daikin status info structure.
+   */
+  static bool isCooling(const daikin_status_info_t *status) {
+    if (status == nullptr) return false;
+    if (status->power != DaikinEnums::Power::POWER_ON)
+      return false;
+    if (status->compressor_freq == 0)
+      return false;
+    switch(status->mode) {
+      case DaikinEnums::Mode::MODE_AUTO:
+        return (status->target_temp < status->indoor_temp); // depends on setpoint vs indoor temperature
+        break;
+      case DaikinEnums::Mode::MODE_COOLING:
+        return true;
+        break;
+      default:
+        return false;
+    }
+    return false;
+  }
+
+  /**
+   * @brief Get an estimated instantaneous electrical power consumption in Watts from the given Daikin status info structure.
+   * The returned value combines the power consumption of both of indoor and output units.
+   * Returns a value is in Watts.
+   * The function assume a single indoor units connected to the outdoor unit.
+   * Change num_indoor_unit accordingly if the outdoor unit is connected to multiple indoor units.
+   * For example, for a heat pump system with 3 indoor units, the total power consumption for a single indoor unit is calculated from:
+   *   1. The  indoor unit power consumption based on its fan speed setting
+   *   2. The outdoor unit power consumption based on the compressor frequency, multipled by 1/3.
+   * For  indoor unit, the estimation is based on the fan speed setting.  
+   * For outdoor unit, the estimation is based on the compressor frequency.
+   */
+  static uint16_t getEstimatedInstantaneousPower(const daikin_status_info_t *status, int num_indoor_unit = 1) {
+    if (status == nullptr) return 0;
+
+    #define INDOOR_FAN_TOTAL_W 48.0 // based on the specification label sticker
+    #define OUTDOOR_COMPRESSOR_TOTAL_W 1500.0 // based on the specification label sticker, 18000 BTU unit
+    #define MIN_COMPRESSOR_FREQ_HZ  0.0 // based on observations
+    #define MAX_COMPRESSOR_FREQ_HZ 71.0 // based on observations
+
+    // Compute indoor unit power based on fan speed
+    float indoor_fan_ratio = 0.0;
+    switch (status->fan_rate) {
+      case DaikinEnums::FanRate::FAN_QUIET:   indoor_fan_ratio = 0.10; break; //  10%
+      case DaikinEnums::FanRate::FAN_LEVEL1:  indoor_fan_ratio = 0.25; break; //  25%
+      case DaikinEnums::FanRate::FAN_LEVEL2:  indoor_fan_ratio = 0.40; break; //  40%
+      case DaikinEnums::FanRate::FAN_LEVEL3:  indoor_fan_ratio = 0.60; break; //  60%
+      case DaikinEnums::FanRate::FAN_LEVEL4:  indoor_fan_ratio = 0.80; break; //  80%
+      case DaikinEnums::FanRate::FAN_LEVEL5:  indoor_fan_ratio = 1.00; break; // 100%
+      default:                                indoor_fan_ratio = 0.00; break; //   0%
+    }
+    uint16_t indoor_unit_power = (uint16_t)(indoor_fan_ratio * INDOOR_FAN_TOTAL_W);
+    
+    // Compute outdoor unit power based on compressor frequency
+    float outdoor_compressor_ratio = (float)map(
+        (float)status->compressor_freq,
+        MIN_COMPRESSOR_FREQ_HZ,
+        MAX_COMPRESSOR_FREQ_HZ,
+        0.0,
+        1.0);
+    float outoor_unit_share_factor = 1.0/(float)num_indoor_unit;
+    uint16_t outoor_unit_power = (uint16_t)(outdoor_compressor_ratio * OUTDOOR_COMPRESSOR_TOTAL_W * outoor_unit_share_factor);
+
+    uint16_t total_power = indoor_unit_power + outoor_unit_power;
+    return total_power;
+  }
+
+  static String toString(const daikin_status_info_t *status, int num_indoor_unit = 1) {
+    String output;
+    if (status == nullptr) return output;
+
+    output.reserve(320); // the default sample output is 304 characters long
+
+    output += "{\n";
+
+    // Print basic info
+    {
+      output += strformat("  Device name:  %s\n", status->name);
+    }
+    
+    // Print control info
+    {
+      output += strformat("  Power:        %s\n", DaikinEnums::toString(status->power).c_str());
+      output += strformat("  Mode:         %s\n", DaikinEnums::toString(status->mode).c_str());
+      output += strformat("  Fan rate:     %s\n", DaikinEnums::toString(status->fan_rate).c_str());
+      output += strformat("  Fan dir:      %s\n", DaikinEnums::toString(status->fan_dir).c_str());
+      output += strformat("  Preset:       %s\n", DaikinEnums::toString(status->preset).c_str());
+      output += strformat("  Target Temp:  %.1f°C\n", status->target_temp / 100.0);
+    }
+
+    // Print sensor info
+    {
+      output += strformat("  Indoor Temp:  %.1f°C\n", status->indoor_temp / 100.0);
+      output += strformat("  Outdoor Temp: %.1f°C\n", status->outdoor_temp / 100.0);
+      output += strformat("  Comp. Freq:   %u Hz\n", status->compressor_freq);
+    }
+
+    // Print derived information
+    {
+      bool heating = isHeating(status);
+      bool cooling = isCooling(status);
+      uint16_t instantaneous_power = getEstimatedInstantaneousPower(status, num_indoor_unit);
+      output += strformat("  Heating:      %s\n", bool2str(heating));
+      output += strformat("  Cooling:      %s\n", bool2str(cooling));
+      output += strformat("  Consumption:  %u W\n", instantaneous_power);
+    }
+
+    // Do not add a newline character at the end of the output string.
+    // Implement the same behavior as any other toString() function which output a single line string
+    // (it does not add newline characters at all).
+    output += "}";
+
+    return output;
+  }
 };

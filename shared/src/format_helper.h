@@ -145,6 +145,14 @@ static bool to_bin(const void* input, size_t input_size, char* buffer, size_t bu
   return true;
 }
 
+/*
+ * Converts a boolean value to a string representation
+ */
+static inline const char * bool2str(bool value) {
+  if (value) return "true";
+  return "false";
+}
+
 static void endian_swap(void* buffer, size_t buffer_size) {
   if (buffer == NULL || buffer_size <= 1)
     return;
