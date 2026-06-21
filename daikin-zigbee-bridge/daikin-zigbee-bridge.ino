@@ -32,6 +32,8 @@
 #error "Zigbee end device mode is not selected in Tools->Zigbee mode"
 #endif
 
+//#define ENABLE_DAIKIN_SERIAL_MOCK
+
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
 #include "ZigbeeStelproH420Thermostat.h"
@@ -42,7 +44,16 @@
 #include "scope_debugger.h"
 #include "zb_helper.h"
 #include "ZigbeeAttributeT.hpp"
+#ifdef ENABLE_DAIKIN_SERIAL_MOCK
 #include "DaikinSerialLocalMock.h"
+#else
+#include "DaikinSerialClient.h"
+#endif
+
+#define UART0_TX 17
+#define UART0_RX 16
+#define UART1_TX 18
+#define UART1_RX 19
 
 // Pin definitions
 #define LED_PIN RGB_BUILTIN   // RGB LED on ESP32-C6
@@ -75,7 +86,11 @@ LED_MODE previousLedMode = LED_MODE_OFF;
 // During static initialization, a FreeRTOS task executes in parallel, causing a race condition that crashes the ESP32‑C6.
 ZigbeeStelproH420Thermostat* zbThermostat = nullptr;
 
+#ifdef ENABLE_DAIKIN_SERIAL_MOCK
 DaikinSerialLocalMock daikin;
+#else
+DaikinSerialClient daikin;
+#endif
 
 // Button handler
 Button2 button;
@@ -337,6 +352,10 @@ void updateLEDStatus() {
 // -------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
+  #ifdef ENABLE_DAIKIN_SERIAL_MOCK
+  #else
+  Serial1.begin(115200, SERIAL_8N1, UART1_RX, UART1_TX);
+  #endif
 
   // Initialize RGB LED blinker
   blinker.setup(LED_PIN);
@@ -345,6 +364,10 @@ void setup() {
 
   // Wait up to 3s for serial
   while (!Serial && millis() < 3000);
+  #ifdef ENABLE_DAIKIN_SERIAL_MOCK
+  #else
+  while (!Serial1 && millis() < 3000);
+  #endif
   
   log_i("========================================");
   log_i("  Stelpro HT402 Thermostat Emulator");
@@ -404,7 +427,11 @@ void setup() {
   // Set manufacturer and model
   zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
 
+  #ifdef ENABLE_DAIKIN_SERIAL_MOCK
   daikin.begin(Serial);
+  #else
+  daikin.begin(Serial1);
+  #endif
 
   // DEBUG
   //zbThermostat->debugClusterList();
@@ -503,7 +530,10 @@ void loop() {
     log_w("zbThermostat has failed to update()!");
   }
 
+  #ifdef ENABLE_DAIKIN_SERIAL_MOCK
   daikin.loop();
+  #else
+  #endif
 
   // Should we download from daikin and update our zigbee thermostat ?
   checkDaikinSerialToZigbeeThermostatSynchronization();

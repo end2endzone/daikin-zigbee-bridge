@@ -32,8 +32,10 @@
 #include "DaikinBridgeImpl.h"
 #include "DaikinSerialListener.h"
 
-#define UART1_TX 17
-#define UART1_RX 16
+#define UART0_TX 17
+#define UART0_RX 16
+#define UART1_TX 18
+#define UART1_RX 19
 
 // Pin definitions
 #define LED_PIN RGB_BUILTIN   // RGB LED on ESP32-C6
