@@ -2,7 +2,6 @@
 
 #include "Arduino.h"
 #include "Zigbee.h"
-#include "zb_uint8_t.h"
 #include "esp_zigbee_type.h"
 
 static String strformat(const char* fmt, ...) {
