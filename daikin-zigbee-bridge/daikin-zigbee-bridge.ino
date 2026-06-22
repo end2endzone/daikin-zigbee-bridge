@@ -43,6 +43,7 @@
 #include "logging.h"
 #include "scope_debugger.h"
 #include "zb_helper.h"
+#include "project_config.h"
 #include "ZigbeeAttributeT.hpp"
 #ifdef ENABLE_DAIKIN_SERIAL_MOCK
 #include "DaikinSerialLocalMock.h"
@@ -181,7 +182,6 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
     }
   }
 
-  static const int NUM_INDOOR_UNIT = 2; // this project has 2 indoor units
   String status_desc = DaikinSerialApi::toString(&remote_status, NUM_INDOOR_UNIT);
   log_i("Daikin heatpump attributes: %s", status_desc.c_str());
 

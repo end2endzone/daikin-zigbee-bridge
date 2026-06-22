@@ -21,6 +21,7 @@
 #include <SoftTimers.h>
 #include "logging.h"
 #include "scope_debugger.h"
+#include "project_config.h"
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -28,7 +29,7 @@
 #include "DaikinHTTP.h"
 #include "WiFiConnectionManager.h"
 
-
+#include "DaikinSerialApi.h"
 #include "DaikinBridgeImpl.h"
 #include "DaikinSerialListener.h"
 
@@ -126,46 +127,16 @@ bool daikinPullInfo() {
 }
 
 void daikinPrintInfo() {
-  log_i("Daikin heatpump attributes: {");
-
   // Print payloads
   log_d("     DEBUG: Basic payload:   %s", daikin.getBasicInfoPayload().get()  .c_str());
   log_d("     DEBUG: Control payload: %s", daikin.getControlInfoPayload().get().c_str());
   log_d("     DEBUG: Sensor payload:  %s", daikin.getSensorInfoPayload().get() .c_str());
 
-  // Print basic info
-  {
-    String device_name = daikin.getDeviceName();
-    log_i("     Device name:  %s", device_name.c_str());
-  }
-  
-  // Print control info
-  {
-    DaikinEnums::Power power = daikin.getPower();
-    DaikinEnums::Mode mode = daikin.getMode();
-    DaikinEnums::FanRate fan = daikin.getFanRate();
-    DaikinEnums::FanDir FanDir = daikin.getFanDir();
-    DaikinEnums::Preset preset = daikin.getPreset();
-    float target_temp = daikin.getTargetTemp();
+  DaikinSerialApi::daikin_status_info_t status = {};
+  DaikinBridgeImpl::daikinHttp2DaikinStatusInfo(&daikin, &status);
 
-    log_i("     Power:        %s", DaikinEnums::toString(power).c_str());
-    log_i("     Mode:         %s", DaikinEnums::toString(mode).c_str());
-    log_i("     Fan rate:     %s", DaikinEnums::toString(fan).c_str());
-    log_i("     Fan dir:      %s", DaikinEnums::toString(FanDir).c_str());
-    log_i("     Preset:       %s", DaikinEnums::toString(preset).c_str());
-    log_i("     Target Temp:  %s", String(target_temp).c_str());
-  }
-
-  // Print sensor info
-  {
-    float indoor_temp = daikin.getIndoorTemp();
-    float outdoor_temp = daikin.getOutdoorTemp();
-
-    log_i("     Indoor Temp:  %s", String(indoor_temp).c_str());
-    log_i("     Outdoor Temp: %s", String(outdoor_temp).c_str());
-  }
-
-  log_i("};");
+  String status_desc = DaikinSerialApi::toString(&status, NUM_INDOOR_UNIT);
+  log_i("Daikin heatpump attributes: %s", status_desc.c_str());
 }
 
 bool daikinPullAndPrintInfo() {
