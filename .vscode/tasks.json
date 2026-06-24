@@ -58,14 +58,14 @@
             "problemMatcher": []
         },
         {
-            "label": "Arduino: <daikin-zigbee-bridge> - Compile",
+            "label": "Arduino: <zigbee-bridge> - Compile",
             "type": "shell",
             "command": "arduino-cli",
             "args": [
                 "compile",
                 "--libraries", "./shared",
                 "--fqbn", "${config:myproject.fqbn}",
-                "--build-path", "${workspaceFolder}/build/daikin-zigbee-bridge",
+                "--build-path", "${workspaceFolder}/build/zigbee-bridge",
                 
                 //"--build-property", "\"compiler.cpp.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
                 //"--build-property", "\"compiler.c.extra_flags=\\\"${config:myproject.compiler.extra_flags}\\\"\"",
@@ -82,7 +82,7 @@
                 "--build-property", "\"compiler.cpp.extra_flags=${config:myproject.compiler.extra_flags}\"",
                 "--build-property", "\"compiler.c.extra_flags=${config:myproject.compiler.extra_flags}\"",
 
-                "${workspaceFolder}/daikin-zigbee-bridge/."
+                "${workspaceFolder}/zigbee-bridge/."
             ],
             "group": {
                 "kind": "build",
@@ -95,15 +95,15 @@
             "problemMatcher": []
         },
         {
-            "label": "Arduino: <daikin-zigbee-bridge> - Upload",
+            "label": "Arduino: <zigbee-bridge> - Upload",
             "type": "shell",
             "command": "arduino-cli",
             "args": [
                 "upload",
                 "--fqbn", "${config:myproject.fqbn}",
-                "--build-path", "${workspaceFolder}/build/daikin-zigbee-bridge",
+                "--build-path", "${workspaceFolder}/build/zigbee-bridge",
                 "--port", "${config:myproject.port}",
-                "${workspaceFolder}/daikin-zigbee-bridge/."
+                "${workspaceFolder}/zigbee-bridge/."
             ],
             "group": "build",
             "presentation": {
@@ -118,7 +118,7 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "Arduino: <daikin-controller> - Compile",
-                "Arduino: <daikin-zigbee-bridge> - Compile",
+                "Arduino: <zigbee-bridge> - Compile",
             ],
             "group": {
                 "kind": "build",
@@ -142,11 +142,11 @@
             "problemMatcher": []
         },
         {
-            "label": "Arduino: <daikin-zigbee-bridge> - Compile & Upload",
+            "label": "Arduino: <zigbee-bridge> - Compile & Upload",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "Arduino: <daikin-zigbee-bridge> - Compile",
-                "Arduino: <daikin-zigbee-bridge> - Upload"
+                "Arduino: <zigbee-bridge> - Compile",
+                "Arduino: <zigbee-bridge> - Upload"
             ],
             "group": "build",
             "problemMatcher": []
