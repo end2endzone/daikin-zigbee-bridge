@@ -128,9 +128,11 @@ bool daikinPullInfo() {
 
 void daikinPrintInfo() {
   // Print payloads
-  log_d("     DEBUG: Basic payload:   %s", daikin.getBasicInfoPayload().get()  .c_str());
-  log_d("     DEBUG: Control payload: %s", daikin.getControlInfoPayload().get().c_str());
-  log_d("     DEBUG: Sensor payload:  %s", daikin.getSensorInfoPayload().get() .c_str());
+  log_i("Daikin payloads: {");
+  log_i("  Basic payload:   %s", daikin.getBasicInfoPayload().get()  .c_str());
+  log_i("  Control payload: %s", daikin.getControlInfoPayload().get().c_str());
+  log_i("  Sensor payload:  %s", daikin.getSensorInfoPayload().get() .c_str());
+  log_i("}");
 
   DaikinSerialApi::daikin_status_info_t status = {};
   DaikinBridgeImpl::daikinHttp2DaikinStatusInfo(&daikin, &status);
