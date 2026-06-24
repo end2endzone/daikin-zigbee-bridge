@@ -4,15 +4,27 @@
 #include <HTTPClient.h>
 #include "DaikinEnums.h"
 
+#define INVALID_VALUE_FLOAT NAN
+#define INVALID_VALUE_INT 32768
+
 class DaikinHttpPayload {
 private:
   String payload;
   String separator; // usualy `,` but sometimes `&`
 
 public:
-  DaikinHttpPayload() : payload(), separator(",") {}
-  DaikinHttpPayload(const String& payload) : payload(payload), separator(",") {}
-  DaikinHttpPayload(const String& payload, const String& separator) : payload(payload), separator(separator) {}
+  DaikinHttpPayload() :
+    payload(),
+    separator(",")
+    {}
+  DaikinHttpPayload(const String& payload) :
+    payload(payload),
+    separator(",")
+    {}
+  DaikinHttpPayload(const String& payload, const String& separator) :
+    payload(payload),
+    separator(separator)
+    {}
 
   void clear() {
     payload.clear();
@@ -107,10 +119,20 @@ public:
 
   float getValueFloat(const String &key) const {
     String tmp = getValueString(key);
-    return tmp.length() ? tmp.toFloat() : NAN;
+    return tmp.length() ? tmp.toFloat() : INVALID_VALUE_FLOAT;
   }
 
   void setValueFloat(const String &key, const float &value) {
+    String tmp = String(value);
+    setValueString(key, tmp);
+  }
+
+  int getValueInt(const String &key) const {
+    String tmp = getValueString(key);
+    return tmp.length() ? tmp.toInt() : INVALID_VALUE_INT;
+  }
+
+  void setValueInt(const String &key, const int &value) {
     String tmp = String(value);
     setValueString(key, tmp);
   }
@@ -270,6 +292,7 @@ private:
       case DaikinEnums::KEY_PRESET_MODE:       return &controlInfo;
       case DaikinEnums::KEY_INDOOR_TEMP:       return &sensorInfo;
       case DaikinEnums::KEY_OUTDOOR_TEMP:      return &sensorInfo;
+      case DaikinEnums::KEY_COMP_FREQ:         return &sensorInfo;
       case DaikinEnums::KEY_INDOOR_HUMIDITY:   return &controlInfo;
       case DaikinEnums::KEY_TARGET_TEMP:       return &controlInfo;
       case DaikinEnums::KEY_DEVICE_NAME:       return &basicInfo;
@@ -295,7 +318,7 @@ private:
 
   float getKeyFloat(DaikinEnums::Key key) {
     DaikinHttpPayload* payload = findPayloadForKey(key);
-    if (payload == NULL) return NAN;
+    if (payload == NULL) return INVALID_VALUE_FLOAT;
     const String keyName = DaikinEnums::toString(key);
     float value = payload->getValueFloat(keyName);
     return value;
@@ -306,6 +329,21 @@ private:
     if (payload == NULL) return;
     const String keyName = DaikinEnums::toString(key);
     payload->setValueFloat(keyName, value);
+  }
+
+  int getKeyInt(DaikinEnums::Key key) {
+    DaikinHttpPayload* payload = findPayloadForKey(key);
+    if (payload == NULL) return INVALID_VALUE_INT;
+    const String keyName = DaikinEnums::toString(key);
+    int value = payload->getValueInt(keyName);
+    return value;
+  }
+
+  void setKeyInt(DaikinEnums::Key key, const int &value) {
+    DaikinHttpPayload* payload = findPayloadForKey(key);
+    if (payload == NULL) return;
+    const String keyName = DaikinEnums::toString(key);
+    payload->setValueInt(keyName, value);
   }
 
   //------------------------------------------------------
@@ -436,4 +474,8 @@ public:
     return output;
   }
   
+  int getCompressorFrequency() {
+    int output = getKeyInt(DaikinEnums::KEY_COMP_FREQ);
+    return output;
+  }
 };

@@ -15,6 +15,7 @@ public:
     KEY_PRESET_MODE,          // "adv" - preset (eco/away/boost)
     KEY_INDOOR_TEMP,          // "htemp" - indoor temperature
     KEY_OUTDOOR_TEMP,         // "otemp" - outdoor temperature
+    KEY_COMP_FREQ,            // "cmpfreq" - compressor frequency in Hz
     KEY_INDOOR_HUMIDITY,      // "hhum" - indoor humidity
     KEY_TARGET_TEMP,          // "stemp" - setpoint temperature
     KEY_DEVICE_NAME,          // "name" - from basic info
@@ -31,6 +32,7 @@ public:
     "adv",      // KEY_PRESET_MODE
     "htemp",    // KEY_INDOOR_TEMP
     "otemp",    // KEY_OUTDOOR_TEMP
+    "cmpfreq",  // KEY_COMP_FREQ
     "hhum",     // KEY_INDOOR_HUMIDITY
     "stemp",    // KEY_TARGET_TEMP
     "name",     // KEY_DEVICE_NAME
