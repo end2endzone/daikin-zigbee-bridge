@@ -68,12 +68,11 @@ public:
     status->fan_rate = http->getFanRate();
     status->fan_dir = http->getFanDir();
     status->preset = http->getPreset();
+    status->compressor_freq = http->getCompressorFrequency();
 
     float target_temp  = http->getTargetTemp();
     float indoor_temp  = http->getIndoorTemp();
     float outdoor_temp = http->getOutdoorTemp();
-
-    status->compressor_freq = http->getCompressorFrequency();
 
     status->target_temp  = (uint16_t)(target_temp  * 100);
     status->indoor_temp  = (uint16_t)(indoor_temp  * 100);

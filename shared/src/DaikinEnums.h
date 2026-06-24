@@ -12,7 +12,9 @@ public:
     KEY_OPERATION_MODE,       // "mode" - operating mode (heat/cool/etc.)
     KEY_FAN_RATE,             // "f_rate" - fan speed
     KEY_FAN_DIRECTION,        // "f_dir" - FanDir direction
-    KEY_PRESET_MODE,          // "adv" - preset (eco/away/boost)
+    KEY_PRESET_AWAY,          // "en_hol" - holiday preset mode
+    KEY_PRESET_ECONO,         // "en_econo" - econo preset mode
+    KEY_PRESET_POWERFUL,      // "en_powerful" - powerful preset mode
     KEY_INDOOR_TEMP,          // "htemp" - indoor temperature
     KEY_OUTDOOR_TEMP,         // "otemp" - outdoor temperature
     KEY_COMP_FREQ,            // "cmpfreq" - compressor frequency in Hz
@@ -24,19 +26,21 @@ public:
 
   // Lookup table: maps key enums to string key in payload
   static constexpr const char* KeyNames[] = {
-    "ret",      // KEY_RETURN_STATUS
-    "pow",      // KEY_DEVICE_POWER
-    "mode",     // KEY_OPERATION_MODE
-    "f_rate",   // KEY_FAN_RATE
-    "f_dir",    // KEY_FAN_DIRECTION
-    "adv",      // KEY_PRESET_MODE
-    "htemp",    // KEY_INDOOR_TEMP
-    "otemp",    // KEY_OUTDOOR_TEMP
-    "cmpfreq",  // KEY_COMP_FREQ
-    "hhum",     // KEY_INDOOR_HUMIDITY
-    "stemp",    // KEY_TARGET_TEMP
-    "name",     // KEY_DEVICE_NAME
-    "unknown"   // KEY_UNKNOWN
+    "ret",            // KEY_RETURN_STATUS
+    "pow",            // KEY_DEVICE_POWER
+    "mode",           // KEY_OPERATION_MODE
+    "f_rate",         // KEY_FAN_RATE
+    "f_dir",          // KEY_FAN_DIRECTION
+    "en_hol",         // KEY_PRESET_AWAY
+    "en_econo",       // KEY_PRESET_ECONO
+    "en_powerful",    // KEY_PRESET_POWERFUL
+    "htemp",          // KEY_INDOOR_TEMP
+    "otemp",          // KEY_OUTDOOR_TEMP
+    "cmpfreq",        // KEY_COMP_FREQ
+    "hhum",           // KEY_INDOOR_HUMIDITY
+    "stemp",          // KEY_TARGET_TEMP
+    "name",           // KEY_DEVICE_NAME
+    "unknown"         // KEY_UNKNOWN
   };
 
   static const char* toString(Key key) {

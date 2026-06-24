@@ -5,7 +5,7 @@
 #include "DaikinEnums.h"
 
 #define INVALID_VALUE_FLOAT NAN
-#define INVALID_VALUE_INT 32768
+#define INVALID_VALUE_INT 0xFFFF
 
 class DaikinHttpPayload {
 private:
@@ -289,7 +289,9 @@ private:
       case DaikinEnums::KEY_OPERATION_MODE:    return &controlInfo;
       case DaikinEnums::KEY_FAN_RATE:          return &controlInfo;
       case DaikinEnums::KEY_FAN_DIRECTION:     return &controlInfo;
-      case DaikinEnums::KEY_PRESET_MODE:       return &controlInfo;
+      case DaikinEnums::KEY_PRESET_AWAY:       return &controlInfo;
+      case DaikinEnums::KEY_PRESET_ECONO:      return &controlInfo;
+      case DaikinEnums::KEY_PRESET_POWERFUL:   return &controlInfo;
       case DaikinEnums::KEY_INDOOR_TEMP:       return &sensorInfo;
       case DaikinEnums::KEY_OUTDOOR_TEMP:      return &sensorInfo;
       case DaikinEnums::KEY_COMP_FREQ:         return &sensorInfo;
@@ -448,10 +450,29 @@ public:
     setKeyString(DaikinEnums::KEY_FAN_DIRECTION, tmp);
   }
 
+  bool isPresetAway() {
+    int output = getKeyInt(DaikinEnums::KEY_PRESET_AWAY);
+    if (output == INVALID_VALUE_INT) return false;
+    return output != 0;
+  }
+ 
+  bool isPresetEcono() {
+    int output = getKeyInt(DaikinEnums::KEY_PRESET_ECONO);
+    if (output == INVALID_VALUE_INT) return false;
+    return output != 0;
+  }
+ 
+  bool isPresetPowerful() {
+    int output = getKeyInt(DaikinEnums::KEY_PRESET_POWERFUL);
+    if (output == INVALID_VALUE_INT) return false;
+    return output != 0;
+  }
+ 
   DaikinEnums::Preset getPreset() {
-    String tmp = getKeyString(DaikinEnums::KEY_PRESET_MODE);
-    DaikinEnums::Preset output = static_cast<DaikinEnums::Preset>(DaikinEnums::deserializePreset(tmp));
-    return output;
+    if (isPresetAway())         return DaikinEnums::Preset::PRESET_AWAY;
+    if (isPresetEcono())        return DaikinEnums::Preset::PRESET_ECO;
+    if (isPresetPowerful())     return DaikinEnums::Preset::PRESET_BOOST;
+    return DaikinEnums::Preset::PRESET_NONE;
   }
 
   float getTargetTemp() {
