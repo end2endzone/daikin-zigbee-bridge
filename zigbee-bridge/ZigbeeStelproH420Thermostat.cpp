@@ -38,6 +38,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _energy_computation_timer.setTimeOutTime(STELPRO_ENERGY_UPDATE_INTERVAL * 1000);
   _energy_computation_timer.reset();
 
+  _update_heating_logic_callback = nullptr;
+
   _device_id = ESP_ZB_HA_THERMOSTAT_DEVICE_ID;
   
   // Init all attributes
@@ -451,6 +453,22 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
     }
   }
 
+  bool success = updateHeatingLogic(output.running_state, output.pi_heating_demand, output.stelpro_power);
+  return success;
+}
+
+bool ZigbeeStelproH420Thermostat::updateHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power) {
+  // Capture actual intput value
+  zb_zcl_stelpro_thermostat_snapshot_t input = {};
+  if (!getSnapshot(input))
+    return false;
+  zb_zcl_stelpro_thermostat_snapshot_t output = input;
+
+  // Update output settings with the given arguments
+  output.running_state = running_state;
+  output.pi_heating_demand = pi_heating_demand;
+  output.stelpro_power = stelpro_power;
+
   // Note:
   // Zigbee attribute `pi_heating_demand` can not be set to a value (even 0) if :
   // * attribute `system_mode` is IDLE or
@@ -576,8 +594,13 @@ bool ZigbeeStelproH420Thermostat::update() {
     return false;
   if (!updateStelproPeakDemandIcon())
     return false;
-  if (!updateHeatingLogic())
-    return false;
+  if (_update_heating_logic_callback) {
+    if (!_update_heating_logic_callback())
+      return false;
+  } else {
+    if (!updateHeatingLogic())
+      return false;
+  }
   if (!updateEnergy())
     return false;
   return true;
@@ -681,6 +704,10 @@ bool ZigbeeStelproH420Thermostat::setup() {
   }
   log_i("}");
   return success;
+}
+
+void ZigbeeStelproH420Thermostat::setUpdateHeatingLogicCallback(UpdateHeatingLogicCallback callback) {
+  this->_update_heating_logic_callback = callback;
 }
 
 void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {

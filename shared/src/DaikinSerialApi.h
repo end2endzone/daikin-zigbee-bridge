@@ -6,6 +6,11 @@
 #include "format_helper.h"
 #include "logging.h"
 
+#define DAIKIN_INDOOR_FAN_MAX_POWER 48.0 // based on the specification label sticker
+#define DAIKIN_OUTDOOR_COMPRESSOR_MAX_POWER 1500.0 // based on the specification label sticker, 18000 BTU unit
+#define DAIKIN_MIN_COMPRESSOR_FREQ_HZ  0.0 // based on observations
+#define DAIKIN_MAX_COMPRESSOR_FREQ_HZ 71.0 // based on observations
+
 class DaikinSerialApi
 {
 public:
@@ -158,11 +163,6 @@ public:
   static uint16_t getEstimatedInstantaneousPower(const daikin_status_info_t *status, int num_indoor_unit = 1) {
     if (status == nullptr) return 0;
 
-    #define INDOOR_FAN_TOTAL_W 48.0 // based on the specification label sticker
-    #define OUTDOOR_COMPRESSOR_TOTAL_W 1500.0 // based on the specification label sticker, 18000 BTU unit
-    #define MIN_COMPRESSOR_FREQ_HZ  0.0 // based on observations
-    #define MAX_COMPRESSOR_FREQ_HZ 71.0 // based on observations
-
     // Compute indoor unit power based on fan speed
     float indoor_fan_ratio = 0.0;
     switch (status->fan_rate) {
@@ -174,20 +174,44 @@ public:
       case DaikinEnums::FanRate::FAN_LEVEL5:  indoor_fan_ratio = 1.00; break; // 100%
       default:                                indoor_fan_ratio = 0.00; break; //   0%
     }
-    uint16_t indoor_unit_power = (uint16_t)(indoor_fan_ratio * INDOOR_FAN_TOTAL_W);
+    uint16_t indoor_unit_power = (uint16_t)(indoor_fan_ratio * DAIKIN_INDOOR_FAN_MAX_POWER);
     
     // Compute outdoor unit power based on compressor frequency
     float outdoor_compressor_ratio = (float)map(
         (float)status->compressor_freq,
-        MIN_COMPRESSOR_FREQ_HZ,
-        MAX_COMPRESSOR_FREQ_HZ,
+        DAIKIN_MIN_COMPRESSOR_FREQ_HZ,
+        DAIKIN_MAX_COMPRESSOR_FREQ_HZ,
         0.0,
         1.0);
     float outoor_unit_share_factor = 1.0/(float)num_indoor_unit;
-    uint16_t outoor_unit_power = (uint16_t)(outdoor_compressor_ratio * OUTDOOR_COMPRESSOR_TOTAL_W * outoor_unit_share_factor);
+    uint16_t outoor_unit_power = (uint16_t)(outdoor_compressor_ratio * DAIKIN_OUTDOOR_COMPRESSOR_MAX_POWER * outoor_unit_share_factor);
 
     uint16_t total_power = indoor_unit_power + outoor_unit_power;
     return total_power;
+  }
+
+  /**
+   * @brief Get an estimated instantaneous electrical power ratio where 
+   * 0.0 is the minimum power usage (unit completely off) and
+   * 1.0 is the maximum power usage.
+   * The returned value combines the power consumption of both of indoor and output units.
+   * Returns a value is in Watts.
+   * The function assume a single indoor units connected to the outdoor unit.
+   * Change num_indoor_unit accordingly if the outdoor unit is connected to multiple indoor units.
+   * For example, for a heat pump system with 3 indoor units, the total power consumption for a single indoor unit is calculated from:
+   *   1. The  indoor unit power consumption based on its fan speed setting
+   *   2. The outdoor unit power consumption based on the compressor frequency, multipled by 1/3.
+   * For  indoor unit, the estimation is based on the fan speed setting.  
+   * For outdoor unit, the estimation is based on the compressor frequency.
+   */
+  static float getEstimatedInstantaneousPowerRatio(const daikin_status_info_t *status, int num_indoor_unit = 1) {
+    if (status == nullptr) return 0.0;
+
+    uint16_t current_power = getEstimatedInstantaneousPower(status, num_indoor_unit);
+    uint16_t max_power = DAIKIN_INDOOR_FAN_MAX_POWER + (DAIKIN_OUTDOOR_COMPRESSOR_MAX_POWER / num_indoor_unit);
+
+    uint16_t total_power_ratio = (float)((float)current_power / (float)max_power);
+    return total_power_ratio;
   }
 
   static String toString(const daikin_status_info_t *status, int num_indoor_unit = 1) {
