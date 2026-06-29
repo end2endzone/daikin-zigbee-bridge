@@ -232,7 +232,7 @@ static const char* zb_constants_zcl_attr_type_to_string(esp_zb_zcl_attr_type_t v
 }
 
 static const char* zb_constants_zcl_attr_access_to_string(esp_zb_zcl_attr_access_t value) {
-  switch (value) {
+  switch ((int)value) {
     case 0:                                   return "Unset"; // UNDOCUMENTED. Assumption
 
     // Base values
@@ -723,7 +723,7 @@ static const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_
     case ESP_ZB_ZCL_CLUSTER_ID_PUMP_CONFIG_CONTROL:         return UNKNOWN_SMART_CLUSTER_ATTR;
     case ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT:                  return zb_constants_zcl_thermostat_cluster_attr_to_string((esp_zb_zcl_thermostat_attr_t)value);
     case ESP_ZB_ZCL_CLUSTER_ID_FAN_CONTROL:                 return UNKNOWN_SMART_CLUSTER_ATTR;
-    case ESP_ZB_ZCL_CLUSTER_ID_DEHUMIDIFICATION_CONTROL /*ESP_ZB_ZCL_CLUSTER_ID_DEHUMID_CONTROL*/:             UNKNOWN_SMART_CLUSTER_ATTR;
+    case ESP_ZB_ZCL_CLUSTER_ID_DEHUMIDIFICATION_CONTROL /*ESP_ZB_ZCL_CLUSTER_ID_DEHUMID_CONTROL*/:             return UNKNOWN_SMART_CLUSTER_ATTR;
     case ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG:        return zb_constants_zcl_thermostat_ui_cluster_attr_to_string((esp_zb_zcl_thermostat_ui_config_attr_t)value);
     case ESP_ZB_ZCL_CLUSTER_ID_COLOR_CONTROL:               
     case ESP_ZB_ZCL_CLUSTER_ID_BALLAST_CONFIG:              
@@ -742,7 +742,7 @@ static const char* zb_constants_smart_cluster_attr_to_string(esp_zb_zcl_cluster_
 }
 
 static const char* zb_constants_zcl_cluster_role_to_string(esp_zb_zcl_cluster_role_t value) {
-  switch (value) {
+  switch ((int)value) {
     case ESP_ZB_ZCL_CLUSTER_SERVER_ROLE                                       :  return "Server";
     case ESP_ZB_ZCL_CLUSTER_CLIENT_ROLE                                       :  return "Client";
     case ESP_ZB_ZCL_CLUSTER_CLIENT_ROLE | ESP_ZB_ZCL_CLUSTER_SERVER_ROLE      :  return "Client / Server";

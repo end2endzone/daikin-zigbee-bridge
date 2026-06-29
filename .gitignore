@@ -1,5 +1,8 @@
-/daikin-zigbee-bridge/secrets.h
-/daikin-zigbee-bridge/logs.txt
-/daikin-zigbee-bridge/temp.txt
+/daikin-controller/secrets.h
+/daikin-controller/build
+/zigbee-bridge/logs.txt
+/zigbee-bridge/temp.txt
+/zigbee-bridge/build
 /desktop.ini
 /build
+/examples/UnitTests/build

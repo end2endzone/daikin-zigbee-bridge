@@ -1,9 +1,6 @@
 - Implement Temperature Measurement Sensor Cluster
   https://docs.silabs.com/zigbee/8.2.2/zigbee-fundamentals/06-zigbee-cluster-library#example-temperature-measurement-sensor-cluster
   ???
-- Test with real Stelpro thermostat:
-  - Validate unit for "StelproOutdoorTemp". Look at the value displayed on the thermostat and use attribute read and see if the attribute uses °C or 0.1°C unit.
-  - Validate StelproSystemMode to see if it always matches system_mode.
 - Create function pointer typedef for formatter: 
   ```
   typedef String (*FormatterFunc)(uint16_t cluster_id,
@@ -12,5 +9,6 @@
                               void* data_p);
   ```
 - Create function `FormatterFunc zb_get_attribute_formatter(uint16_t cluster_id, uint16_t attr_id);`
-- Rename `toHex()` and `toBin` to match `snake_case`.
-- Change the device manufacturer from `Stelpro` to `Stello` as per real device.
+- Fields peak_demand_icon shows as `"peak_demand_icon": null` in the device's state instead as `"peak_demand_icon": 0,`.
+- According to a Stelpro H420 thermostat, pi_heating_demand is must be in range [0, 100]. Update documentation (zigbee-bridge\ZigbeeStelproH420Thermostat.md line 184)
+

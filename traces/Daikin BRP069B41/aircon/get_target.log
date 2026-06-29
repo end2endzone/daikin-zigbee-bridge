@@ -1,0 +1,2 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/aircon/get_target"
+ret=OK,target=0

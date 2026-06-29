@@ -1,8 +1,8 @@
-# Zigbee Reference - daikin-zigbee-bridge
+# Zigbee Reference - zigbee-bridge
 
 ## Overview
 
-This document describes all Zigbee clusters and attributes implemented by the `ZigbeeStelproH420Thermostat` class in the **daikin-zigbee-bridge** project. The class emulates a **Stelpro HT402 (Hilo)** line-voltage baseboard thermostat, allowing it to be recognised natively by Zigbee2MQTT and compatible coordinators without any custom converter.
+This document describes all Zigbee clusters and attributes implemented by the `ZigbeeStelproH420Thermostat` class in the **zigbee-bridge** sketch. The class emulates a **Stelpro HT402 (Hilo)** line-voltage baseboard thermostat, allowing it to be recognised natively by Zigbee2MQTT and compatible coordinators without any custom converter.
 
 ### Device Identity
 
@@ -191,7 +191,7 @@ The `PIHeatingDemand` attribute (`0x0008`) has a strict ordering requirement enf
 - The HEAT bit in `RunningState` (`0x0029`) **must be set before** `PIHeatingDemand` is set to a non-zero value.
 - `PIHeatingDemand` **must be reset to `0` before** the HEAT bit is cleared from `RunningState`.
 
-Violating this order results in a ZCL error. The simulation loop in `daikin-zigbee-bridge.ino` accounts for this ordering explicitly.
+Violating this order results in a ZCL error. The simulation loop in `zigbee-bridge.ino` accounts for this ordering explicitly.
 
 ### StelproOutdoorTemp Registration Method
 

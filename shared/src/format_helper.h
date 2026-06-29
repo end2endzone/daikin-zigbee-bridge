@@ -2,7 +2,6 @@
 
 #include "Arduino.h"
 #include "Zigbee.h"
-#include "zb_uint8_t.h"
 #include "esp_zigbee_type.h"
 
 static String strformat(const char* fmt, ...) {
@@ -37,7 +36,7 @@ static String strformat(const char* fmt, ...) {
  * Returns true  when the full representation fits input buffer.
  * Returns false otherwise.
  */
-static bool toHex(const void* input, size_t input_size, char* buffer, size_t buffer_size)
+static bool to_hex(const void* input, size_t input_size, char* buffer, size_t buffer_size)
 {
   if ( buffer == NULL || buffer_size == 0 )
     return false;
@@ -94,7 +93,7 @@ static bool toHex(const void* input, size_t input_size, char* buffer, size_t buf
  * Returns true  when the full representation fits in buffer.
  * Returns false otherwise.
  */
-static bool toBin(const void* input, size_t input_size, char* buffer, size_t buffer_size)
+static bool to_bin(const void* input, size_t input_size, char* buffer, size_t buffer_size)
 {
   if ( buffer == NULL || buffer_size == 0 )
     return false;
@@ -143,6 +142,14 @@ static bool toBin(const void* input, size_t input_size, char* buffer, size_t buf
 
   buffer[pos] = '\0';
   return true;
+}
+
+/*
+ * Converts a boolean value to a string representation
+ */
+static inline const char * bool2str(bool value) {
+  if (value) return "true";
+  return "false";
 }
 
 static void endian_swap(void* buffer, size_t buffer_size) {

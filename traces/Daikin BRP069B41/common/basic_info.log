@@ -1,0 +1,5 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/common/basic_info"
+ret=OK,type=aircon,reg=eu,dst=1,ver=1_2_54,rev=203DE8C,pow=1,err=0,location=0,name=%4d%79%48%65%61%74%70%75%6d%70,icon=4,method=home only,port=30050,id=,pw=,lpw_flag=0,adp_kind=3,pv=0,cpv=0,cpv_minor=00,led=1,en_setzone=1,mac=1068381234FF,adp_mode=run,en_hol=0,ssid1=mynetworkname,radio1=-20,grp_name=,en_grp=0
+
+AWAY Preset:
+ret=OK,type=aircon,reg=eu,dst=1,ver=1_2_54,rev=203DE8C,pow=0,err=0,location=0,name=%4d%79%48%65%61%74%70%75%6d%70,icon=4,method=home only,port=30050,id=,pw=,lpw_flag=0,adp_kind=3,pv=0,cpv=0,cpv_minor=00,led=1,en_setzone=1,mac=1068381234FF,adp_mode=run,en_hol=1,ssid1=mynetworkname,radio1=-20,grp_name=,en_grp=0

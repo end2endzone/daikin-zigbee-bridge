@@ -38,6 +38,8 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _energy_computation_timer.setTimeOutTime(STELPRO_ENERGY_UPDATE_INTERVAL * 1000);
   _energy_computation_timer.reset();
 
+  _update_heating_logic_callback = nullptr;
+
   _device_id = ESP_ZB_HA_THERMOSTAT_DEVICE_ID;
   
   // Init all attributes
@@ -123,9 +125,12 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
 
     // Change default values from macro ESP_ZB_DEFAULT_THERMOSTAT_CONFIG()
     {
-      // Change from basic power source to constant power    
-      stelpro_cfg.basic_cfg.power_source = ESP_ZB_AF_NODE_POWER_SOURCE_CONSTANT_POWER;
+      // Stelpro's HT402 thermostat has a constant power source (ESP_ZB_AF_NODE_POWER_SOURCE_CONSTANT_POWER)
+      // but it's attribute ESP_ZB_ZCL_ATTR_BASIC_POWER_SOURCE_ID is not set and report 0
+      // which is the default unset value.
+      stelpro_cfg.basic_cfg.power_source = 0;
       
+
       // For `occupied_cooling_setpoint`, do not use default value `ESP_ZB_ZCL_THERMOSTAT_OCCUPIED_COOLING_SETPOINT_DEFAULT_VALUE` of 26.0°C.
       // If you do, this will set an upper limit for `occupied_heating_setpoint` at 25.0°C.
       // Controllers that try to set a value above 25.0°C will get a "Invalid Value" error such as:
@@ -154,34 +159,42 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
     _cluster_list = zigbee_stelpro_thermostat_clusters_create(&stelpro_cfg);
   }
 
-  // DEBUG:
-  // Print the list of all clusters and attributes...
-  log_i("Clusters summary:");
-  zb_print_markdown_cluster_list_summary(_cluster_list);
-  log_i("Attributes summary:");
-  zb_print_markdown_attributes_summary(_cluster_list);
-
   // Set zigbee default attribute initialization values.
   // The following zigbee attributes are attributes automatically created by esp_zb_thermostat_cluster_create() and other similar functions.
   // We need to initialize their default value before they are created in the zigbee stack.
   if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID            , THERMOSTAT_RUNNING_STATE_IDLE))                                             log_w("Failed to set attribute 'RUNNING_STATE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID                   , 0))                                                                         log_w("Failed to set attribute 'PI_HEATING_DEMAND' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<int16_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID                 , 0 ))                                                                        log_w("Failed to set attribute 'OUTDOOR_TEMPERATURE' value in cluster list!");
-  if (!zb_set_attribute_value_in_cluster_list<zb_uint8_t> (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID                           , ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE ))                            log_w("Failed to set attribute 'OCCUPANCY' value in cluster list!");
-  if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE ))   log_w("Failed to set attribute 'DISPLAY_MODE' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_DEFAULT_VALUE ))   log_w("Failed to set attribute 'TEMPERATURE_DISPLAY_MODE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_DEFAULT_VALUE ))             log_w("Failed to set attribute 'KEYPAD_LOCKOUT' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<int16_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID                                   , 0 ))                                                                        log_w("Failed to set attribute 'STELPRO_OUTDOOR_TEMPERATURE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint8_t>    (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_SYSTEM_MODE_ID                                    , ESP_ZB_ZCL_THERMOSTAT_SYSTEM_MODE_HEAT ))                                   log_w("Failed to set attribute 'STELPRO_SYSTEM_MODE' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_POWER_ID                                          , 0 ))                                                                        log_w("Failed to set attribute 'STELPRO_POWER' value in cluster list!");
   if (!zb_set_attribute_value_in_cluster_list<uint32_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_ENERGY_ID                                         , 0 ))                                                                        log_w("Failed to set attribute 'STELPRO_ENERGY' value in cluster list!");
-  if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID                              , 0 ))                                                                         log_w("Failed to set attribute 'STELPRO_PEAK_DEMAND_ICON' value in cluster list!");
+  if (!zb_set_attribute_value_in_cluster_list<uint16_t>   (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID                               , 0 ))                                                                        log_w("Failed to set attribute 'STELPRO_PEAK_DEMAND_ICON' value in cluster list!");
+
+  // Default occupancy is usualy set to 1 by default using `ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE`.
+  // More specificaly, the default constant is defined as `((zb_uint8_t)1U)`.
+  // Stelpro's HT402 thermostat has the occupacy set to false. This is confirmed from a actual physical thermostat.
+  // This can be observed in the State tab of Zigbee2MQTT which shows the following json key/value: `"occupancy": false`.
+  // Changing the default value to 0.
+  if (!zb_set_attribute_value_in_cluster_list<zb_uint8_t> (_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT            , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID                           , STELPRO_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE ))                           log_w("Failed to set attribute 'OCCUPANCY' value in cluster list!");
 
   // Force some zigbee attributes to be reportable.
   // The following attributes are reportable according to zigbee2mqtt's UI with a real Stelpro H402 thermostat.
-  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID     , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'OCCUPIED_HEATING_SETPOINT' reporting access!");
-  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID                   , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'SYSTEM_MODE' reporting access!");
-  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID             , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'PI_HEATING_DEMAND' reporting access!");
-  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG       , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID      , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'KEYPAD_LOCKOUT' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPIED_HEATING_SETPOINT_ID           , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'OCCUPIED_HEATING_SETPOINT' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_SYSTEM_MODE_ID                         , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'SYSTEM_MODE' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID                   , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'PI_HEATING_DEMAND' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID                           , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'OCCUPANCY' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG       , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'TEMPERATURE_DISPLAY_MODE' reporting access!");
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG       , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'KEYPAD_LOCKOUT' reporting access!");
+
+  // DEBUG:
+  // Print the list of all clusters and attributes...
+  log_i("Clusters summary:");
+  zb_print_markdown_cluster_list_summary(_cluster_list);
+  log_i("Attributes summary:");
+  zb_print_markdown_attributes_summary(_cluster_list);
 
   // Set endpoint configuration
   _ep_config = {
@@ -386,10 +399,15 @@ bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
 
 bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
   // Capture actual intput value
-  zb_zcl_stelpro_thermostat_snapshot_t input = {0};
+  zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
     return false;
   zb_zcl_stelpro_thermostat_snapshot_t output = input;
+
+  //// Debug: Log line numbers only when previous_occupied_heating_setpoint has changed.
+  //static int16_t previous_occupied_heating_setpoint = 9999;
+  //bool forceDebugging = (input.occupied_heating_setpoint != previous_occupied_heating_setpoint);
+  //previous_occupied_heating_setpoint = input.occupied_heating_setpoint;
 
   int16_t temp_diff = input.occupied_heating_setpoint - input.local_temperature; // positive when requiring heating
   if (abs(temp_diff) < STELPRO_TEMPERATURE_DIFFERENCE_THRESHOLD) {
@@ -407,11 +425,12 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
       output.running_state |= ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
     } else {
       output.running_state = THERMOSTAT_RUNNING_STATE_IDLE;
+      output.pi_heating_demand = 0;
       output.stelpro_power = 0;
     }
 
     // Compute new pi_heating_demand
-    if ((output.running_state | ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT) > 0) {
+    if ((output.running_state & ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT) > 0) {
       // map [0°C,3°C] to [0%,100%]
       int16_t tmp = (int16_t)map(
         abs(temp_diff),
@@ -433,6 +452,22 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
         STELPRO_MAX_POWER_WATTS);
     }
   }
+
+  bool success = updateHeatingLogic(output.running_state, output.pi_heating_demand, output.stelpro_power);
+  return success;
+}
+
+bool ZigbeeStelproH420Thermostat::updateHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power) {
+  // Capture actual intput value
+  zb_zcl_stelpro_thermostat_snapshot_t input = {};
+  if (!getSnapshot(input))
+    return false;
+  zb_zcl_stelpro_thermostat_snapshot_t output = input;
+
+  // Update output settings with the given arguments
+  output.running_state = running_state;
+  output.pi_heating_demand = pi_heating_demand;
+  output.stelpro_power = stelpro_power;
 
   // Note:
   // Zigbee attribute `pi_heating_demand` can not be set to a value (even 0) if :
@@ -514,7 +549,7 @@ bool ZigbeeStelproH420Thermostat::updateEnergy() {
   _energy_computation_timer.reset();
 
   // Capture actual intput value
-  zb_zcl_stelpro_thermostat_snapshot_t input = {0};
+  zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
     return false;
   zb_zcl_stelpro_thermostat_snapshot_t output = input;
@@ -559,8 +594,13 @@ bool ZigbeeStelproH420Thermostat::update() {
     return false;
   if (!updateStelproPeakDemandIcon())
     return false;
-  if (!updateHeatingLogic())
-    return false;
+  if (_update_heating_logic_callback) {
+    if (!_update_heating_logic_callback())
+      return false;
+  } else {
+    if (!updateHeatingLogic())
+      return false;
+  }
   if (!updateEnergy())
     return false;
   return true;
@@ -664,6 +704,10 @@ bool ZigbeeStelproH420Thermostat::setup() {
   }
   log_i("}");
   return success;
+}
+
+void ZigbeeStelproH420Thermostat::setUpdateHeatingLogicCallback(UpdateHeatingLogicCallback callback) {
+  this->_update_heating_logic_callback = callback;
 }
 
 void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
@@ -804,6 +848,26 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _outdoor_temperature    .getAttributeId() , _outdoor_temperature    .getDefaultDataPointer());   logError(err);
   err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, _occupancy              .getAttributeId() , _occupancy              .getDefaultDataPointer());   logError(err);
 
+  // Hardcoded Basic cluster attributes
+  #if 1
+  {
+    static uint8_t app_version = 33;
+    static uint8_t* date_code = (uint8_t*)"\01720000000 00000\u0000"; // (sizeof("20000000 00000\u0000") - 1) == 15 == \017
+    static uint8_t hw_version = 1;
+    static uint8_t* location_desc = (uint8_t*)"\012Thermostat"; // (sizeof("Thermostat") - 1) == 10 == \012
+    static int8_t physical_env = 0;
+    static uint8_t stack_version = 34;
+
+    // Add attribute limits
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_APPLICATION_VERSION_ID,   &app_version);      logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_DATE_CODE_ID,              date_code);        logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_HW_VERSION_ID,            &hw_version);       logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_LOCATION_DESCRIPTION_ID,   location_desc);    logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_PHYSICAL_ENVIRONMENT_ID,  &physical_env);     logError(err);
+    err = esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_STACK_VERSION_ID,         &stack_version);    logError(err);
+  }
+  #endif
+
   // Hardcoded HEATING MIN/MAX/ABS SETPOINTS
   #if 1
   {
@@ -853,6 +917,13 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     // Note that it could also be a bug in ESP ZIGBEE SDK's library which do not register attribute with custom manufacturer codes.
     // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
     // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
+    //
+    // Based on observations of a physical H420 thermostat ("appVersion":33,"hwVersion":1),
+    // * The attribute unit is 0.01°C. Value 1234 matches 12.34°C.
+    // * The unit can only show round numbers. Values are rounded down to the nearest integer. For example: value 1099 shows as 10°C.
+    // * The attribute accept values from -32768 to +32767.
+    // * The physical display can show values from -99°C to 199°C (-9900 to 19900).
+    // * Values lower than -9900 are displayed incorrectly on the device. They seems to be truncated to the 2 most significant digits. For example: value -19900 shows as -19 instead of -199.
     err = esp_zb_cluster_add_attr(
       esp_zb_thermostat_cluster,
       _stelpro_outdoor_temperature.getClusterId(),

@@ -17,7 +17,7 @@ static void zb_debug_print_attributes_in_attribute_list(esp_zb_attribute_list_t*
   while (element != nullptr) {
     esp_zb_zcl_attr_t & attr = element->attribute;
 
-    char str[256 + DATA_VALUE_STRING_BUFFER_SIZE] = {0};
+    char str[256 + DATA_VALUE_STRING_BUFFER_SIZE] = {};
     bool success = zb_zcl_attribute_to_string(str, sizeof(str), cluster_id, &attr);
     log_d("    attribute[%02d] %s", index, str);
 

@@ -92,7 +92,7 @@ class RgbLedBlinker {
 
   public:
     RgbLedBlinker() :
-      pin(pin),
+      pin(0),
       mode(MODE_OFF),
       color(COLOR_BLACK) {
     }

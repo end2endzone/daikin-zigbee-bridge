@@ -19,6 +19,7 @@
         // For Arduino libraries
         "${env:USERPROFILE}/Documents/Arduino/libraries/SoftTimers/src",
         "${env:USERPROFILE}/Documents/Arduino/libraries/Button2/src",
+        "${env:USERPROFILE}/Documents/Arduino/libraries/SerialTransfer/src",
 
         // For Zigbee.h, ZigbeeEP.h, ZigbeeEP.cpp
         "${env:HOME}/Arduino15/packages/esp32/hardware/esp32/*/libraries/Zigbee/src",
@@ -46,6 +47,9 @@
 
         // For esp_newlib.h
         //"${env:LOCALAPPDATA}/Arduino15/packages/esp32/tools/esp32c6-libs/*/include/newlib/platform_include",
+
+        // For HTTPClient.h
+        "${env:LOCALAPPDATA}/Arduino15/packages/esp32/hardware/esp32/*/libraries/HTTPClient/src",
 
         //For esp_err.h, hal\gpio_types.h and other include directories under `esp32c6-libs/*/include`.
         "${env:LOCALAPPDATA}/Arduino15/packages/esp32/tools/esp32c6-libs/*/include/app_trace/include",

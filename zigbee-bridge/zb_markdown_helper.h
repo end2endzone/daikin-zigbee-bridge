@@ -93,6 +93,9 @@ static void zb_print_markdown_attributes_summary(uint16_t cluster_id, esp_zb_att
     // Compute the value of the data as a string
     char data_str[DATA_VALUE_STRING_BUFFER_SIZE];
     bool success = zb_zcl_attribute_data_pointer_to_string(data_str, DATA_VALUE_STRING_BUFFER_SIZE, (esp_zb_zcl_attr_type_t)attr.type, attr.data_p);
+    if (!success) {
+      snprintf(data_str, sizeof(data_str), "ERROR-%s-%d", logBaseFileName(__FILE__), __LINE__);
+    }
 
     // Get more attribute info
     const char * unit_readable =  "-";

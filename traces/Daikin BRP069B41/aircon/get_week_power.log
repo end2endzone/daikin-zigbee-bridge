@@ -1,0 +1,3 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/aircon/get_week_power"
+ret=OK,today_runtime=963,datas=0/0/0/0/0/0/0
+ret=OK,today_runtime=817,datas=0/0/0/0/0/0/0

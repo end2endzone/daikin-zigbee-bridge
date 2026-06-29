@@ -1,0 +1,2 @@
+curl "http://%DAIKIN_HEATPUMP_IP%/aircon/get_demand_control"
+ret=OK,type=0

@@ -9,7 +9,7 @@
 //   HT402 uses endpoint 25, not 10!
 #define STELPRO_ENDPOINT 25
 #define STELPRO_MANUFACTURER_CODE 0x1185
-#define STELPRO_MANUFACTURER_NAME "Stelpro"
+#define STELPRO_MANUFACTURER_NAME "Stello"
 #define STELPRO_MODEL_NAME "HT402"
 
 // Default Stelpro thermostat values (in hundredths of degrees Celsius)
@@ -23,6 +23,8 @@
 #define STELPRO_MIN_COOL_SETPOINT              500  //  5.0°C
 #define STELPRO_MAX_COOL_SETPOINT             (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
 #define STELPRO_OCCUPIED_COOLING_SETPOINT     (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
+
+#define STELPRO_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE ((zb_uint8_t)0U) // Stelpro H420 thermostat default value. It is the opposite of `ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE`.
 
 // Running state values (each bit is the state of something)
 #define THERMOSTAT_RUNNING_STATE_IDLE 0x0000

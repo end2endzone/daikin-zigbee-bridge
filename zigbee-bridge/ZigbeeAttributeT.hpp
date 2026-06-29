@@ -27,7 +27,7 @@ public:
   virtual ~ZigbeeAttribute() {}
 
   T get() const {
-    T value = {0};
+    T value = {};
     if (!isValid())
       return value; // garbadge
     bool readed = getGenericAttribute(&value, sizeof(T));
@@ -88,7 +88,7 @@ public:
   }
 
   virtual bool report() const {
-    T value = {0};
+    T value = {};
     bool readed = get(value);
     if (!readed)
       return false;
@@ -133,11 +133,11 @@ public:
   }
 
   virtual void zbDataToHex(char* buffer, size_t buffer_size) const {
-    T value = {0};
+    T value = {};
     if (buffer_size >= 1)
       buffer[0] = '\0';
     if (get(value)) {
-      toHex(&value, sizeof(T), buffer, buffer_size);
+      to_hex(&value, sizeof(T), buffer, buffer_size);
     }
   }
 
@@ -150,7 +150,7 @@ public:
   }
 
   virtual bool update() {
-    T value = {0};
+    T value = {};
     bool readed = get(value);
     if (!readed)
       return false;
