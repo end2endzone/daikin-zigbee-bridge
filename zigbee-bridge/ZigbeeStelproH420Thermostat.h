@@ -197,10 +197,8 @@ public:
   bool report();
   bool setup();
 
-  typedef bool (*UpdateHeatingLogicCallback)();
-  void setUpdateHeatingLogicCallback(UpdateHeatingLogicCallback callback);
-
-  bool updateHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power);
+  void setManualHeatingLogicUpdate(bool value);
+  bool setHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power);
 
   void printZigbeeAttributes();
 
@@ -296,5 +294,5 @@ private:
   // The list of all attributes, for handling attributes in loops  
   ZigbeeAttributeList _zigbee_attribute_list;
 
-  UpdateHeatingLogicCallback _update_heating_logic_callback;
+  bool _manual_heating_logic_update;
 };

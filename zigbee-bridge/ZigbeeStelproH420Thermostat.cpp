@@ -38,7 +38,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _energy_computation_timer.setTimeOutTime(STELPRO_ENERGY_UPDATE_INTERVAL * 1000);
   _energy_computation_timer.reset();
 
-  _update_heating_logic_callback = nullptr;
+  _manual_heating_logic_update = false;
 
   _device_id = ESP_ZB_HA_THERMOSTAT_DEVICE_ID;
   
@@ -453,11 +453,11 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
     }
   }
 
-  bool success = updateHeatingLogic(output.running_state, output.pi_heating_demand, output.stelpro_power);
+  bool success = setHeatingLogic(output.running_state, output.pi_heating_demand, output.stelpro_power);
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::updateHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power) {
+bool ZigbeeStelproH420Thermostat::setHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power) {
   // Capture actual intput value
   zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
@@ -594,10 +594,7 @@ bool ZigbeeStelproH420Thermostat::update() {
     return false;
   if (!updateStelproPeakDemandIcon())
     return false;
-  if (_update_heating_logic_callback) {
-    if (!_update_heating_logic_callback())
-      return false;
-  } else {
+  if (!_manual_heating_logic_update) {
     if (!updateHeatingLogic())
       return false;
   }
@@ -706,8 +703,8 @@ bool ZigbeeStelproH420Thermostat::setup() {
   return success;
 }
 
-void ZigbeeStelproH420Thermostat::setUpdateHeatingLogicCallback(UpdateHeatingLogicCallback callback) {
-  this->_update_heating_logic_callback = callback;
+void ZigbeeStelproH420Thermostat::setManualHeatingLogicUpdate(bool value) {
+  this->_manual_heating_logic_update = value;
 }
 
 void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {

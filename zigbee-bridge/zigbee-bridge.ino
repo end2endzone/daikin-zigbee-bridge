@@ -150,19 +150,6 @@ void longClickDetected(Button2& btn) {
 // -------------------------------------------------------------------------
 
 /**
- * @brief Provides an emplty implementation for updating the default heating logic.
- * This allows the sketch to disables the default implementation in ZigbeeStelproH420Thermostat class
- * in favor of implementing our own. The actual heating logic is implemented in function
- * forceDaikinSerialToZigbeeThermostatSynchronization()
- * See forceDaikinSerialToZigbeeThermostatSynchronization() for details.
- * 
- * Returns true when the function is succesful. Returns false otherwise.
- */
-bool disableDefaultUpdateHeatingLogic() {
-  return true;
-}
-
-/**
  * @brief Force a Daikin Serial to Zigbee Thermostat synchronization.
  * Daikin controller can change state without the zigbee bridge to be notified.
  * This function make sure to synchronize the zigbee bridge from the Daikin Serial adaptor.
@@ -195,8 +182,8 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
       return false;
     }
 
-    // Update the heating logic of the thermostat since the internal implementation is disabled.
-    // See call to ZigbeeStelproH420Thermostat::setUpdateHeatingLogicCallback() in setup() function.
+    // Update the heating logic of the thermostat manually.
+    // See call to ZigbeeStelproH420Thermostat::setManualHeatingLogicUpdate() in setup() function.
     bool is_heating = DaikinSerialApi::isHeating(&remote_status);
     bool is_cooling = DaikinSerialApi::isCooling(&remote_status);
     uint16_t new_running_state = 0;
@@ -217,8 +204,8 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
       new_pi_heating_demand = (uint8_t)tmp;
     }
     new_stelpro_power = DaikinSerialApi::getEstimatedInstantaneousPower(&remote_status, NUM_INDOOR_UNIT);
-    if (!zbThermostat->updateHeatingLogic(new_running_state, new_pi_heating_demand, new_stelpro_power)) {
-      log_e("Unable to update heating logic. Synchronization has failed.");
+    if (!zbThermostat->setHeatingLogic(new_running_state, new_pi_heating_demand, new_stelpro_power)) {
+      log_e("Unable to set heating logic. Synchronization has failed.");
       return false;
     }
   }
@@ -468,8 +455,8 @@ void setup() {
   // Set manufacturer and model
   zbThermostat->setManufacturerAndModel(STELPRO_MANUFACTURER_NAME, STELPRO_MODEL_NAME);
 
-  // Disables the default implementation of the heating logic in ZigbeeStelproH420Thermostat class
-  zbThermostat->setUpdateHeatingLogicCallback(&disableDefaultUpdateHeatingLogic);
+  // The the zigbee thermostat that we will be updating the heating logic manually in forceDaikinSerialToZigbeeThermostatSynchronization().
+  zbThermostat->setManualHeatingLogicUpdate(true);
   
   #ifdef ENABLE_DAIKIN_SERIAL_MOCK
   daikin.begin(Serial);
