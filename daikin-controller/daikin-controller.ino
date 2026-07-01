@@ -25,10 +25,9 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include "secrets.h"
 #include "DaikinHTTP.h"
 #include "WiFiConnectionManager.h"
-#include "PreferencesProvider.h"
+#include "SettingsProvider.h"
 
 #include "DaikinSerialApi.h"
 #include "DaikinBridgeImpl.h"
@@ -67,7 +66,7 @@ Button2 button;
 SoftTimer forceReportingTimer;
 SoftTimer activityTimer;
 
-PreferencesProvider preferencesProvider;
+SettingsProvider settingsProvider;
 
 bool daikinOnline = false;
 
@@ -182,7 +181,7 @@ void holdDetected(Button2& btn) {
   log_i("Factory reset triggered - hold detected for %d seconds!", FACTORY_RESET_LONG_CLICK_TIME);
   log_i("Rebooting in 1 second...");
   delay(1000);
-  preferencesProvider.factoryReset();
+  settingsProvider.factoryReset();
 }
 
 void longClickDetected(Button2& btn) {
@@ -283,21 +282,21 @@ void setup() {
   initForceReportingTimer();
 
   // Initialize the preferences provider
-  preferencesProvider.begin();
+  settingsProvider.begin();
 
   // Check if preferences are already stored
-  String daikin_heatpump_ip = preferencesProvider.getSavedIP();
-  if (daikin_heatpump_ip.length() == 0) {
-    log_i("Existing configuration preferences not found. Booting into WiFi access point mode");
-    
+  const SettingsProvider::Settings & settings = settingsProvider.getSettings();
+  if (!SettingsProvider::isValid(settings)) {
+    log_i("Existing configuration settings not found. Booting into WiFi access point mode.");
+   
     // Skip the rest of the setup
     return;
   }
 
-  log_i("Using preexisting configuration preferences:\n"
-    "  Daikin heatpump IP: %s", daikin_heatpump_ip.c_str());
-
-  daikin.setIP(daikin_heatpump_ip.c_str());
+  // Configure our object with our preference values
+  daikin.setIP(settings.daikin_ip.c_str());
+  wifiManager.setNetworkSSID(settings.wifi_ssid);
+  wifiManager.setNetworkPassword(settings.wifi_password);
 
   bridge.begin(&daikin);
   listener.begin(Serial1, &bridge);
@@ -348,10 +347,10 @@ void loop() {
   }
 
   // Handle web server if ESP booted in AP mode
-  preferencesProvider.loop();
+  settingsProvider.loop();
 
   // Refresh WiFi connection state or the web server
-  if (!preferencesProvider.isWifiAccessPointModeEnabled()) {
+  if (!settingsProvider.isWifiAccessPointModeEnabled()) {
     wifiManager.loop();
   }
 
@@ -362,7 +361,7 @@ void loop() {
   blinker.loop();
   button.loop();
 
-  if (!preferencesProvider.isWifiAccessPointModeEnabled()) {
+  if (!settingsProvider.isWifiAccessPointModeEnabled()) {
     // Print Daikin info periodicaly.
     daikinReportCheck();
 

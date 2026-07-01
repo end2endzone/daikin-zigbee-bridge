@@ -2,7 +2,6 @@
 #include <HTTPClient.h>
 #include <ESPping.h>
 #include <SoftTimers.h>
-#include "secrets.h"
 #include "timer_helper.h"
 #include "esp_wifi.h"
 
@@ -27,6 +26,8 @@ public:
 
 private:
   SoftTimer eventTimer;
+  String networkSSID;
+  String networkPassword;
   IPAddress gatewayIP;
   IPAddress dnsIP;
   bool gatewayProbeOK;
@@ -50,6 +51,14 @@ public:
     gatewayProbeOK(false),
     dnsProbeOK(false),
     wifi_state(WIFI_STATE::DISCONNECTED) {
+  }
+
+  void setNetworkSSID(const String& value) {
+    networkSSID = value;
+  }
+
+  void setNetworkPassword(const String& value) {
+    networkPassword = value;
   }
 
   WIFI_STATE getState() const {
@@ -99,9 +108,9 @@ public:
           // DISCONNECTED --> CONNECTING
 
           // Time to try/retry the connection
-          log_i("WiFi connecting to '%s'.", SECRET_WIFI_SSID);
+          log_i("WiFi connecting to '%s'.", networkSSID.c_str());
           WiFi.disconnect(true);
-          WiFi.begin(SECRET_WIFI_SSID, SECRET_WIFI_PASSWORD);
+          WiFi.begin(networkSSID.c_str(), networkPassword.c_str());
 
           // Start a timer to detect connection timeout or to delay reconnecting.
           eventTimer.setTimeOutTime(WIFI_CONNECTION_TIMEOUT);

@@ -28,6 +28,22 @@ static String strformat(const char* fmt, ...) {
   return output;
 }
 
+static String hidePassword(size_t n) {
+  String result = ""; 
+  for (size_t i = 0; i < n; i++) {
+    result += '*';
+  }
+  return result;
+}
+
+static inline String hidePassword(const char * value) {
+  return hidePassword(strlen(value));
+}
+
+static inline String hidePassword(const String & value) {
+  return hidePassword(value.length());
+}
+
 /*
  * Converts an input buffer to its hexadecimal string representation.
  *
