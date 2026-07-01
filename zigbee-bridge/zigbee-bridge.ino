@@ -439,6 +439,14 @@ void setup() {
   button.setLongClickHandler(longClickDetected);
   button.setLongClickDetectedHandler(holdDetected);
   
+  // Read the state of the button right now to initialize
+  button.loop();
+
+  // Check if the button is already pressed and hold during boot to force a factory reset.
+  while (button.isPressed()) {
+    button.loop();
+  }
+
   // Initialize temperature update timer
   initSyncUpdateTimer();
   
