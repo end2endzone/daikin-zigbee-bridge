@@ -102,6 +102,7 @@ SoftTimer forceReportingTimer;
 SoftTimer identifyTimer;
 
 bool peak_demand = false;
+bool forceSync = false; // a flag that can be set to force the synchronization between DaikinSerialApi and the Zigbee Thermostat.
 
 // -------------------------------------------------------------------------
 //                          Reset/init functions
@@ -159,6 +160,9 @@ void longClickDetected(Button2& btn) {
 bool forceDaikinSerialToZigbeeThermostatSynchronization() {
   // Note: Zigbee target temperature updates are synchronized synchronously in the zigbee callback.
 
+  // reset the force sync flag, if set.
+  forceSync = false;
+
   log_i("Synchronizing zigbee controller from daikin serial adapter.");
 
   // Daikin Serial remote updates must be manually pulled.
@@ -208,10 +212,18 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
       log_e("Unable to set heating logic. Synchronization has failed.");
       return false;
     }
+
+    // Force reporting all changed attributes
+    if (!zbThermostat->report()) {
+      log_e("zbThermostat has failed to report())!");
+    }
   }
 
   String status_desc = DaikinSerialApi::toString(&remote_status, NUM_INDOOR_UNIT);
   log_i("Daikin heatpump attributes: %s", status_desc.c_str());
+
+  // print zigbee values as well for debuging and validating they match the Daikin controller's state. 
+  printAllAttributes();
 
   return true;
 }
@@ -220,9 +232,11 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
  * @brief Check if a Daikin Serial to Zigbee Thermostat synchronization is required.
  */
 void checkDaikinSerialToZigbeeThermostatSynchronization() {
-  // Make sure we do not call this function too often...
-  if (syncUpdateTimer.getTimeOutTime() != 0 && !syncUpdateTimer.hasTimedOut()) {
-    return; // too soon
+  if (!forceSync) {
+    // Make sure we do not call this function too often...
+    if (syncUpdateTimer.getTimeOutTime() != 0 && !syncUpdateTimer.hasTimedOut()) {
+      return; // too soon
+    }
   }
   // reset timer for next iteration timestamps
   syncUpdateTimer.reset();
@@ -283,7 +297,11 @@ void onOccupiedCoolSetpointChange(int16_t setpoint) {
   DaikinSerialApi::ApiResult result = daikin.setTargetTemperature(setpoint);
   if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
     log_e("Failed to set Occupied Cool Setpoint in Daikin Controller to: %.1f°C: %s", setpoint / 100.0, DaikinSerialApi::toString(result).c_str());
+    return;
   }
+
+  // set the flag to force a sync update.
+  forceSync = true;
 }
 
 void onOccupiedHeatSetpointChange(int16_t setpoint) {
@@ -292,7 +310,11 @@ void onOccupiedHeatSetpointChange(int16_t setpoint) {
   DaikinSerialApi::ApiResult result = daikin.setTargetTemperature(setpoint);
   if (result != DaikinSerialApi::ApiResult::API_RESULT_OK) {
     log_e("Failed to set Occupied Cool Setpoint in Daikin Controller to: %.1f°C: %s", setpoint / 100.0, DaikinSerialApi::toString(result).c_str());
+    return;
   }
+
+  // set the flag to force a sync update.
+  forceSync = true;
 }
 
 void onControlSequenceOfOperationChange(uint8_t csop) {
@@ -529,6 +551,9 @@ void setup() {
   // Connected - switch to blue pulse
   updateLEDStatus();
   blinker.loop();
+
+  // Force an update just before printing zigbee attributes
+  forceDaikinSerialToZigbeeThermostatSynchronization();
 
   // DEBUG
   printAllAttributes();

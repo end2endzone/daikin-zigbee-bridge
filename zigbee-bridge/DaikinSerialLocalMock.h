@@ -19,12 +19,15 @@
 class DaikinSerialLocalMock : public DaikinSerialApi
 {
 private:
+  bool _forceTemperatureSimulationUpdate;
   DaikinSerialApi::daikin_ip_address_t _ipaddr;
   DaikinSerialApi::daikin_status_info_t _status;
   SoftTimer tempSimulationUpdateTimer;
 
 public:
   DaikinSerialLocalMock() {
+    _forceTemperatureSimulationUpdate = false;
+
     snprintf(_ipaddr.ip, sizeof(DaikinSerialApi::daikin_ip_address_t::ip), "%s", "101.102.103.104");
 
     //   Device name:  LivingRoom
@@ -47,6 +50,10 @@ public:
     _status.indoor_temp = SIMULATION_DEFAULT_ROOM_TEMPERATURE;
     _status.outdoor_temp = 3100;
     _status.compressor_freq = 0;
+
+    // Make sure all temperature modes are updated
+    _forceTemperatureSimulationUpdate = true;
+    simulateTemperature();
   }
 
   virtual ~DaikinSerialLocalMock() {}
@@ -69,6 +76,12 @@ public:
 
   ApiResult setTargetTemperature(int16_t temperature, unsigned long timeout_ms = DEFAULT_TIMEOUT_MS) override {
     _status.target_temp = temperature;
+
+    // force an update of simulateTemperature() to make sure this mock class will report an updated mode
+    // if the caller makes a call to getStatus() right after this one.
+    _forceTemperatureSimulationUpdate = true;
+    simulateTemperature();
+
     return ApiResult::API_RESULT_OK;
   }
 
@@ -79,22 +92,35 @@ public:
 
   // 
   void loop() {
-    simulateTemperature();
+    checkSimulateTemperature();
   }
 
 private:
+
+  void checkSimulateTemperature() {
+    if (!_forceTemperatureSimulationUpdate) {
+      // Make sure we do not call this function too often...
+      if (tempSimulationUpdateTimer.getTimeOutTime() != 0 && !tempSimulationUpdateTimer.hasTimedOut()) {
+        return; // too soon
+      }
+    }
+    // reset timer for next iteration timestamps
+    tempSimulationUpdateTimer.reset();
+
+    // unset forced flag, if set
+    _forceTemperatureSimulationUpdate = false;
+
+    // proceed with temperature update iteration
+    simulateTemperature();
+  }
 
   /**
    * @brief Simulate local temperature changes.
    * Makes the local temperature drift toward an hypothetical "setpoint".
    */
   void simulateTemperature() {
-    // Make sure we do not call this function too often...
-    if (tempSimulationUpdateTimer.getTimeOutTime() != 0 && !tempSimulationUpdateTimer.hasTimedOut()) {
-      return; // too soon
-    }
-    // reset timer for next iteration timestamps
-    tempSimulationUpdateTimer.reset();
+    // unset forced flag, if set
+    _forceTemperatureSimulationUpdate = false;
 
     // Get actuals values
     const int16_t old_local_temp = _status.indoor_temp;
