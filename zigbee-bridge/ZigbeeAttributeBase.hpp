@@ -181,6 +181,53 @@ public:
     return true;
   }
 
+  bool setDefaultReportingInfo() {
+    // Register reporting info for this attribute (must happen after zigbee stack start)
+
+    if (!isValid())
+      return false;
+  
+    bool success = false;
+    esp_zb_lock_acquire(portMAX_DELAY);
+      
+    // Set default reporting info
+    esp_zb_zcl_reporting_info_t rep_info = {};
+
+    rep_info.direction      = ESP_ZB_ZCL_CMD_DIRECTION_TO_CLI;
+    rep_info.ep             = _endpoint;
+    rep_info.cluster_id     = _cluster_id;
+    rep_info.cluster_role   = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE;
+    rep_info.attr_id        = _attr_id;
+    rep_info.manuf_code     = _manuf_code;
+
+    // Report on any change (delta = 0), no periodic minimum interval,
+    // max interval = 0xFFFF means "only on change, no periodic".
+    rep_info.u.send_info.min_interval     = 0;
+    rep_info.u.send_info.max_interval     = 0xFFFF;
+    rep_info.u.send_info.def_min_interval = 0;
+    rep_info.u.send_info.def_max_interval = 0xFFFF;
+
+    // delta.u16 = 0 means: report on any change whatsoever
+    rep_info.u.send_info.delta.u16        = 0;
+
+    // dst.profile_id must be set, otherwise the stack may reject the record
+    rep_info.dst.profile_id = ESP_ZB_AF_HA_PROFILE_ID;
+
+    esp_err_t err = esp_zb_zcl_update_reporting_info(&rep_info);
+    if (err != ESP_OK) {
+      const char * err_name = esp_err_to_name(err);
+      log_e("Failed to set default reporting info for %s. Error: 0x%x: (%s).", toString().c_str(), err, err_name);
+      goto unlock_and_return;
+    }
+
+    // done
+    success = true;
+  
+  unlock_and_return:
+    esp_zb_lock_release();
+    return success;
+  }
+
 protected:
   bool getGenericAttribute(void* output_ptr, size_t output_size) const {
     if (output_ptr == nullptr || output_size == 0)
