@@ -524,7 +524,12 @@ void setup() {
 
   // Init zbThermostat's zigbee attributes
   if (!zbThermostat->setup()) {
-    log_i("WARNING: zbThermostat->setup() has failed!");
+    log_w("WARNING: zbThermostat->setup() has failed!");
+  }
+
+  // Setup custom attributes that have reporting flag set.
+  if (!zbThermostat->setupPostStackStart()) {
+    log_w("WARNING: zbThermostat->setupPostStackStart() has failed!");
   }
 
   // Forcing Zigbee Controller to be initialized with values from the Daikin Serial adaptor.

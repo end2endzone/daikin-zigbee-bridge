@@ -193,6 +193,9 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG       , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID  , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'TEMPERATURE_DISPLAY_MODE' reporting access!");
   if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG       , ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID            , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'KEYPAD_LOCKOUT' reporting access!");
 
+  // Force more zigbee attributes to be reportable so zigbee2mqtt is notified when the value changes
+  if (!zb_set_attribute_access_flag_in_cluster_list(_cluster_list, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT                 , ESP_ZB_ZCL_ATTR_THERMOSTAT_THERMOSTAT_RUNNING_STATE_ID            , ESP_ZB_ZCL_ATTR_ACCESS_REPORTING, true))                                            log_w("Failed to set attribute 'PI_HEATING_DEMAND' reporting access!");
+
   // DEBUG:
   // Print the list of all clusters and attributes...
   log_i("Clusters summary:");
@@ -704,6 +707,17 @@ bool ZigbeeStelproH420Thermostat::setup() {
     log_i("    %s", attr_p->toString().c_str());
   }
   log_i("}");
+  return success;
+}
+
+bool ZigbeeStelproH420Thermostat::setupPostStackStart() {
+  bool success = true;
+
+  if (!_running_state.setDefaultReportingInfo()) {
+    log_e("Attribute has failed to setDefaultReportingInfo(): %s", _running_state.toString().c_str());
+    return false;
+  }
+  
   return success;
 }
 

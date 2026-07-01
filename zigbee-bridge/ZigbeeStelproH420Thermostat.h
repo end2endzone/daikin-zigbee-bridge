@@ -200,6 +200,7 @@ public:
   bool update();
   bool report();
   bool setup();
+  bool setupPostStackStart();
 
   void setManualHeatingLogicUpdate(bool value);
   bool setHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power);
