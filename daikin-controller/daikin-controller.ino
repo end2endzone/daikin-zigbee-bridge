@@ -28,6 +28,7 @@
 #include "secrets.h"
 #include "DaikinHTTP.h"
 #include "WiFiConnectionManager.h"
+#include "PreferencesProvider.h"
 
 #include "DaikinSerialApi.h"
 #include "DaikinBridgeImpl.h"
@@ -66,6 +67,8 @@ Button2 button;
 SoftTimer forceReportingTimer;
 SoftTimer activityTimer;
 
+PreferencesProvider preferencesProvider;
+
 bool daikinOnline = false;
 
 // -------------------------------------------------------------------------
@@ -74,7 +77,7 @@ bool daikinOnline = false;
 WiFiConnectionManager wifiManager;
 DaikinBridgeImpl     bridge;
 DaikinSerialListener listener;
-DaikinHTTP daikin(SECRET_DAIKIN_HEATPUMP_IP);
+DaikinHTTP daikin;
 
 #if 0
 void daikinIncreaseTargetTempBy1() {
@@ -175,6 +178,11 @@ void trippleClickDetected(Button2& btn) {
 
 void holdDetected(Button2& btn) {
   //Serial.println("button hold detected!");
+
+  log_i("Factory reset triggered - hold detected for %d seconds!", FACTORY_RESET_LONG_CLICK_TIME);
+  log_i("Rebooting in 1 second...");
+  delay(1000);
+  preferencesProvider.factoryReset();
 }
 
 void longClickDetected(Button2& btn) {
@@ -248,9 +256,6 @@ void setup() {
   while (!Serial  && millis() < 3000);
   while (!Serial1 && millis() < 3000);
 
-  bridge.begin(&daikin);
-  listener.begin(Serial1, &bridge);
-
   log_i("========================================");
   log_i("  Daiking Controller");
   log_i("========================================");
@@ -276,6 +281,26 @@ void setup() {
   
   // Initialize force reporting timer
   initForceReportingTimer();
+
+  // Initialize the preferences provider
+  preferencesProvider.begin();
+
+  // Check if preferences are already stored
+  String daikin_heatpump_ip = preferencesProvider.getSavedIP();
+  if (daikin_heatpump_ip.length() == 0) {
+    log_i("Existing configuration preferences not found. Booting into WiFi access point mode");
+    
+    // Skip the rest of the setup
+    return;
+  }
+
+  log_i("Using preexisting configuration preferences:\n"
+    "  Daikin heatpump IP: %s", daikin_heatpump_ip.c_str());
+
+  daikin.setIP(daikin_heatpump_ip.c_str());
+
+  bridge.begin(&daikin);
+  listener.begin(Serial1, &bridge);
 
   wifiManager.setup();
 
@@ -322,8 +347,13 @@ void loop() {
     activityTimer.reset();
   }
 
-  // Refresh WiFi connection state
-  wifiManager.loop();
+  // Handle web server if ESP booted in AP mode
+  preferencesProvider.loop();
+
+  // Refresh WiFi connection state or the web server
+  if (!preferencesProvider.isWifiAccessPointModeEnabled()) {
+    wifiManager.loop();
+  }
 
   // Update LED status based on connection state
   updateLEDStatus();
@@ -332,11 +362,13 @@ void loop() {
   blinker.loop();
   button.loop();
 
-  // Print Daikin info periodicaly.
-  daikinReportCheck();
+  if (!preferencesProvider.isWifiAccessPointModeEnabled()) {
+    // Print Daikin info periodicaly.
+    daikinReportCheck();
 
-  // Parse any incomming messages
-  listener.loop();
+    // Parse any incomming messages
+    listener.loop();
+  }
   
   delay(10);
 }

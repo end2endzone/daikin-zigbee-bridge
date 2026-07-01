@@ -197,6 +197,16 @@ public:
   {
   }
 
+  DaikinHTTP() :
+    ip("0.0.0.0"),
+    timeout((uint16_t)-1)
+  {
+  }
+
+  void setIP(String ip) {
+    this->ip = ip;
+  }
+
   bool pullBasicInfo() {
     controlInfo.clear();
     bool success = httpGet("/common/basic_info", basicInfo.get());
