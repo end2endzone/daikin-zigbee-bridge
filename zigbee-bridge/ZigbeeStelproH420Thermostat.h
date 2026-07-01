@@ -22,6 +22,8 @@
 #include "EnergyCalculator.h"
 #endif // #ifdef USE_ENERGY_CALCULATOR
 
+//#define ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
+
 #define STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL      10 /* in seconds */
 #define STELPRO_ENERGY_UPDATE_INTERVAL                10 /* in seconds */
 #define STELPRO_TEMPERATURE_DIFFERENCE_THRESHOLD      50  /* 0.5°C */
@@ -145,6 +147,7 @@ public:
   bool getPIHeatingDemand(uint8_t& output) const                { return _pi_heating_demand             .get(output); }
   bool getOutdoorTemperature(int16_t& output) const             { return _outdoor_temperature           .get(output); }
   bool getOccupancy(zb_uint8_t& output) const                   { return _occupancy                     .get(output); }
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   bool getMinHeatingSetpointLimit(int16_t& output) const        { return _min_heat_setpoint_limit       .get(output); }
   bool getMaxHeatingSetpointLimit(int16_t& output) const        { return _max_heat_setpoint_limit       .get(output); }
   bool getAbsMinHeatingSetpointLimit(int16_t& output) const     { return _abs_min_heat_setpoint_limit   .get(output); }
@@ -153,6 +156,7 @@ public:
   bool getMaxCoolingSetpointLimit(int16_t& output) const        { return _max_cool_setpoint_limit       .get(output); }
   bool getAbsMinCoolingSetpointLimit(int16_t& output) const     { return _abs_min_cool_setpoint_limit   .get(output); }
   bool getAbsMaxCoolingSetpointLimit(int16_t& output) const     { return _abs_max_cool_setpoint_limit   .get(output); }
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   // Thermostat UI cluster
   bool getTemperatureDisplayMode(uint8_t& output) const         { return _ui_config_display_mode        .get(output); }
   bool getKeypadLockout(uint8_t& output) const                  { return _ui_config_keypad_lockout      .get(output); }
@@ -238,6 +242,7 @@ public:
     uint8_t     pi_heating_demand                 ;
     int16_t     outdoor_temperature               ;
     zb_uint8_t  occupancy                         ;
+    #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
     int16_t     min_heat_setpoint_limit           ;
     int16_t     max_heat_setpoint_limit           ;
     int16_t     abs_min_heat_setpoint_limit       ;
@@ -246,6 +251,7 @@ public:
     int16_t     max_cool_setpoint_limit           ;
     int16_t     abs_min_cool_setpoint_limit       ;
     int16_t     abs_max_cool_setpoint_limit       ;
+    #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
     // Thermostat UI cluster mandatory attributes
     uint8_t     ui_config_display_mode            ;
     uint8_t     ui_config_keypad_lockout          ;
@@ -273,6 +279,7 @@ private:
   ZigbeeAttribute<uint8_t>    _pi_heating_demand                ;
   ZigbeeAttribute<int16_t>    _outdoor_temperature              ;
   ZigbeeAttribute<zb_uint8_t> _occupancy                        ;
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   ZigbeeAttribute<int16_t>    _min_heat_setpoint_limit          ;
   ZigbeeAttribute<int16_t>    _max_heat_setpoint_limit          ;
   ZigbeeAttribute<int16_t>    _abs_min_heat_setpoint_limit      ;
@@ -281,6 +288,7 @@ private:
   ZigbeeAttribute<int16_t>    _max_cool_setpoint_limit          ;
   ZigbeeAttribute<int16_t>    _abs_min_cool_setpoint_limit      ;
   ZigbeeAttribute<int16_t>    _abs_max_cool_setpoint_limit      ;
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   // Thermostat UI cluster mandatory attributes
   ZigbeeAttribute<uint8_t>    _ui_config_display_mode           ;
   ZigbeeAttribute<uint8_t>    _ui_config_keypad_lockout         ;

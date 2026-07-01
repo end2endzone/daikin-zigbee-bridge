@@ -52,6 +52,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _pi_heating_demand                          .init("_pi_heating_demand"                     , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_PI_HEATING_DEMAND_ID);                           
   _outdoor_temperature                        .init("_outdoor_temperature"                   , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OUTDOOR_TEMPERATURE_ID);                         
   _occupancy                                  .init("_occupancy"                             , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_OCCUPANCY_ID);                                   
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   _min_heat_setpoint_limit                    .init("_min_heat_setpoint_limit"               , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MIN_HEAT_SETPOINT_LIMIT_ID);                     
   _max_heat_setpoint_limit                    .init("_max_heat_setpoint_limit"               , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_HEAT_SETPOINT_LIMIT_ID);                     
   _abs_min_heat_setpoint_limit                .init("_abs_min_heat_setpoint_limit"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_HEAT_SETPOINT_LIMIT_ID);                 
@@ -60,6 +61,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _max_cool_setpoint_limit                    .init("_max_cool_setpoint_limit"               , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID);                     
   _abs_min_cool_setpoint_limit                .init("_abs_min_cool_setpoint_limit"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MIN_COOL_SETPOINT_LIMIT_ID);                 
   _abs_max_cool_setpoint_limit                .init("_abs_max_cool_setpoint_limit"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_ABS_MAX_COOL_SETPOINT_LIMIT_ID);                 
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   _ui_config_display_mode                     .init("_ui_config_display_mode"                , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_TEMPERATURE_DISPLAY_MODE_ID);
   _ui_config_keypad_lockout                   .init("_ui_config_keypad_lockout"              , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG, ESP_ZB_ZCL_ATTR_THERMOSTAT_UI_CONFIG_KEYPAD_LOCKOUT_ID);          
   _stelpro_outdoor_temperature                .init("_stelpro_outdoor_temperature"           , STELPRO_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_OUTDOOR_TEMP_ID);
@@ -78,6 +80,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _zigbee_attribute_list.push_back(&_pi_heating_demand             );
   _zigbee_attribute_list.push_back(&_outdoor_temperature           );
   _zigbee_attribute_list.push_back(&_occupancy                     );
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   _zigbee_attribute_list.push_back(&_min_heat_setpoint_limit       );
   _zigbee_attribute_list.push_back(&_max_heat_setpoint_limit       );
   _zigbee_attribute_list.push_back(&_abs_min_heat_setpoint_limit   );
@@ -86,6 +89,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
   _zigbee_attribute_list.push_back(&_max_cool_setpoint_limit       );
   _zigbee_attribute_list.push_back(&_abs_min_cool_setpoint_limit   );
   _zigbee_attribute_list.push_back(&_abs_max_cool_setpoint_limit   );
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   _zigbee_attribute_list.push_back(&_ui_config_display_mode        );
   _zigbee_attribute_list.push_back(&_ui_config_keypad_lockout      );
   _zigbee_attribute_list.push_back(&_stelpro_outdoor_temperature   );
@@ -510,7 +514,7 @@ bool ZigbeeStelproH420Thermostat::setHeatingLogic(uint16_t running_state, uint8_
     }
 
     // Log the change
-    log_i("Heating logic update:  State: %s", zb_constants_zcl_thermostat_running_state_attr_to_string(output.running_state).c_str());
+    log_i("Heating logic update:  Running state: %s", zb_constants_zcl_thermostat_running_state_attr_to_string(output.running_state).c_str());
   }
   
   // If pi_heating_demand is still dirty, we must update it now
@@ -717,6 +721,7 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   log_i("-----> _pi_heating_demand            .get()=%d", _pi_heating_demand            .get());
   log_i("-----> _outdoor_temperature          .get()=%d", _outdoor_temperature          .get());
   log_i("-----> _occupancy                    .get()=%d", _occupancy                    .get());
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   log_i("-----> _min_heat_setpoint_limit      .get()=%d", _min_heat_setpoint_limit      .get());
   log_i("-----> _max_heat_setpoint_limit      .get()=%d", _max_heat_setpoint_limit      .get());
   log_i("-----> _abs_min_heat_setpoint_limit  .get()=%d", _abs_min_heat_setpoint_limit  .get());
@@ -725,6 +730,7 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   log_i("-----> _max_cool_setpoint_limit      .get()=%d", _max_cool_setpoint_limit      .get());
   log_i("-----> _abs_min_cool_setpoint_limit  .get()=%d", _abs_min_cool_setpoint_limit  .get());
   log_i("-----> _abs_max_cool_setpoint_limit  .get()=%d", _abs_max_cool_setpoint_limit  .get());
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   log_i("-----> _ui_config_display_mode       .get()=%d", _ui_config_display_mode       .get());
   log_i("-----> _ui_config_keypad_lockout     .get()=%d", _ui_config_keypad_lockout     .get());
   log_i("-----> _stelpro_outdoor_temperature  .get()=%d", _stelpro_outdoor_temperature  .get());
@@ -767,6 +773,7 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   CAPTURE_ATTR(_pi_heating_demand                , snapshot.pi_heating_demand                 );
   CAPTURE_ATTR(_outdoor_temperature              , snapshot.outdoor_temperature               );
   CAPTURE_ATTR(_occupancy                        , snapshot.occupancy                         );
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   CAPTURE_ATTR(_min_heat_setpoint_limit          , snapshot.min_heat_setpoint_limit           );
   CAPTURE_ATTR(_max_heat_setpoint_limit          , snapshot.max_heat_setpoint_limit           );
   CAPTURE_ATTR(_abs_min_heat_setpoint_limit      , snapshot.abs_min_heat_setpoint_limit       );
@@ -775,6 +782,7 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   CAPTURE_ATTR(_max_cool_setpoint_limit          , snapshot.max_cool_setpoint_limit           );
   CAPTURE_ATTR(_abs_min_cool_setpoint_limit      , snapshot.abs_min_cool_setpoint_limit       );
   CAPTURE_ATTR(_abs_max_cool_setpoint_limit      , snapshot.abs_max_cool_setpoint_limit       );
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   // Thermostat UI cluster mandatory attributes
   CAPTURE_ATTR(_ui_config_display_mode           , snapshot.ui_config_display_mode            );
   CAPTURE_ATTR(_ui_config_keypad_lockout         , snapshot.ui_config_keypad_lockout          );
@@ -810,6 +818,7 @@ void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_
   log_i("    _pi_heating_demand            = %d%%",            snapshot.pi_heating_demand            );
   log_i("    _outdoor_temperature          = %d,  %.1f°C",     snapshot.outdoor_temperature          ,     snapshot.outdoor_temperature      /100.0    );
   log_i("    _occupancy                    = %d",              snapshot.occupancy                    );
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   log_i("    _min_heat_setpoint_limit      = %d",              snapshot.min_heat_setpoint_limit      );
   log_i("    _max_heat_setpoint_limit      = %d",              snapshot.max_heat_setpoint_limit      );
   log_i("    _abs_min_heat_setpoint_limit  = %d",              snapshot.abs_min_heat_setpoint_limit  );
@@ -818,6 +827,7 @@ void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_
   log_i("    _max_cool_setpoint_limit      = %d",              snapshot.max_cool_setpoint_limit      );
   log_i("    _abs_min_cool_setpoint_limit  = %d",              snapshot.abs_min_cool_setpoint_limit  );
   log_i("    _abs_max_cool_setpoint_limit  = %d",              snapshot.abs_max_cool_setpoint_limit  );
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   log_i("    _ui_config_display_mode       = %d",              snapshot.ui_config_display_mode       );
   log_i("    _ui_config_keypad_lockout     = %d,  %s",         snapshot.ui_config_keypad_lockout     ,     zb_zcl_thermostat_ui_config_keypad_lockout_to_string((zb_zcl_thermostat_ui_config_keypad_lockout_t)snapshot.ui_config_keypad_lockout));
   log_i("    _stelpro_outdoor_temperature  = %d,  %.1f°C",     snapshot.stelpro_outdoor_temperature  ,     snapshot.stelpro_outdoor_temperature   /100.0    );
@@ -865,6 +875,7 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
   }
   #endif
 
+  #ifdef ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
   // Hardcoded HEATING MIN/MAX/ABS SETPOINTS
   #if 1
   {
@@ -898,6 +909,7 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     err = esp_zb_thermostat_cluster_add_attr(esp_zb_thermostat_cluster, ESP_ZB_ZCL_ATTR_THERMOSTAT_MAX_COOL_SETPOINT_LIMIT_ID,     &max_cool_setpoint);       logError(err);
   }
   #endif
+  #endif // ENABLE_SUPPORT_FOR_MINMAX_SETPOINT_LIMITS
 
   // Manufacturer attributes variables
   #if 1
