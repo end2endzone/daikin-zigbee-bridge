@@ -33,6 +33,7 @@
 #endif
 
 //#define ENABLE_DAIKIN_SERIAL_MOCK
+//#define ENABLE_FORCED_ATTRIBUTE_REPORTING
 
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
@@ -66,7 +67,9 @@
 // Factory reset delay
 #define FACTORY_RESET_LONG_CLICK_TIME 3 // in seconds, to press and hold button for factory reset
 
+#ifdef ENABLE_FORCED_ATTRIBUTE_REPORTING
 #define FORCE_REPORTING_INTERVAL           30000  // 30.0 seconds
+#endif // ENABLE_FORCED_ATTRIBUTE_REPORTING
 
 // RGB LED blinker
 RgbLedBlinker blinker;
@@ -98,7 +101,9 @@ Button2 button;
 
 // Update timers
 SoftTimer syncUpdateTimer;
+#ifdef ENABLE_FORCED_ATTRIBUTE_REPORTING
 SoftTimer forceReportingTimer;
+#endif // ENABLE_FORCED_ATTRIBUTE_REPORTING
 SoftTimer identifyTimer;
 
 bool peak_demand = false;
@@ -112,10 +117,12 @@ void initSyncUpdateTimer() {
   syncUpdateTimer.reset();
 }
 
+#ifdef ENABLE_FORCED_ATTRIBUTE_REPORTING
 void initForceReportingTimer() {
   forceReportingTimer.setTimeOutTime(FORCE_REPORTING_INTERVAL);
   forceReportingTimer.reset();
 }
+#endif // ENABLE_FORCED_ATTRIBUTE_REPORTING
 
 // -------------------------------------------------------------------------
 //                            Debuging functions
@@ -316,7 +323,8 @@ void printAllAttributes() {
   log_i("};");
 }
 
-void reportAttributes() {
+#ifdef ENABLE_FORCED_ATTRIBUTE_REPORTING
+void reportAttributes() {  
   // Make sure we do not call this function too often...
   if (forceReportingTimer.getTimeOutTime() != 0 && !forceReportingTimer.hasTimedOut()) {
     return; // too soon
@@ -329,6 +337,7 @@ void reportAttributes() {
     log_e("zbThermostat has failed to report())!");
   }
 }
+#endif // ENABLE_FORCED_ATTRIBUTE_REPORTING
 
 // -------------------------------------------------------------------------
 //                            Zigbee Callbacks
@@ -507,8 +516,10 @@ void setup() {
   // Initialize temperature update timer
   initSyncUpdateTimer();
   
+#ifdef ENABLE_FORCED_ATTRIBUTE_REPORTING
   // Initialize force reporting timer
   initForceReportingTimer();
+#endif // ENABLE_FORCED_ATTRIBUTE_REPORTING
 
   // Change the OUI prefix in the IEEE address (EUI-64 address) 
   // to match `Silicon Laboratories` instead of `Espressif Inc`.
@@ -664,7 +675,9 @@ void loop() {
   // Should we download from daikin and update our zigbee thermostat ?
   checkDaikinSerialToZigbeeThermostatSynchronization();
 
+#ifdef ENABLE_FORCED_ATTRIBUTE_REPORTING
   reportAttributes();
+#endif // ENABLE_FORCED_ATTRIBUTE_REPORTING
 
   delay(10);
 }
