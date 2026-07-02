@@ -118,6 +118,64 @@ void initForceReportingTimer() {
 }
 
 // -------------------------------------------------------------------------
+//                            Debuging functions
+// -------------------------------------------------------------------------
+
+void increaseStelproPeakDemandIcon() {
+  // read
+  uint16_t value;
+  if (!zbThermostat->getStelproPeakDemandIcon(value)) {
+    log_e("Failed to read StelproPeakDemandIcon.");
+    return;
+  }
+
+  value += 3600;
+
+  // write
+  if (!zbThermostat->setStelproPeakDemandIcon(value)) {
+    log_e("Failed to write StelproPeakDemandIcon.");
+    return;
+  }
+}
+
+void resetStelproPeakDemandIcon() {
+  // write
+  if (!zbThermostat->setStelproPeakDemandIcon(0)) {
+    log_e("Failed to zeroize StelproPeakDemandIcon.");
+    return;
+  }
+}
+
+void increaseRunningStateAsHeating() {
+  uint16_t running_state = ESP_ZB_ZCL_THERMOSTAT_RUNNING_STATE_HEAT_STATE_ON_BIT;
+  uint8_t pi_heating_demand = 5;
+  uint16_t stelpro_power = 111;
+
+  // make multiple increase if already set
+  if (zbThermostat->getPIHeatingDemand(pi_heating_demand)) {
+    pi_heating_demand += 5;
+    if (pi_heating_demand > 100)
+      pi_heating_demand = 100;
+    stelpro_power = (pi_heating_demand/5) * 111;
+  }
+
+  if (!zbThermostat->setHeatingLogic(running_state, pi_heating_demand, stelpro_power)) {
+    log_e("Failed to call setHeatingLogic().");
+    return;
+  }
+}
+
+void resetRunningStateAsIdle() {
+  uint16_t running_state = THERMOSTAT_RUNNING_STATE_IDLE;
+  uint8_t pi_heating_demand = 0;
+  uint16_t stelpro_power = 0;
+  if (!zbThermostat->setHeatingLogic(running_state, pi_heating_demand, stelpro_power)) {
+    log_e("Failed to call setHeatingLogic().");
+    return;
+  }
+}
+
+// -------------------------------------------------------------------------
 //                            Button Callbacks
 // -------------------------------------------------------------------------
 
@@ -257,7 +315,6 @@ void printAllAttributes() {
 
   log_i("};");
 }
-
 
 void reportAttributes() {
   // Make sure we do not call this function too often...
