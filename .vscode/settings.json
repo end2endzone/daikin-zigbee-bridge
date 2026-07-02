@@ -14,4 +14,11 @@
     // COM4, COM5 for zigbee-bridge
     // COM6, COM7 for daikin-controller
     "myproject.port": "COM5",
+
+    // Exclude files from VSCode's Explorer view.
+    "files.exclude": {
+        "**/.git": true,        // this is a default value
+        "build": true,          // exclude `build` at the root the project 
+    }
+
 }
