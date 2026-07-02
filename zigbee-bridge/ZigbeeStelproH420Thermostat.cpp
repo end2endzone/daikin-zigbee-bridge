@@ -401,6 +401,13 @@ bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
   bool success = _stelpro_peak_demand_icon.set(value);
   if (!success)
     return false;
+
+  if (value > 0) {
+    // Start matching timer and start counting from this point
+    _stelpro_peak_demand_icon_timer.setTimeOutTime(STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL * 1000);
+    _stelpro_peak_demand_icon_timer.reset();
+  }
+
   return success;
 }
 
@@ -713,11 +720,18 @@ bool ZigbeeStelproH420Thermostat::setup() {
 bool ZigbeeStelproH420Thermostat::setupPostStackStart() {
   bool success = true;
 
+  /*
   if (!_running_state.setDefaultReportingInfo()) {
     log_e("Attribute has failed to setDefaultReportingInfo(): %s", _running_state.toString().c_str());
     return false;
   }
-  
+  */
+
+  if (!_stelpro_peak_demand_icon.setDefaultReportingInfo()) {
+    log_e("Attribute has failed to setDefaultReportingInfo(): %s", _stelpro_peak_demand_icon.toString().c_str());
+    return false;
+  }
+
   return success;
 }
 
