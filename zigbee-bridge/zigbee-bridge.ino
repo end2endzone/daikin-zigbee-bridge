@@ -182,6 +182,36 @@ void resetRunningStateAsIdle() {
   }
 }
 
+void forceReportAttributes() {
+  // force reportable attributes to report their values to the controller
+  int count = zbThermostat->report();
+  if (count == -1) {
+    log_e("zbThermostat has failed to report an attribute!");
+  } else {
+    log_i("zbThermostat has reported %d attributes.", count);
+  }
+}
+
+void forceReportAttributePeakDemandIcon() {
+  // force reportable attributes to report their values to the controller
+  int count = zbThermostat->reportById(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ZB_STELPRO_ATTR_PEAK_DEMAND_ICON_ID);
+  if (count == -1) {
+    log_e("zbThermostat has failed to report PeakDemandIcon!");
+  } else {
+    log_i("zbThermostat has reported %d attributes (PeakDemandIcon).", count);
+  }
+}
+
+void forceReportAttributeLocalTemperature() {
+  // force reportable attributes to report their values to the controller
+  int count = zbThermostat->reportById(ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT, ESP_ZB_ZCL_ATTR_THERMOSTAT_LOCAL_TEMPERATURE_ID);
+  if (count == -1) {
+    log_e("zbThermostat has failed to report LocalTemperature!");
+  } else {
+    log_i("zbThermostat has reported %d attributes (LocalTemperature).", count);
+  }
+}
+
 // -------------------------------------------------------------------------
 //                            Button Callbacks
 // -------------------------------------------------------------------------
@@ -279,8 +309,11 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
     }
 
     // Force reporting all changed attributes
-    if (!zbThermostat->report()) {
-      log_e("zbThermostat has failed to report())!");
+    int count = zbThermostat->report();
+    if (count == -1) {
+      log_e("zbThermostat has failed to report an attribute!");
+    } else {
+      log_i("zbThermostat has reported %d attributes.", count);
     }
   }
 
@@ -333,8 +366,11 @@ void reportAttributes() {
   forceReportingTimer.reset();
 
   // force reportable attributes to report their values to the controller
-  if (!zbThermostat->report()) {
-    log_e("zbThermostat has failed to report())!");
+  int count = zbThermostat->report();
+  if (count == -1) {
+    log_e("zbThermostat has failed to report an attribute!");
+  } else {
+    log_i("zbThermostat has reported %d attributes.", count);
   }
 }
 #endif // ENABLE_FORCED_ATTRIBUTE_REPORTING

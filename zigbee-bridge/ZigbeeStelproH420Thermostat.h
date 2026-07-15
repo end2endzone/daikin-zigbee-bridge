@@ -198,7 +198,8 @@ public:
   bool setStelproPeakDemandIcon(uint16_t seconds);
 
   bool update();
-  bool report();
+  int report();
+  int reportById(uint16_t cluster_id, uint16_t attribute_id);
   bool setup();
   bool setupPostStackStart();
 

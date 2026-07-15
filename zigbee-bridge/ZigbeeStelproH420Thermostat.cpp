@@ -661,8 +661,9 @@ bool ZigbeeStelproH420Thermostat::updateStelproPeakDemandIcon() {
   return true;
 }
 
-bool ZigbeeStelproH420Thermostat::report() {
+int ZigbeeStelproH420Thermostat::report() {
   bool success = true;
+  int count = 0;
   for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
     IZigbeeAttribute* attr_p = _zigbee_attribute_list[i];
 
@@ -674,13 +675,46 @@ bool ZigbeeStelproH420Thermostat::report() {
       // Assert attribute has reported properly
       if (!hasReported) {
         // No need to print an error, attr_p->report() has already printed a warning.
+      } else {
+        count++;
       }
 
       // show a warning once if any attribute has failed reporting.
       success = success && hasReported;
     }
   }
-  return success;
+  if (success) return count;
+  return -1;
+}
+
+int ZigbeeStelproH420Thermostat::reportById(uint16_t cluster_id, uint16_t attribute_id) {
+  bool success = true;
+  int count = 0;
+  for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
+    IZigbeeAttribute* attr_p = _zigbee_attribute_list[i];
+
+    bool match = attr_p->getClusterId() == cluster_id && attr_p->getAttributeId() == attribute_id;
+    if (!match)
+      continue;
+
+    esp_zb_zcl_attr_access_t access_id = attr_p->getAccessId();
+    bool isReportable = ((access_id & ESP_ZB_ZCL_ATTR_ACCESS_REPORTING) > 0);
+    if (isReportable) {
+      bool hasReported = attr_p->report();
+
+      // Assert attribute has reported properly
+      if (!hasReported) {
+        // No need to print an error, attr_p->report() has already printed a warning.
+      } else {
+        count++;
+      }
+
+      // show a warning once if any attribute has failed reporting.
+      success = success && hasReported;
+    }
+  }
+  if (success) return count;
+  return -1;
 }
 
 bool ZigbeeStelproH420Thermostat::setup() {
