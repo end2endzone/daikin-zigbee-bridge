@@ -45,11 +45,11 @@ The following Zigbee clusters are registered on endpoint 25.
 
 | # | Cluster Name | Cluster ID | Role | attr_count | attr_desc_list/attr_list | role_mask | manuf_code | cluster_init |
 |---|---|---|---|---|---|---|---|---|
-| 0 | Basic | `0x0000` | Server | 0 | `0x4081cc50` | Server | `0x0000` | `0x42010d84` |
-| 1 | Identify | `0x0003` | Server | 0 | `0x4081cce4` | Server | `0x0000` | `0x42012498` |
-| 2 | Groups | `0x0004` | Server | 0 | `0x4081cf58` | Server | `0x0000` | `0x420311c0` |
-| 3 | Thermostat | `0x0201` | Server | 0 | `0x4081ce00` | Server | `0x0000` | `0x420129fc` |
-| 4 | Thermostat UI Configuration | `0x0204` | Server | 0 | `0x4081cfe0` | Server | `0x0000` | `0x42039994` |
+| 0 | Basic | `0x0000` | Server | 0 | `0x4081d788` | Server | `0x0000` | `0x42018cac` |
+| 1 | Identify | `0x0003` | Server | 0 | `0x4081d888` | Server | `0x0000` | `0x4201a3c0` |
+| 2 | Groups | `0x0004` | Server | 0 | `0x4081da68` | Server | `0x0000` | `0x420390f6` |
+| 3 | Thermostat | `0x0201` | Server | 0 | `0x4081d910` | Server | `0x0000` | `0x4201a924` |
+| 4 | Thermostat UI Configuration | `0x0204` | Server | 0 | `0x4081daf0` | Server | `0x0000` | `0x420418ca` |
 
 ----
 
@@ -64,8 +64,14 @@ Attributes:
 | # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4087cde0` | `4` | - | - | - |  |
-| 1 | ZCL Version (`0x0000`) | Unsigned 8-bit Value (`0x0020`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081c3d8` | `8` | - | - | - |  |
-| 2 | Power Source (`0x0007`) | 8-bit Enumeration (`0x0030`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081ccd0` | `1` | - | - | - |  |
+| 1 | ZCL Version (`0x0000`) | Unsigned 8-bit Value (`0x0020`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081d840` | `8` | - | - | - |  |
+| 2 | Power Source (`0x0007`) | 8-bit Enumeration (`0x0030`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081d874` | `0` | - | - | - |  |
+| 3 | Application Version (`0x0001`) | Unsigned 8-bit Value (`0x0020`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081dc9c` | `33` | - | - | - |  |
+| 4 | Date Code (`0x0006`) | Character String (`0x0042`)| 4294967294 | Read Only (`0x0001`) | `0xffff` | `0x4081dcd0` | `20000000 00000` | - | - | - |  |
+| 5 | Hardware Version (`0x0003`) | Unsigned 8-bit Value (`0x0020`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081dd10` | `1` | - | - | - |  |
+| 6 | Location Description (`0x0010`) | Character String (`0x0042`)| 4294967294 | Read/Write (`0x0003`) | `0xffff` | `0x4081dd44` | `Thermostat` | - | - | - |  |
+| 7 | Physical Environment (`0x0011`) | 8-bit Enumeration (`0x0030`)| 1 | Read/Write (`0x0003`) | `0xffff` | `0x4081dd80` | `0` | - | - | - |  |
+| 8 | Stack Version (`0x0002`) | Unsigned 8-bit Value (`0x0020`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081ddb4` | `34` | - | - | - |  |
 
 
 ### Cluster 1 - Identify (`0x0003`)
@@ -74,8 +80,8 @@ Attributes:
 
 | # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081cdb8` | `4` | - | - | - |  |
-| 1 | Identify Time (`0x0000`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read/Write (`0x0003`) | `0xffff` | `0x4081cdec` | `0` | - | - | - | Duration in seconds the device stays in identify mode. |
+| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d8c8` | `4` | - | - | - |  |
+| 1 | Identify Time (`0x0000`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read/Write (`0x0003`) | `0xffff` | `0x4081d8fc` | `0` | - | - | - | Duration in seconds the device stays in identify mode. |
 
 
 ### Cluster 2 - Groups (`0x0004`)
@@ -84,8 +90,8 @@ Attributes:
 
 | # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081cf98` | `4` | - | - | - |  |
-| 1 | Unknown Smart Cluster Attribute (`0x0000`) | 8-bit Bitmap (`0x0018`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081cfcc` | `b00000000` | - | - | - |  |
+| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081daa8` | `4` | - | - | - |  |
+| 1 | Unknown Smart Cluster Attribute (`0x0000`) | 8-bit Bitmap (`0x0018`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081dadc` | `b00000000` | - | - | - |  |
 
 
 ### Cluster 3 - Thermostat (`0x0201`)
@@ -94,29 +100,21 @@ Attributes:
 
 | # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081ce88` | `4` | - | - | - |  |
-| 1 | Local Temperature (`0x0000`) | Signed 16-bit Value (`0x0029`)| 2 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081cebc` | `-1` | 0.01°C | - | - | Value `0x8000` means _Not Available_. |
-| 2 | Occupied Cooling Setpoint (`0x0011`) | Signed 16-bit Value (`0x0029`)| 2 | Scene, Read/Write (`0x0013`) | `0xffff` | `0x4081cef0` | `3500` | 0.01°C | 500 | 3500 | Set artificially high so it never constrains the heating setpoint. |
-| 3 | Occupied Heating Setpoint (`0x0012`) | Signed 16-bit Value (`0x0029`)| 2 | Scene, Read/Write (`0x0013`) | `0xffff` | `0x4081cf24` | `2000` | 0.01°C | 500 | 3000 | Writing a value outside the valid range will result in a INVALID_VALUE ZCL status. Must remain below Occupied Cooling Setpoint to avoid ZCL enforcement errors. |
-| 4 | Control Sequence Of Operation (`0x001b`) | 8-bit Enumeration (`0x0030`)| 1 | Read/Write (`0x0003`) | `0xffff` | `0x4081cf58` | `4` | - | - | - |  |
-| 5 | System Mode (`0x001c`) | 8-bit Enumeration (`0x0030`)| 1 | Scene, Read/Write (`0x0013`) | `0xffff` | `0x4081cf8c` | `4` | - | - | - | Changing this attribute also synchronises StelproSystemMode (0x401C). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately. |
-| 6 | Thermostat Running State (`0x0029`) | 16-bit Bitmap (`0x0019`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d104` | `b0000000000000000` | - | - | - |  |
-| 7 | PI Heating Demand (`0x0008`) | Unsigned 8-bit Value (`0x0020`)| 1 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081d138` | `0` | % | 0 | 100 | Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but this implementation uses `[0, 100]`. |
-| 8 | Outdoor Temperature (`0x0001`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d16c` | `0` | 0.01°C | - | - | ZCL standard outdoor temperature, intended for a physical sensor on the device. |
-| 9 | Occupancy (`0x0002`) | 8-bit Bitmap (`0x0018`)| 1 | Read Only (`0x0001`) | `0xffff` | `0x4081d1a0` | `b00000001` | - | - | - |  |
-| 10 | Abs Min Heat Setpoint Limit (`0x0003`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d1d4` | `500` | 0.01°C | - | - |  |
-| 11 | Abs Max Heat Setpoint Limit (`0x0004`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d208` | `3000` | 0.01°C | - | - |  |
-| 12 | Min Heat Setpoint Limit (`0x0015`) | Signed 16-bit Value (`0x0029`)| 2 | Read/Write (`0x0003`) | `0xffff` | `0x4081d23c` | `500` | 0.01°C | - | - |  |
-| 13 | Max Heat Setpoint Limit (`0x0016`) | Signed 16-bit Value (`0x0029`)| 2 | Read/Write (`0x0003`) | `0xffff` | `0x4081d270` | `3000` | 0.01°C | - | - |  |
-| 14 | Abs Min Cool Setpoint Limit (`0x0005`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d2a4` | `500` | 0.01°C | - | - |  |
-| 15 | Abs Max Cool Setpoint Limit (`0x0006`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d2d8` | `3500` | 0.01°C | - | - |  |
-| 16 | Min Cool Setpoint Limit (`0x0017`) | Signed 16-bit Value (`0x0029`)| 2 | Read/Write (`0x0003`) | `0xffff` | `0x4081d30c` | `500` | 0.01°C | - | - |  |
-| 17 | Max Cool Setpoint Limit (`0x0018`) | Signed 16-bit Value (`0x0029`)| 2 | Read/Write (`0x0003`) | `0xffff` | `0x4081d340` | `3500` | 0.01°C | - | - |  |
-| 18 | StelproOutdoorTemperature (`0x4001`) | Signed 16-bit Value (`0x0029`)| 2 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081d374` | `0` | 0.01°C | -3200 | 19900 | Outdoor temperature displayed on the thermostat face. |
-| 19 | StelproSystemMode (`0x401c`) | 8-bit Enumeration (`0x0030`)| 1 | Scene, Read/Write (`0x0013`) | `0xffff` | `0x4081d3a8` | `4` | - | - | - | Mirror of the standard `SystemMode` attribute (`0x001C`). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately. |
-| 20 | StelproPower (`0x4008`) | Unsigned 16-bit Value (`0x0021`)| 2 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081d3dc` | `0` | W | 0 | 4000 | Instantaneous electrical power draw of the baseboard heater. Updated at runtime from the heating demand calculation. Zigbee2MQTT exposes this value directly in Watts. |
-| 21 | StelproEnergy (`0x4009`) | Unsigned 32-bit Value (`0x0023`)| 4 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081d410` | `0` | Wh | - | - | Cumulative energy consumption since last reset. The on-wire value is in **Watt-hours (Wh)**. Zigbee2MQTT divides by `1000` before publishing, so Home Assistant receives the value in **kWh**. |
-| 22 | StelproPeakDemandIcon (`0x4105`) | Unsigned 16-bit Value (`0x0021`)| 2 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081d444` | `0` |  | 0 | 64800 | Set peak demand event icon for the specified number of seconds. |
+| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d950` | `4` | - | - | - |  |
+| 1 | Local Temperature (`0x0000`) | Signed 16-bit Value (`0x0029`)| 2 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081d984` | `-1` | 0.01°C | - | - | Value `0x8000` means _Not Available_. |
+| 2 | Occupied Cooling Setpoint (`0x0011`) | Signed 16-bit Value (`0x0029`)| 2 | Scene, Read/Write (`0x0013`) | `0xffff` | `0x4081d9b8` | `3500` | 0.01°C | 500 | 3500 | Set artificially high so it never constrains the heating setpoint. |
+| 3 | Occupied Heating Setpoint (`0x0012`) | Signed 16-bit Value (`0x0029`)| 2 | Unknown Access Type (`0x0017`) | `0xffff` | `0x4081d9ec` | `2000` | 0.01°C | 500 | 3000 | Writing a value outside the valid range will result in a INVALID_VALUE ZCL status. Must remain below Occupied Cooling Setpoint to avoid ZCL enforcement errors. |
+| 4 | Control Sequence Of Operation (`0x001b`) | 8-bit Enumeration (`0x0030`)| 1 | Read/Write (`0x0003`) | `0xffff` | `0x4081da20` | `4` | - | - | - |  |
+| 5 | System Mode (`0x001c`) | 8-bit Enumeration (`0x0030`)| 1 | Unknown Access Type (`0x0017`) | `0xffff` | `0x4081da54` | `4` | - | - | - | Changing this attribute also synchronises StelproSystemMode (0x401C). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately. |
+| 6 | Thermostat Running State (`0x0029`) | 16-bit Bitmap (`0x0019`)| 2 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dbcc` | `b0000000000000000` | - | - | - |  |
+| 7 | PI Heating Demand (`0x0008`) | Unsigned 8-bit Value (`0x0020`)| 1 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dc00` | `0` | % | 0 | 100 | Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but ESP ZCL specification uses `[0, 100]`. Stelpro H420 thermostat's behavior also confirms the range `[0, 100]`. |
+| 8 | Outdoor Temperature (`0x0001`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081dc34` | `0` | 0.01°C | - | - | ZCL standard outdoor temperature, intended for a physical sensor on the device. |
+| 9 | Occupancy (`0x0002`) | 8-bit Bitmap (`0x0018`)| 1 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dc68` | `b00000000` | - | - | - |  |
+| 10 | StelproOutdoorTemperature (`0x4001`) | Signed 16-bit Value (`0x0029`)| 2 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081dde8` | `0` | 0.01°C | -9900 | 19900 | Outdoor temperature displayed on the thermostat face. |
+| 11 | StelproSystemMode (`0x401c`) | 8-bit Enumeration (`0x0030`)| 1 | Scene, Read/Write (`0x0013`) | `0xffff` | `0x4081de1c` | `4` | - | - | - | Mirror of the standard `SystemMode` attribute (`0x001C`). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately. |
+| 12 | StelproPower (`0x4008`) | Unsigned 16-bit Value (`0x0021`)| 2 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081de50` | `0` | W | 0 | 4000 | Instantaneous electrical power draw of the baseboard heater. Updated at runtime from the heating demand calculation. Zigbee2MQTT exposes this value directly in Watts. |
+| 13 | StelproEnergy (`0x4009`) | Unsigned 32-bit Value (`0x0023`)| 4 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081de84` | `0` | Wh | - | - | Cumulative energy consumption since last reset. The on-wire value is in **Watt-hours (Wh)**. Zigbee2MQTT divides by `1000` before publishing, so Home Assistant receives the value in **kWh**. |
+| 14 | StelproPeakDemandIcon (`0x4105`) | Unsigned 16-bit Value (`0x0021`)| 2 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081deb8` | `0` |  | 0 | 64800 | Set peak demand event icon for the specified number of seconds. |
 
 
 ### Cluster 4 - Thermostat UI Configuration (`0x0204`)
@@ -125,9 +123,9 @@ Attributes:
 
 | # | Attr  | Type | Size | Access | manuf_code | data_p | Value | Unit | Min | Max | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081d020` | `4` | - | - | - |  |
-| 1 | Temperature Display Mode (`0x0000`) | 8-bit Enumeration (`0x0030`)| 1 | Read/Write (`0x0003`) | `0xffff` | `0x4081d054` | `0` | - | - | - |  |
-| 2 | Keypad Lockout (`0x0001`) | 8-bit Enumeration (`0x0030`)| 1 | Read/Write (`0x0003`) | `0xffff` | `0x4081d088` | `0` | - | - | - |  |
+| 0 | Cluster Revision (`0xfffd`) | Unsigned 16-bit Value (`0x0021`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081db30` | `4` | - | - | - |  |
+| 1 | Temperature Display Mode (`0x0000`) | 8-bit Enumeration (`0x0030`)| 1 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081db64` | `0` | - | - | - |  |
+| 2 | Keypad Lockout (`0x0001`) | 8-bit Enumeration (`0x0030`)| 1 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081db98` | `0` | - | - | - |  |
 
 ---
 
@@ -179,9 +177,10 @@ The update interval is defined by `SIMULATION_UPDATE_INTERVAL` (default 5 000 ms
 
 **Range of values**:
 
-* The attribute represent a _Percentage of Heating Demand_. See macros `ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE` & `ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE` which defines the minimum and maximum values.
-* As a percentage, it must be in range [0, 100]. However, _Zigbee2mqtt_ assume values are in [0,255] range. Other zigbee projects (including esp-zigbee-sdk library) assume values in [0,100] range.
-* TODO: validate with a real Stelpro thermostat.
+* The attribute represent a _Percentage of Heating Demand_. As a percentage, it must be in range [0, 100]. See macros `ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE` & `ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE` which defines the minimum and maximum values.
+* _Zigbee2mqtt_ assumes values are in [0,255] range. This is likely a bug or an incomplete implementation.
+* Other zigbee projects (including esp-zigbee-sdk library) also assume values in [0,100] range.
+* Also confirmed with a real Stelpro H420 thermostat, pi_heating_demand must be in range [0, 100].
 
 
 **Ordering Constraint**:
