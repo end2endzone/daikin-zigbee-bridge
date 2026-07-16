@@ -370,7 +370,9 @@ protected:
       const char * access_name = zbAccessName();
       log_w("Failed to report attribute %s. Error: 0x%x: (%s). Attribute access: %s (0x%02x)", toString().c_str(), err, err_name, access_name, _access_id);
       return false;
-    }
+    } /*else {
+      log_i("Attribute has reported: %s.", toString().c_str());
+    }*/
     return true;
   }
 

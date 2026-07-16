@@ -27,6 +27,7 @@
 #define STELPRO_PEAK_DEMAND_ICON_UPDATE_INTERVAL      10 /* in seconds */
 #define STELPRO_ENERGY_UPDATE_INTERVAL                10 /* in seconds */
 #define STELPRO_TEMPERATURE_DIFFERENCE_THRESHOLD      50  /* 0.5°C */
+#define STELPRO_INVALID_TEMPERATURE               0x8000  /* -32768, -327.68°C */
 
 /**
  * @brief Zigbee Stelpro H420 thermostat device clusters configuration
