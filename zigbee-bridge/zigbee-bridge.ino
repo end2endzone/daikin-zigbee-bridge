@@ -218,6 +218,17 @@ void forceReportAttributeLocalTemperature() {
 
 void clickDetected(Button2& btn) {
   //Serial.print("button click detected!");
+
+  // Force reading from the sensor (WiFi Daikin ctrl)
+  forceSync = true;
+  bool success = forceDaikinSerialToZigbeeThermostatSynchronization();
+  if (!success ) {
+    log_e("Failed forcing synchronizaton from the Daikin serial to the zigbee thermostat!");
+    return false;
+  }
+
+  // Force reporting everything
+  forceReportAttributes();
 }
 
 void doubleClickDetected(Button2& btn) {
@@ -350,7 +361,7 @@ void printAllAttributes() {
   ZigbeeStelproH420Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {};
   bool readed = zbThermostat->getSnapshot(actuals);
   if (!readed)
-    log_i("ERROR: Failed to read snapshot!");
+    log_e("ERROR: Failed to read snapshot!");
   zbThermostat->printSnapshot(actuals);
 
   log_i("};");
