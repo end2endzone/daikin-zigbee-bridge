@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes all Zigbee clusters and attributes implemented by the `ZigbeeStelproH420Thermostat` class in the **zigbee-bridge** sketch. The class emulates a **Stelpro HT402 (Hilo)** line-voltage baseboard thermostat, allowing it to be recognised natively by Zigbee2MQTT and compatible coordinators without any custom converter.
+This document describes all Zigbee clusters and attributes implemented by the `ZigbeeStelproHT402Thermostat` class in the **zigbee-bridge** sketch. The class emulates a **Stelpro HT402 (Hilo)** line-voltage baseboard thermostat, allowing it to be recognised natively by Zigbee2MQTT and compatible coordinators without any custom converter.
 
 ### Device Identity
 

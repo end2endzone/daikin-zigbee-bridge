@@ -1,5 +1,5 @@
 /**
- * @brief This file declares the ZigbeeStelproH420Thermostat class.
+ * @brief This file declares the ZigbeeStelproHT402Thermostat class.
  * The class emulates a Zigbee Stelpro HT402 Thermostat endpoint (Hilo thermostat).
  * This is a heating-only baseboard heater thermostat (4000W @ 240V).
  */
@@ -84,10 +84,10 @@ typedef struct {
 /**
  * @brief Zigbee class that implements a Stelpro HT402 thermostat.
  */
-class ZigbeeStelproH420Thermostat : public ZigbeeEP {
+class ZigbeeStelproHT402Thermostat : public ZigbeeEP {
 public:
-  ZigbeeStelproH420Thermostat(uint8_t endpoint = STELPRO_ENDPOINT);
-  ~ZigbeeStelproH420Thermostat() {}
+  ZigbeeStelproHT402Thermostat(uint8_t endpoint = STELPRO_ENDPOINT);
+  ~ZigbeeStelproHT402Thermostat() {}
 
   // Callback setters
   // Thermostat cluster

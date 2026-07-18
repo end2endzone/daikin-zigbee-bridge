@@ -37,7 +37,7 @@
 
 #include "Zigbee.h"
 #include "zb_uint8_t.h"
-#include "ZigbeeStelproH420Thermostat.h"
+#include "ZigbeeStelproHT402Thermostat.h"
 #include "RgbLedBlinker.h"
 #include "Button2.h"
 #include <SoftTimers.h>
@@ -84,11 +84,11 @@ enum LED_MODE {
 };
 LED_MODE previousLedMode = LED_MODE_OFF;
 
-// ZigbeeStelproH420Thermostat invokes Zigbee API functions inside its constructor.
+// ZigbeeStelproHT402Thermostat invokes Zigbee API functions inside its constructor.
 // Therefore, the object must be created dynamically (on the heap) during setup().
 // This avoids calling Zigbee functions during static initialization, which occurs before setup() runs.
 // During static initialization, a FreeRTOS task executes in parallel, causing a race condition that crashes the ESP32‑C6.
-ZigbeeStelproH420Thermostat* zbThermostat = nullptr;
+ZigbeeStelproHT402Thermostat* zbThermostat = nullptr;
 
 #ifdef ENABLE_DAIKIN_SERIAL_MOCK
 DaikinSerialLocalMock daikin;
@@ -293,7 +293,7 @@ bool forceDaikinSerialToZigbeeThermostatSynchronization() {
     }
 
     // Update the heating logic of the thermostat manually.
-    // See call to ZigbeeStelproH420Thermostat::setManualHeatingLogicUpdate() in setup() function.
+    // See call to ZigbeeStelproHT402Thermostat::setManualHeatingLogicUpdate() in setup() function.
     bool is_heating = DaikinSerialApi::isHeating(&remote_status);
     bool is_cooling = DaikinSerialApi::isCooling(&remote_status);
     uint16_t new_running_state = 0;
@@ -358,7 +358,7 @@ void printAllAttributes() {
   log_i("attributes: {");
 
   // Get and show all thermostat attributes
-  ZigbeeStelproH420Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {};
+  ZigbeeStelproHT402Thermostat::zb_zcl_stelpro_thermostat_snapshot_t actuals = {};
   bool readed = zbThermostat->getSnapshot(actuals);
   if (!readed)
     log_e("ERROR: Failed to read snapshot!");
@@ -575,7 +575,7 @@ void setup() {
   zb_ieee_addr_set_oui(target_oui);
 
   // Create the thermostat on the heap.
-  zbThermostat = new ZigbeeStelproH420Thermostat(STELPRO_ENDPOINT);
+  zbThermostat = new ZigbeeStelproHT402Thermostat(STELPRO_ENDPOINT);
 
   // Set callback functions for Zigbee
   // Thermostat cluster

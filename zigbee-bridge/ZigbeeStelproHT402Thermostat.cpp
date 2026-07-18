@@ -1,5 +1,5 @@
 #include "zcl/esp_zigbee_zcl_common.h"
-#include "ZigbeeStelproH420Thermostat.h"
+#include "ZigbeeStelproHT402Thermostat.h"
 
 #include "esp_zigbee_cluster.h"
 #include "zcl/esp_zigbee_zcl_thermostat.h"
@@ -31,7 +31,7 @@ void logUnhandledMessageError(uint8_t endpoint, uint16_t cluster_id, uint16_t at
     endpoint, cluster_name, cluster_id, attr_name, attr_id, zb_constants_zcl_attr_type_to_string((esp_zb_zcl_attr_type_t)type_id), type_id );
 }
 
-ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : ZigbeeEP(endpoint) {
+ZigbeeStelproHT402Thermostat::ZigbeeStelproHT402Thermostat(uint8_t endpoint) : ZigbeeEP(endpoint) {
   // Disable timers
   _stelpro_peak_demand_icon_timer.setTimeOutTime(0);
   _stelpro_peak_demand_icon_timer.reset();
@@ -213,7 +213,7 @@ ZigbeeStelproH420Thermostat::ZigbeeStelproH420Thermostat(uint8_t endpoint) : Zig
 
 }
 
-void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) {
+void ZigbeeStelproHT402Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value_message_t *message) {
   // Handle incoming Zigbee attribute changes.
   // When this function is called, the internal memory of the attribute is already updated.
   // There is no need to call setters.
@@ -260,7 +260,7 @@ void ZigbeeStelproH420Thermostat::zbAttributeSet(const esp_zb_zcl_set_attr_value
   attr->notifyChange();
 }
 
-bool ZigbeeStelproH420Thermostat::updateSystemModes(ZigbeeAttribute<uint8_t> * source, ZigbeeAttribute<uint8_t> * target) {
+bool ZigbeeStelproHT402Thermostat::updateSystemModes(ZigbeeAttribute<uint8_t> * source, ZigbeeAttribute<uint8_t> * target) {
   uint8_t mode = 0;
 
   // Get source value from the attribute's internal memory pointer.
@@ -284,7 +284,7 @@ bool ZigbeeStelproH420Thermostat::updateSystemModes(ZigbeeAttribute<uint8_t> * s
 
 // Zigbee attribute setters
 // Thermostat cluster mandatory attributes
-bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
+bool ZigbeeStelproHT402Thermostat::setLocalTemperature(int16_t temperature) {
   //// Round value to the nearest multiple of STELPRO_TEMP_MEASUREMENT_TOLERANCE
   //temperature = (((temperature + (STELPRO_TEMP_MEASUREMENT_TOLERANCE/2)) / STELPRO_TEMP_MEASUREMENT_TOLERANCE) * STELPRO_TEMP_MEASUREMENT_TOLERANCE);
 
@@ -294,28 +294,28 @@ bool ZigbeeStelproH420Thermostat::setLocalTemperature(int16_t temperature) {
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setOccupiedCoolingSetpoint(int16_t setpoint) {
+bool ZigbeeStelproHT402Thermostat::setOccupiedCoolingSetpoint(int16_t setpoint) {
   bool success = _occupied_cooling_setpoint.set(setpoint);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setOccupiedHeatingSetpoint(int16_t setpoint) {
+bool ZigbeeStelproHT402Thermostat::setOccupiedHeatingSetpoint(int16_t setpoint) {
   bool success = _occupied_heating_setpoint.set(setpoint);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setControlSequenceOfOperation(uint8_t csop) {
+bool ZigbeeStelproHT402Thermostat::setControlSequenceOfOperation(uint8_t csop) {
   bool success = _control_sequence_of_operation.set(csop);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
+bool ZigbeeStelproHT402Thermostat::setSystemMode(uint8_t mode) {
   bool success = _system_mode.set(mode);
   if (!success)
     return false;
@@ -323,28 +323,28 @@ bool ZigbeeStelproH420Thermostat::setSystemMode(uint8_t mode) {
 }
 
 // Thermostat cluster, additional attributes
-bool ZigbeeStelproH420Thermostat::setRunningState(uint16_t state) {
+bool ZigbeeStelproHT402Thermostat::setRunningState(uint16_t state) {
   bool success = _running_state.set(state);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setPIHeatingDemand(uint8_t demand) {
+bool ZigbeeStelproHT402Thermostat::setPIHeatingDemand(uint8_t demand) {
   bool success = _pi_heating_demand.set(demand);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setOutdoorTemperature(int16_t temperature) {
+bool ZigbeeStelproHT402Thermostat::setOutdoorTemperature(int16_t temperature) {
   bool success = _outdoor_temperature.set(temperature);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setOccupancy(zb_uint8_t occupancy) {
+bool ZigbeeStelproHT402Thermostat::setOccupancy(zb_uint8_t occupancy) {
   bool success = _occupancy.set(occupancy);
   if (!success)
     return false;
@@ -352,28 +352,28 @@ bool ZigbeeStelproH420Thermostat::setOccupancy(zb_uint8_t occupancy) {
 }
 
 // Thermostat UI cluster
-bool ZigbeeStelproH420Thermostat::setTemperatureDisplayMode(uint8_t mode) {
+bool ZigbeeStelproHT402Thermostat::setTemperatureDisplayMode(uint8_t mode) {
   bool success = _ui_config_display_mode.set(mode);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setKeypadLockout(uint8_t lockout) {
+bool ZigbeeStelproHT402Thermostat::setKeypadLockout(uint8_t lockout) {
   bool success = _ui_config_keypad_lockout.set(lockout);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setStelproOutdoorTemp(int16_t temperature) {
+bool ZigbeeStelproHT402Thermostat::setStelproOutdoorTemp(int16_t temperature) {
   bool success = _stelpro_outdoor_temperature.set(temperature);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setStelproSystemMode(uint8_t mode) {
+bool ZigbeeStelproHT402Thermostat::setStelproSystemMode(uint8_t mode) {
   // Do not update _stelpro_system_mode attribute.
   // Update _system_mode attribute and then synchronize _stelpro_system_mode to _system_mode.
   bool success = _system_mode.set(mode);
@@ -383,21 +383,21 @@ bool ZigbeeStelproH420Thermostat::setStelproSystemMode(uint8_t mode) {
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setStelproPower(uint16_t value) {
+bool ZigbeeStelproHT402Thermostat::setStelproPower(uint16_t value) {
   bool success = _stelpro_power.set(value);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setStelproEnergy(uint32_t value) {
+bool ZigbeeStelproHT402Thermostat::setStelproEnergy(uint32_t value) {
   bool success = _stelpro_energy.set(value);
   if (!success)
     return false;
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
+bool ZigbeeStelproHT402Thermostat::setStelproPeakDemandIcon(uint16_t value) {
   bool success = _stelpro_peak_demand_icon.set(value);
   if (!success)
     return false;
@@ -411,7 +411,7 @@ bool ZigbeeStelproH420Thermostat::setStelproPeakDemandIcon(uint16_t value) {
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
+bool ZigbeeStelproHT402Thermostat::updateHeatingLogic() {
   // Capture actual intput value
   zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
@@ -471,7 +471,7 @@ bool ZigbeeStelproH420Thermostat::updateHeatingLogic() {
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power) {
+bool ZigbeeStelproHT402Thermostat::setHeatingLogic(uint16_t running_state, uint8_t pi_heating_demand, uint16_t stelpro_power) {
   // Capture actual intput value
   zb_zcl_stelpro_thermostat_snapshot_t input = {};
   if (!getSnapshot(input))
@@ -554,7 +554,7 @@ bool ZigbeeStelproH420Thermostat::setHeatingLogic(uint16_t running_state, uint8_
   return true;
 }
 
-bool ZigbeeStelproH420Thermostat::updateEnergy() {
+bool ZigbeeStelproHT402Thermostat::updateEnergy() {
   // Make sure we do not call this function too often...
   if (_energy_computation_timer.getTimeOutTime() != 0 && !_energy_computation_timer.hasTimedOut()) {
     return true; // too soon
@@ -603,7 +603,7 @@ bool ZigbeeStelproH420Thermostat::updateEnergy() {
   return true;
 }
 
-bool ZigbeeStelproH420Thermostat::update() {
+bool ZigbeeStelproHT402Thermostat::update() {
   if (!updatePreviousAttributeValues())
     return false;
   if (!updateStelproPeakDemandIcon())
@@ -617,7 +617,7 @@ bool ZigbeeStelproH420Thermostat::update() {
   return true;
 }
 
-bool ZigbeeStelproH420Thermostat::updatePreviousAttributeValues() {
+bool ZigbeeStelproHT402Thermostat::updatePreviousAttributeValues() {
   // Remember previous values
   for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
     IZigbeeAttribute* attr_p = _zigbee_attribute_list[i];
@@ -628,7 +628,7 @@ bool ZigbeeStelproH420Thermostat::updatePreviousAttributeValues() {
   return true;
 }
 
-bool ZigbeeStelproH420Thermostat::updateStelproPeakDemandIcon() {
+bool ZigbeeStelproHT402Thermostat::updateStelproPeakDemandIcon() {
   // Check if an update for StelproPeakDemandIcon is required
   if (_stelpro_peak_demand_icon_timer.getTimeOutTime() != 0 && _stelpro_peak_demand_icon_timer.hasTimedOut()) { // if active and has timed out
     uint16_t remaining = 0;
@@ -661,7 +661,7 @@ bool ZigbeeStelproH420Thermostat::updateStelproPeakDemandIcon() {
   return true;
 }
 
-int ZigbeeStelproH420Thermostat::report() {
+int ZigbeeStelproHT402Thermostat::report() {
   bool success = true;
   int count = 0;
   for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
@@ -687,7 +687,7 @@ int ZigbeeStelproH420Thermostat::report() {
   return -1;
 }
 
-int ZigbeeStelproH420Thermostat::reportById(uint16_t cluster_id, uint16_t attribute_id) {
+int ZigbeeStelproHT402Thermostat::reportById(uint16_t cluster_id, uint16_t attribute_id) {
   bool success = true;
   int count = 0;
   for(size_t i=0; i<_zigbee_attribute_list.size(); i++) {
@@ -717,7 +717,7 @@ int ZigbeeStelproH420Thermostat::reportById(uint16_t cluster_id, uint16_t attrib
   return -1;
 }
 
-bool ZigbeeStelproH420Thermostat::setup() {
+bool ZigbeeStelproHT402Thermostat::setup() {
   bool success = true;
 
   // Setup all attributes
@@ -751,7 +751,7 @@ bool ZigbeeStelproH420Thermostat::setup() {
   return success;
 }
 
-bool ZigbeeStelproH420Thermostat::setupPostStackStart() {
+bool ZigbeeStelproHT402Thermostat::setupPostStackStart() {
   bool success = true;
 
   /*
@@ -771,11 +771,11 @@ bool ZigbeeStelproH420Thermostat::setupPostStackStart() {
   return success;
 }
 
-void ZigbeeStelproH420Thermostat::setManualHeatingLogicUpdate(bool value) {
+void ZigbeeStelproHT402Thermostat::setManualHeatingLogicUpdate(bool value) {
   this->_manual_heating_logic_update = value;
 }
 
-void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
+void ZigbeeStelproHT402Thermostat::printZigbeeAttributes() {
   log_i("-----> _local_temperature            .get()=%d", _local_temperature            .get());
   log_i("-----> _occupied_cooling_setpoint    .get()=%d", _occupied_cooling_setpoint    .get());
   log_i("-----> _occupied_heating_setpoint    .get()=%d", _occupied_heating_setpoint    .get());
@@ -804,7 +804,7 @@ void ZigbeeStelproH420Thermostat::printZigbeeAttributes() {
   log_i("-----> _stelpro_peak_demand_icon     .get()=%d", _stelpro_peak_demand_icon     .get());
 }
 
-bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
+bool ZigbeeStelproHT402Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
   bool success = true;
   size_t capture_size = 0;
 
@@ -872,7 +872,7 @@ bool ZigbeeStelproH420Thermostat::getSnapshot(zb_zcl_stelpro_thermostat_snapshot
   return success;
 }
 
-void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
+void ZigbeeStelproHT402Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_snapshot_t& snapshot) {
   log_i("    _local_temperature            = %d,  %.1f°C",     snapshot.local_temperature            ,     snapshot.local_temperature        /100.0    );
   log_i("    _occupied_cooling_setpoint    = %d,  %.1f°C",     snapshot.occupied_cooling_setpoint    ,     snapshot.occupied_cooling_setpoint/100.0    );
   log_i("    _occupied_heating_setpoint    = %d,  %.1f°C",     snapshot.occupied_heating_setpoint    ,     snapshot.occupied_heating_setpoint/100.0    );
@@ -901,7 +901,7 @@ void ZigbeeStelproH420Thermostat::printSnapshot(const zb_zcl_stelpro_thermostat_
   log_i("    _stelpro_peak_demand_icon     = %d",              snapshot.stelpro_peak_demand_icon     );
 }
 
-esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *stelpro_cfg) {
+esp_zb_cluster_list_t * ZigbeeStelproHT402Thermostat::zigbee_stelpro_thermostat_clusters_create(zigbee_stelpro_thermostat_cfg_t *stelpro_cfg) {
   esp_err_t err = ESP_OK;
 
   // Minimum mandatory clusters for a thermostat
