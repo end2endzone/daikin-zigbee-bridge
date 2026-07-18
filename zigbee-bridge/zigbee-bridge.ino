@@ -1,5 +1,5 @@
 /**
- * @brief Zigbee Stelpro H420/HT402 Thermostat Emulator
+ * @brief Zigbee Stelpro HT402 Thermostat Emulator
  *
  * This sketch emulates a Stelpro HT402 (Hilo) line-voltage thermostat
  * for Zigbee2MQTT recognition. The HT402 is a heating-only thermostat

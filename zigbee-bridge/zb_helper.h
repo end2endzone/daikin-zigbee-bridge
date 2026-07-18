@@ -689,7 +689,7 @@ static const zb_attr_more_info_t * zb_get_attribute_more_info(uint16_t cluster_i
           .scaled_unit = nullptr,
           .min = "0",
           .max = "100",
-          .notes = "Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but ESP ZCL specification uses `[0, 100]`. Stelpro H420 thermostat's behavior also confirms the range `[0, 100]`.",
+          .notes = "Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but ESP ZCL specification uses `[0, 100]`. Stelpro HT402 thermostat's behavior also confirms the range `[0, 100]`.",
         };
         return &more;
       }

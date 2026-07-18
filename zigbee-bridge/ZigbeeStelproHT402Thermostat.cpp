@@ -991,7 +991,7 @@ esp_zb_cluster_list_t * ZigbeeStelproH420Thermostat::zigbee_stelpro_thermostat_c
     // The current solution/workaround is to add the attribute as a normal attribute (without a custom manufacterer code).
     // Use `esp_zb_cluster_add_attr()` instead of `esp_zb_cluster_add_manufacturer_attr()`.
     //
-    // Based on observations of a physical H420 thermostat ("appVersion":33,"hwVersion":1),
+    // Based on observations of a physical HT402 thermostat ("appVersion":33,"hwVersion":1),
     // * The attribute unit is 0.01°C. Value 1234 matches 12.34°C.
     // * The unit can only show round numbers. Values are rounded down to the nearest integer. For example: value 1099 which is 10.99°C shows as 10°C.
     // * The attribute accept values from -32768 to +32767.
