@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes all Zigbee clusters and attributes implemented by the `ZigbeeStelproH420Thermostat` class in the **zigbee-bridge** sketch. The class emulates a **Stelpro HT402 (Hilo)** line-voltage baseboard thermostat, allowing it to be recognised natively by Zigbee2MQTT and compatible coordinators without any custom converter.
+This document describes all Zigbee clusters and attributes implemented by the `ZigbeeStelproHT402Thermostat` class in the **zigbee-bridge** sketch. The class emulates a **Stelpro HT402 (Hilo)** line-voltage baseboard thermostat, allowing it to be recognised natively by Zigbee2MQTT and compatible coordinators without any custom converter.
 
 ### Device Identity
 
@@ -107,7 +107,7 @@ Attributes:
 | 4 | Control Sequence Of Operation (`0x001b`) | 8-bit Enumeration (`0x0030`)| 1 | Read/Write (`0x0003`) | `0xffff` | `0x4081da20` | `4` | - | - | - |  |
 | 5 | System Mode (`0x001c`) | 8-bit Enumeration (`0x0030`)| 1 | Unknown Access Type (`0x0017`) | `0xffff` | `0x4081da54` | `4` | - | - | - | Changing this attribute also synchronises StelproSystemMode (0x401C). Both carry identical semantics and are always kept in sync: writing either one causes the other to be updated immediately. |
 | 6 | Thermostat Running State (`0x0029`) | 16-bit Bitmap (`0x0019`)| 2 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dbcc` | `b0000000000000000` | - | - | - |  |
-| 7 | PI Heating Demand (`0x0008`) | Unsigned 8-bit Value (`0x0020`)| 1 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dc00` | `0` | % | 0 | 100 | Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but ESP ZCL specification uses `[0, 100]`. Stelpro H420 thermostat's behavior also confirms the range `[0, 100]`. |
+| 7 | PI Heating Demand (`0x0008`) | Unsigned 8-bit Value (`0x0020`)| 1 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dc00` | `0` | % | 0 | 100 | Percentage of heating demand. Must not be set to a non-zero value unless `running_state` has the `HEAT` bit set. Must be reset to `0` before clearing the `HEAT` bit. Zigbee2MQTT assumes range `[0, 255]` but ESP ZCL specification uses `[0, 100]`. Stelpro HT402 thermostat's behavior also confirms the range `[0, 100]`. |
 | 8 | Outdoor Temperature (`0x0001`) | Signed 16-bit Value (`0x0029`)| 2 | Read Only (`0x0001`) | `0xffff` | `0x4081dc34` | `0` | 0.01°C | - | - | ZCL standard outdoor temperature, intended for a physical sensor on the device. |
 | 9 | Occupancy (`0x0002`) | 8-bit Bitmap (`0x0018`)| 1 | Reporting, Read Only (`0x0005`) | `0xffff` | `0x4081dc68` | `b00000000` | - | - | - |  |
 | 10 | StelproOutdoorTemperature (`0x4001`) | Signed 16-bit Value (`0x0029`)| 2 | Reporting, Read/Write (`0x0007`) | `0xffff` | `0x4081dde8` | `0` | 0.01°C | -9900 | 19900 | Outdoor temperature displayed on the thermostat face. |
@@ -180,7 +180,7 @@ The update interval is defined by `SIMULATION_UPDATE_INTERVAL` (default 5 000 ms
 * The attribute represent a _Percentage of Heating Demand_. As a percentage, it must be in range [0, 100]. See macros `ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MIN_VALUE` & `ESP_ZB_ZCL_THERMOSTAT_PI_HEATING_DEMAND_MAX_VALUE` which defines the minimum and maximum values.
 * _Zigbee2mqtt_ assumes values are in [0,255] range. This is likely a bug or an incomplete implementation.
 * Other zigbee projects (including esp-zigbee-sdk library) also assume values in [0,100] range.
-* Also confirmed with a real Stelpro H420 thermostat, pi_heating_demand must be in range [0, 100].
+* Also confirmed with a real Stelpro HT402 thermostat, pi_heating_demand must be in range [0, 100].
 
 
 **Ordering Constraint**:

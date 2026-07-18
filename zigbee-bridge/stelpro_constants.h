@@ -24,7 +24,7 @@
 #define STELPRO_MAX_COOL_SETPOINT             (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
 #define STELPRO_OCCUPIED_COOLING_SETPOINT     (500 + STELPRO_MAX_HEAT_SETPOINT) // make sure value is greater than STELPRO_MAX_HEAT_SETPOINT
 
-#define STELPRO_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE ((zb_uint8_t)0U) // Stelpro H420 thermostat default value. It is the opposite of `ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE`.
+#define STELPRO_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE ((zb_uint8_t)0U) // Stelpro HT402 thermostat default value. It is the opposite of `ESP_ZB_ZCL_THERMOSTAT_OCCUPANCY_DEFAULT_VALUE`.
 
 // Running state values (each bit is the state of something)
 #define THERMOSTAT_RUNNING_STATE_IDLE 0x0000

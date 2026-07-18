@@ -1,6 +1,6 @@
 /**
- * @brief This file declares the ZigbeeStelproH420Thermostat class.
- * The class emulates a Zigbee Stelpro H420/HT402 Thermostat endpoint (Hilo thermostat).
+ * @brief This file declares the ZigbeeStelproHT402Thermostat class.
+ * The class emulates a Zigbee Stelpro HT402 Thermostat endpoint (Hilo thermostat).
  * This is a heating-only baseboard heater thermostat (4000W @ 240V).
  */
 
@@ -30,11 +30,11 @@
 #define STELPRO_INVALID_TEMPERATURE               0x8000  /* -32768, -327.68°C */
 
 /**
- * @brief Zigbee Stelpro H420 thermostat device clusters configuration
+ * @brief Zigbee Stelpro HT402 thermostat device clusters configuration
  * See `esp_zigbee_type.h` in `esp-zigbee-sdk` for details of each types at:
  * https://github.com/espressif/esp-zigbee-sdk/blob/main/components/esp-zigbee-lib/include/esp_zigbee_type.h
  *
- * Exposed clusters for Zigbee Stelpro H420 thermostat according to zigbee-herdsman-converters (Zigbee2MQTT) :
+ * Exposed clusters for Zigbee Stelpro HT402 thermostat according to zigbee-herdsman-converters (Zigbee2MQTT) :
  * https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/devices/stelpro.ts#L31
  * Presets:
  *   https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/lib/exposes.ts#L950
@@ -52,7 +52,7 @@ typedef struct {
 } zigbee_stelpro_thermostat_cfg_t;
 
 /**
- * @brief Default configuration for Stelpro H420 thermostat
+ * @brief Default configuration for Stelpro HT402 thermostat
  */
 #define ZIGBEE_DEFAULT_STELPRO_THERMOSTAT_CONFIG()                                                    \
 {                                                                                                     \
@@ -82,12 +82,12 @@ typedef struct {
   }
 
 /**
- * @brief Zigbee class that implements a Stelpro H420 thermostat.
+ * @brief Zigbee class that implements a Stelpro HT402 thermostat.
  */
-class ZigbeeStelproH420Thermostat : public ZigbeeEP {
+class ZigbeeStelproHT402Thermostat : public ZigbeeEP {
 public:
-  ZigbeeStelproH420Thermostat(uint8_t endpoint = STELPRO_ENDPOINT);
-  ~ZigbeeStelproH420Thermostat() {}
+  ZigbeeStelproHT402Thermostat(uint8_t endpoint = STELPRO_ENDPOINT);
+  ~ZigbeeStelproHT402Thermostat() {}
 
   // Callback setters
   // Thermostat cluster
@@ -221,7 +221,7 @@ private:
   SoftTimer _energy_computation_timer;
 
   /**
-   * @brief Create Stelpro H420 thermostat cluster list
+   * @brief Create Stelpro HT402 thermostat cluster list
    * 
    * Contains:
    * - Basic cluster (with manufacturer name and model)
